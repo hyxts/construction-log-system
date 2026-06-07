@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>国标装修工装施工日志系统 v2.0</title>
+
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#2563eb;--primary-light:#3b82f6;--primary-bg:#eff6ff;
+  --success:#16a34a;--success-bg:#f0fdf4;
+  --warning:#d97706;--warning-bg:#fffbeb;
+  --danger:#dc2626;--danger-bg:#fef2f2;
+  --bg:#f1f5f9;--card:#fff;--text:#0f172a;--text2:#64748b;--text3:#94a3b8;
+  --border:#e2e8f0;--border2:#cbd5e1;
+  --sidebar-bg:#0f172a;--sidebar-text:#94a3b8;--sidebar-active:#3b82f6;
+  --radius:10px;--radius-sm:6px;--shadow:0 1px 3px rgba(0,0,0,.08);
+  --transition:.2s ease;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+  background:var(--bg);color:var(--text);min-height:100vh;display:flex;line-height:1.6;
+}
+.sidebar{width:240px;background:var(--sidebar-bg);color:var(--sidebar-text);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sidebar-header{padding:20px 16px 12px}
+.sidebar-header h2{color:#fff;font-size:17px;margin-bottom:2px;letter-spacing:.5px}
+.sidebar-header p{font-size:11px;opacity:.5}
+.project-switcher{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.project-switcher .lbl{font-size:10px;opacity:.4;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.project-switcher select{width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#e2e8f0;font-size:13px;cursor:pointer;outline:none}
+.project-switcher select option{background:#1e293b;color:#e2e8f0}
+.sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px 20px;cursor:pointer;font-size:14px;transition:var(--transition);border-left:3px solid transparent;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,.04);color:#e2e8f0}
+.nav-item.active{background:rgba(59,130,246,.12);border-left-color:var(--sidebar-active);color:#fff}
+.nav-item .icon{font-size:18px;width:22px;text-align:center}
+.nav-divider{border-top:1px solid rgba(255,255,255,.06);margin:6px 0}
+.sidebar-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;opacity:.4;text-align:center}
+.main{flex:1;margin-left:240px;padding:24px 28px;min-height:100vh}
+.page{display:none;animation:fadeIn .25s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--card);border-radius:var(--radius);padding:24px;margin-bottom:18px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.card-header h3{font-size:18px;font-weight:600}
+.card-header .sub{font-size:13px;color:var(--text2);margin-top:2px}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:18px}
+.dash-card{background:var(--card);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.dash-title{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px}
+.dash-stat{display:flex;gap:16px;flex-wrap:wrap}
+.dash-stat-item{text-align:center;min-width:60px}
+.dash-stat-item .val{font-size:28px;font-weight:700;color:var(--primary)}
+.dash-stat-item .lbl{font-size:12px;color:var(--text2);margin-top:2px}
+.dash-stat-item.success .val{color:var(--success)}
+.dash-stat-item.warn .val{color:var(--warning)}
+.progress-wrap{margin-top:14px}
+.progress-bar{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-light));border-radius:4px;transition:width .5s ease}
+.progress-label{font-size:12px;color:var(--text2);margin-top:4px}
+.dash-todo-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);font-size:13px;margin-bottom:4px}
+.dash-todo-item:hover{background:var(--bg)}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.pending{background:var(--text3)}.dot.in_progress{background:var(--warning)}.dot.completed{background:var(--success)}.dot.overdue{background:var(--danger)}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:500;margin-left:auto;flex-shrink:0}
+.tag.today{background:var(--primary-bg);color:var(--primary)}
+.tag.upcoming{background:var(--bg);color:var(--text2)}
+.tag.late{background:var(--danger-bg);color:var(--danger)}
+.dash-log-mini{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;cursor:pointer;transition:var(--transition)}
+.dash-log-mini:last-child{border-bottom:none}
+.dash-log-mini:hover{color:var(--primary)}
+.log-mini-date{font-weight:600;font-size:12px;color:var(--text2);white-space:nowrap;min-width:80px}
+.dash-quick-actions{display:flex;gap:10px;flex-wrap:wrap}
+.dash-quick-btn{padding:10px 20px;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;transition:var(--transition);font-family:inherit}
+.dash-quick-btn.primary{background:var(--primary);color:#fff}
+.dash-quick-btn.primary:hover{background:var(--primary-light)}
+.dash-quick-btn.secondary{background:var(--bg);color:var(--text)}
+.dash-quick-btn.secondary:hover{background:var(--border)}
+.form-section{margin-bottom:22px}
+.form-section-title{font-size:14px;font-weight:600;color:var(--primary);margin-bottom:12px;padding-bottom:8px;border-bottom:1px dashed var(--border);display:flex;align-items:center;gap:8px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:12px;font-weight:500;color:var(--text2)}
+.form-group input,.form-group select,.form-group textarea{padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;transition:var(--transition);outline:none;background:var(--card)}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.form-group textarea{resize:vertical;min-height:80px}
+.form-group .hint{font-size:11px;color:var(--text3)}
+.btn{padding:9px 18px;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;transition:var(--transition);display:inline-flex;align-items:center;gap:5px;font-family:inherit}
+.btn:hover{opacity:.9;transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-warning{background:var(--warning);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-outline:hover{background:var(--bg);border-color:var(--border2)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap}
+.log-list-item{display:flex;align-items:center;padding:14px 18px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;transition:var(--transition);gap:12px}
+.log-list-item:hover{border-color:var(--primary-light);box-shadow:0 2px 8px rgba(37,99,235,.06)}
+.log-date{font-weight:600;font-size:14px;white-space:nowrap;min-width:100px}
+.log-summary{color:var(--text2);font-size:13px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.log-weather{font-size:20px;min-width:36px;text-align:center}
+.log-actions{display:flex;gap:4px}
+.search-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.search-bar input,.search-bar select{padding:9px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;background:var(--card);font-family:inherit}
+.search-bar input:focus,.search-bar select:focus{border-color:var(--primary)}
+.search-bar input{flex:1;min-width:180px}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{background:#f8fafc;padding:10px 12px;text-align:left;font-weight:600;color:var(--text2);border-bottom:2px solid var(--border);white-space:nowrap}
+.data-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table tr:hover td{background:#f8fafc}
+.data-table .actions{white-space:nowrap;text-align:right}
+.phase-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden}
+.phase-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#f8fafc;border-bottom:1px solid var(--border)}
+.phase-title{font-weight:600;font-size:14px}
+.phase-meta{font-size:12px;color:var(--text2);margin-left:6px}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:14px;font-size:11px;font-weight:500}
+.badge-info{background:var(--primary-bg);color:var(--primary)}
+.badge-success{background:var(--success-bg);color:var(--success)}
+.badge-warning{background:var(--warning-bg);color:var(--warning)}
+.badge-danger{background:var(--danger-bg);color:var(--danger)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text2)}
+.empty-icon{font-size:48px;margin-bottom:12px;opacity:.3}
+.empty-state p{font-size:14px;margin-bottom:8px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border-radius:var(--radius);width:100%;max-width:600px;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--border)}
+.modal-header h3{font-size:17px}
+.modal-body{padding:20px 24px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:14px 24px;border-top:1px solid var(--border)}
+.toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 20px;border-radius:var(--radius-sm);font-size:14px;color:#fff;animation:slideIn .3s ease;box-shadow:0 4px 12px rgba(0,0,0,.15);max-width:360px}
+.toast-success{background:var(--success)}
+.toast-error{background:var(--danger)}
+.toast-info{background:var(--primary)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+.smart-fill-bar{background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:var(--radius);padding:16px 20px;margin-bottom:20px;color:#fff;display:flex;align-items:center;gap:14px}
+.smart-fill-bar .info{flex:1}
+.smart-fill-bar .title{font-weight:600;font-size:15px;margin-bottom:3px}
+.smart-fill-bar .desc{font-size:12px;opacity:.85}
+.smart-fill-bar .btn-fill{background:#fff;color:#6366f1;border:none;padding:10px 22px;border-radius:var(--radius-sm);font-weight:600;font-size:14px;cursor:pointer;transition:var(--transition);font-family:inherit}
+.smart-fill-bar .btn-fill:hover{transform:scale(1.03)}
+.auto-fill-panel{background:#f8fafc;border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:18px}
+.auto-fill-tasks{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;max-height:200px;overflow-y:auto}
+.detail-grid{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;font-size:14px}
+.detail-grid .dl{font-weight:600;color:var(--text2);text-align:right}
+.detail-grid .dd{padding:2px 0}
+.gantt-container{overflow-x:auto;font-size:12px}
+.gantt-row{display:flex;align-items:center;margin-bottom:6px;gap:0}
+.gantt-label{min-width:160px;padding:4px 8px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gantt-bars{flex:1;position:relative;height:28px;background:#f8fafc;border-radius:3px}
+.gantt-bar{position:absolute;height:22px;top:3px;border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:10px;color:#fff;white-space:nowrap;overflow:hidden}
+.gantt-bar.pending{background:var(--text3)}.gantt-bar.in_progress{background:var(--primary)}.gantt-bar.completed{background:var(--success)}
+.gantt-header{display:flex;margin-bottom:8px;font-size:10px;color:var(--text2)}
+.gantt-header span{text-align:center}
+.mode-toggle{padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--card);cursor:pointer;font-size:12px;transition:var(--transition);font-family:inherit;color:var(--text)}
+.mode-toggle:hover{border-color:var(--primary);color:var(--primary)}
+.mode-toggle.active{background:var(--primary-bg);border-color:var(--primary);color:var(--primary)}
+@media(max-width:768px){.sidebar{width:200px}.main{margin-left:200px;padding:16px}.form-grid{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr}.detail-grid .dl{text-align:left}}
+@media print{.sidebar,.toast-container,.btn,.modal-overlay,.nav-item:not(.active){display:none!important}.main{margin-left:0!important;padding:0!important}.page{display:block!important}.card{box-shadow:none!important;border:none!important;padding:10px 0!important}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h2>施工日志系统</h2>
+    <p>国标装修工装 v2.0</p>
+  </div>
+  <div class="project-switcher">
+    <div class="lbl">当前工程</div>
+    <select id="sidebar-project-select" onchange="onProjectSwitch(this.value)"></select>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+      <span class="icon">📊</span>首页看板
+    </div>
+    <div class="nav-item" data-page="create" onclick="switchPage('create')">
+      <span class="icon">✏️</span>新建日志
+    </div>
+    <div class="nav-item" data-page="list" onclick="switchPage('list')">
+      <span class="icon">📋</span>日志列表
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-item" data-page="project" onclick="switchPage('project')">
+      <span class="icon">⚙️</span>工程与数据
+    </div>
+    <div class="nav-divider"></div>
+    <div class="nav-item" onclick="exportDatabase()">
+      <span class="icon">💾</span>导出数据备份
+    </div>
+    <div class="nav-item" onclick="importDatabasePrompt()">
+      <span class="icon">📥</span>导入数据备份
+    </div>
+  </nav>
+  <div class="sidebar-footer">v2.0 · SQLite本地数据库</div>
+</aside>
+
+<main class="main">
+
+  <!-- Dashboard -->
+  <div class="page active" id="page-dashboard">
+    <div class="dash-grid" id="dash-overview"></div>
+    <div class="dash-grid">
+      <div class="dash-card">
+        <div class="dash-title">📌 今日待办</div>
+        <div id="dash-today-tasks"></div>
+        <div class="empty-state" id="dash-today-empty" style="display:none"><p>今日无施工任务</p></div>
+      </div>
+      <div class="dash-card">
+        <div class="dash-title">📝 最近日志</div>
+        <div id="dash-recent-logs"></div>
+        <div class="empty-state" id="dash-logs-empty" style="display:none"><p>暂无日志记录</p></div>
+      </div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-title">⚠️ 到期提醒</div>
+      <div id="dash-deadline-tasks"></div>
+      <div class="empty-state" id="dash-deadline-empty" style="display:none"><p>所有任务进度正常 ✅</p></div>
+    </div>
+    <div class="dash-card">
+      <div class="dash-title">🚀 快速操作</div>
+      <div class="dash-quick-actions">
+        <button class="dash-quick-btn primary" onclick="switchPage('create');resetForm()">➕ 新建日志</button>
+        <button class="dash-quick-btn secondary" onclick="switchPage('project')">⚙️ 管理工程</button>
+        <button class="dash-quick-btn secondary" onclick="switchPage('list')">📋 查看日志</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Log -->
+  <div class="page" id="page-create">
+    <div class="card">
+      <div class="card-header">
+        <div><h3 id="form-title">📝 新建施工日志</h3></div>
+        <div class="btn-group">
+          <button class="mode-toggle" id="quick-mode-btn" onclick="toggleQuickMode()">快速录入</button>
+          <button class="mode-toggle" id="continuous-btn" onclick="toggleContinuous()">连续录入</button>
+          <button class="btn btn-outline btn-sm" onclick="loadDraft()">📥 加载草稿</button>
+          <button class="btn btn-outline btn-sm" onclick="clearForm()">🗑️ 清空</button>
+        </div>
+      </div>
+      <form id="log-form" onsubmit="saveLog(event)">
+        <div class="smart-fill-bar">
+          <div class="info">
+            <div class="title">✨ 一键智能填充</div>
+            <div class="desc">自动获取天气+施工计划+项目信息，一键完成日志填写</div>
+          </div>
+          <button type="button" class="btn-fill" onclick="smartAutoFill()">🔄 智能填充</button>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">📋 基本信息</div>
+          <div class="form-grid">
+            <div class="form-group"><label>工程名称</label><input type="text" id="log-project-name" placeholder="自动填入"></div>
+            <div class="form-group"><label>施工单位</label><input type="text" id="log-unit" placeholder="自动填入"></div>
+            <div class="form-group"><label>日志日期 *</label><input type="date" id="log-date" required></div>
+            <div class="form-group"><label>天气状况 *</label>
+              <select id="log-weather" required>
+                <option value="">请选择</option>
+                <option>晴</option><option>多云</option><option>阴</option><option>小雨</option><option>中雨</option><option>大雨</option><option>暴雨</option><option>小雪</option><option>中雪</option><option>大风</option><option>雾</option><option>霾</option>
+              </select>
+            </div>
+            <div class="form-group"><label>最高温度(°C)</label><input type="number" id="log-temp-high" placeholder="自动获取"></div>
+            <div class="form-group"><label>最低温度(°C)</label><input type="number" id="log-temp-low" placeholder="自动获取"></div>
+            <div class="form-group"><label>风力</label><input type="text" id="log-wind" placeholder="自动获取"></div>
+            <div class="form-group full"><label>施工部位</label><input type="text" id="log-location" placeholder="如：3层会议室、走廊天花"></div>
+            <div class="form-group full"><label>突发事件</label><input type="text" id="log-incident" placeholder="如：无 / 停电2小时 / 设计变更"></div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">🔨 生产情况记录（施工项目内容、机械作业、班组工作、生产存在问题）</div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <textarea id="log-production-record" rows="12" placeholder="请填写：&#10;1. 当日施工项目内容&#10;2. 机械作业情况&#10;3. 各班组工作安排及人数&#10;4. 生产存在的问题&#10;&#10;示例：&#10;1. 施工内容：3层会议室轻钢龙骨吊顶安装&#10;2. 机械：电锤2台、切割机1台、激光水平仪1台&#10;3. 班组：木工班组6人（张工带班），电工班组2人&#10;4. 问题：部分龙骨配件型号不符，已联系供应商调换"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">✅ 技术质量安全工作记录（技术质量安全活动、技术质量安全问题、检查验收情况等）</div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <textarea id="log-tech-quality-safety" rows="12" placeholder="请填写：&#10;1. 技术质量安全活动&#10;2. 技术质量安全问题&#10;3. 检查验收情况&#10;&#10;示例：&#10;1. 活动：班前安全教育，强调高空作业安全注意事项&#10;2. 问题：发现2处临边防护不牢固，已当场整改&#10;3. 验收：吊顶龙骨隐蔽工程验收合格，监理签字确认"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="form-section-title">📝 签章</div>
+          <div class="form-grid">
+            <div class="form-group"><label>项目负责人</label><input type="text" id="log-manager" placeholder="自动填入"></div>
+            <div class="form-group"><label>记录人</label><input type="text" id="log-recorder" placeholder="自动填入"></div>
+          </div>
+        </div>
+        <input type="hidden" id="log-id">
+        <div class="btn-group" style="margin-top:12px">
+          <button type="submit" class="btn btn-primary">💾 保存日志</button>
+          <button type="button" class="btn btn-outline" onclick="saveDraft()">📝 暂存草稿</button>
+          <button type="button" class="btn btn-outline" onclick="resetForm()">↩️ 重置</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Log List -->
+  <div class="page" id="page-list">
+    <div class="card">
+      <div class="card-header">
+        <h3>📋 施工日志列表 <span style="font-weight:400;font-size:14px;color:var(--text2)" id="log-count"></span></h3>
+        <button class="btn btn-primary btn-sm" onclick="switchPage('create');resetForm()">➕ 新建日志</button>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="🔍 搜索日志内容、部位、天气..." oninput="renderLogList()">
+        <input type="date" id="search-date-from" onchange="renderLogList()" title="起始日期">
+        <span style="color:var(--text3)">至</span>
+        <input type="date" id="search-date-to" onchange="renderLogList()" title="截止日期">
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('search-input').value='';document.getElementById('search-date-from').value='';document.getElementById('search-date-to').value='';renderLogList()">✕ 清除</button>
+      </div>
+      <div id="log-list-container"></div>
+    </div>
+  </div>
+
+  <!-- Project & Data -->
+  <div class="page" id="page-project">
+    <div class="card">
+      <div class="card-header">
+        <h3>🏗️ 工程管理</h3>
+        <button class="btn btn-primary btn-sm" onclick="showProjectForm()">➕ 新建工程</button>
+      </div>
+      <div id="project-list-container"></div>
+    </div>
+    <div class="card" id="active-project-tasks" style="display:none">
+      <div class="card-header">
+        <h3>📋 施工任务计划</h3>
+        <div class="btn-group">
+          <button class="mode-toggle active" id="view-list-btn" onclick="setProjectView('list')">📋 列表</button>
+          <button class="mode-toggle" id="view-gantt-btn" onclick="setProjectView('gantt')">📊 甘特图</button>
+          <button class="btn btn-primary btn-sm" onclick="showTaskForm()">➕ 添加任务</button>
+        </div>
+      </div>
+      <div id="project-task-list"></div>
+      <div id="project-gantt" style="display:none"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Modals -->
+<div class="modal-overlay" id="project-modal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="project-modal-title">🏗️ 新建工程</h3><button class="btn btn-outline btn-sm" onclick="closeProjectModal()">✕</button></div>
+    <div class="modal-body">
+      <form id="project-form" onsubmit="saveProject(event)">
+        <input type="hidden" id="proj-id">
+        <div class="form-grid">
+          <div class="form-group"><label>工程名称 *</label><input type="text" id="proj-name" required></div>
+          <div class="form-group"><label>工程类型</label>
+            <select id="proj-type">
+              <option value="custom">自定义</option><option value="office">办公楼</option><option value="mall">商场</option>
+              <option value="hotel">酒店</option><option value="home">住宅</option><option value="restaurant">餐厅</option>
+              <option value="hospital">医院</option><option value="school">学校</option><option value="bank">银行营业厅</option>
+              <option value="exhibition">展厅/展览馆</option><option value="gym">健身房/运动场馆</option>
+              <option value="sales_office">售楼处</option><option value="factory">厂房/车间</option>
+            </select>
+          </div>
+          <div class="form-group"><label>施工单位</label><input type="text" id="proj-company"></div>
+          <div class="form-group"><label>项目负责人</label><input type="text" id="proj-manager"></div>
+          <div class="form-group"><label>施工员（记录人）</label><input type="text" id="proj-recorder"></div>
+        </div>
+        <div class="btn-group" style="margin-top:16px">
+          <button type="submit" class="btn btn-primary">💾 保存</button>
+          <button type="button" class="btn btn-outline" onclick="closeProjectModal()">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="task-modal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="task-modal-title">➕ 添加施工任务</h3><button class="btn btn-outline btn-sm" onclick="closeTaskModal()">✕</button></div>
+    <div class="modal-body">
+      <form id="task-form" onsubmit="saveTask(event)">
+        <input type="hidden" id="task-id">
+        <div class="form-grid">
+          <div class="form-group"><label>施工阶段</label>
+            <select id="task-category">
+              <option value="">请选择</option><option>拆除工程</option><option>水电改造</option>
+              <option>防水工程</option><option>泥瓦工程</option><option>木工工程</option>
+              <option>油漆工程</option><option>安装工程</option><option>竣工验收</option><option>其他</option>
+            </select>
+          </div>
+          <div class="form-group"><label>任务名称 *</label><input type="text" id="task-name" required></div>
+          <div class="form-group"><label>施工部位</label><input type="text" id="task-location" placeholder="如：3层会议室"></div>
+          <div class="form-group"><label>开始日期</label><input type="date" id="task-start"></div>
+          <div class="form-group"><label>结束日期</label><input type="date" id="task-end"></div>
+          <div class="form-group"><label>施工班组</label><input type="text" id="task-team" placeholder="如：木工班组"></div>
+          <div class="form-group"><label>状态</label>
+            <select id="task-status">
+              <option value="pending">未开始</option><option value="in_progress">进行中</option><option value="completed">已完成</option>
+            </select>
+          </div>
+          <div class="form-group full"><label>任务描述</label><textarea id="task-desc" rows="2"></textarea></div>
+          <div class="form-group full"><label>备注</label><textarea id="task-remark" rows="2"></textarea></div>
+        </div>
+        <div class="btn-group" style="margin-top:16px">
+          <button type="submit" class="btn btn-primary">💾 保存</button>
+          <button type="button" class="btn btn-outline" onclick="closeTaskModal()">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <h3>📄 施工日志详情</h3>
+      <div class="btn-group">
+        <button class="btn btn-outline btn-sm" onclick="printLog()">🖨️ 打印</button>
+        <button class="btn btn-outline btn-sm" onclick="closeDetailModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="detail-content"></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ==================== REST API DATABASE LAYER ====================
+// 数据通过 Flask 后端 API 存取，数据库为 SQLite
+
+// Helper to generate unique IDs
+function genId() {
+  return String(Date.now()) + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+function initDatabase() {
+  // 不再需要初始化，后端自动管理数据库
+  return Promise.resolve();
+}
+
+// 通用 API 请求封装
+async function apiGet(url) {
+  const resp = await fetch(url);
+  const json = await resp.json();
+  if (!json.success) throw new Error(json.error || '请求失败');
+  return json.data;
+}
+
+async function apiPost(url, body) {
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const json = await resp.json();
+  if (!json.success) throw new Error(json.error || '请求失败');
+  return json.data;
+}
+
+async function apiPut(url, body) {
+  const resp = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const json = await resp.json();
+  if (!json.success) throw new Error(json.error || '请求失败');
+  return json.data;
+}
+
+async function apiDelete(url) {
+  const resp = await fetch(url, { method: 'DELETE' });
+  const json = await resp.json();
+  if (!json.success) throw new Error(json.error || '请求失败');
+  return json.data;
+}
+
+async function apiPatch(url, body) {
+  const resp = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const json = await resp.json();
+  if (!json.success) throw new Error(json.error || '请求失败');
+  return json.data;
+}
+
+// ==================== DATA ACCESS LAYER (REST API) ====================
+
+// --- Projects ---
+async function fetchProjects() {
+  return await apiGet('/api/projects');
+}
+
+async function createProject(data) {
+  const id = genId();
+  await apiPost('/api/projects', { ...data, id });
+  return id;
+}
+
+async function updateProject(id, data) {
+  await apiPut('/api/projects/' + id, data);
+}
+
+async function deleteProject(id) {
+  await apiDelete('/api/projects/' + id);
+}
+
+// --- Tasks ---
+async function fetchTasksByProject(projectId) {
+  return await apiGet('/api/tasks/project/' + projectId);
+}
+
+async function createTask(data) {
+  const id = genId();
+  await apiPost('/api/tasks', { ...data, id });
+  return id;
+}
+
+async function updateTask(id, data) {
+  await apiPut('/api/tasks/' + id, data);
+}
+
+async function deleteTask(id) {
+  await apiDelete('/api/tasks/' + id);
+}
+
+async function deleteAllTasksByProject(projectId) {
+  const tasks = await fetchTasksByProject(projectId);
+  await Promise.all(tasks.map(t => apiDelete('/api/tasks/' + (t._id || t.id))));
+}
+
+// --- Logs ---
+async function fetchLogsByProject(projectId) {
+  return await apiGet('/api/logs/project/' + projectId);
+}
+
+async function fetchLogById(id) {
+  return await apiGet('/api/logs/' + id);
+}
+
+async function createLog(data) {
+  const id = genId();
+  await apiPost('/api/logs', { ...data, id });
+  return id;
+}
+
+async function updateLog(id, data) {
+  await apiPut('/api/logs/' + id, data);
+}
+
+async function deleteLog(id) {
+  await apiDelete('/api/logs/' + id);
+}
+
+async function deleteAllLogsByProject(projectId) {
+  const logs = await fetchLogsByProject(projectId);
+  await Promise.all(logs.map(l => apiDelete('/api/logs/' + (l._id || l.id))));
+}
+
+// ==================== EXPORT/IMPORT ====================
+async function exportDatabase() {
+  try {
+    const data = await apiGet('/api/export');
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '施工日志数据备份_' + new Date().toISOString().split('T')[0] + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('数据已导出！');
+  } catch(e) {
+    showToast('导出失败：' + e.message, 'error');
+  }
+}
+
+async function importDatabasePrompt() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!confirm('导入数据将覆盖当前所有数据，确定继续吗？')) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const resp = await fetch('/api/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const json = await resp.json();
+      if (!json.success) throw new Error(json.error || '导入失败');
+      showToast('数据已成功导入！');
+      location.reload();
+    } catch(err) {
+      showToast('导入失败：' + err.message, 'error');
+    }
+  };
+  input.click();
+}
+
+// ==================== GLOBAL STATE ====================
+let activeProjectId = null;
+let projects = [];
+let quickMode = false;
+let continuousMode = false;
+let currentDetailLog = null;
+let currentProjectView = 'list';
+
+// ==================== DATE HELPERS ====================
+function formatDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// ==================== TOAST ====================
+function showToast(msg, type='success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-'+type;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity='0'; toast.style.transition='opacity .3s'; setTimeout(() => toast.remove(), 300); }, 2500);
+}
+
+// ==================== NAVIGATION ====================
+function switchPage(name) {
+  document.title = '施工日志 - ' + ({dashboard:'首页',create:'新建',list:'列表',project:'工程'}[name]||name);
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const pageEl = document.getElementById('page-'+name);
+  if (!pageEl) return;
+  pageEl.classList.add('active');
+  const ni = document.querySelector('[data-page="'+name+'"]');
+  if (ni) ni.classList.add('active');
+  if (name === 'dashboard') renderDashboard();
+  else if (name === 'list') renderLogList();
+  else if (name === 'create') { setDefaultDate(); }
+  else if (name === 'project') { renderProjectList(); loadTasks(); }
+}
+
+// ==================== LOAD ALL DATA ====================
+async function loadProjects() {
+  try {
+    const rawProjects = await fetchProjects();
+    const tasksData = await Promise.all(rawProjects.map(async p => {
+      const tasks = await fetchTasksByProject(p._id);
+      return { ...p, tasks, id: p._id };
+    }));
+    projects = tasksData;
+    updateProjectSelect();
+  } catch(e) { console.error('loadProjects:', e); }
+}
+
+function updateProjectSelect() {
+  const sel = document.getElementById('sidebar-project-select');
+  const val = sel.value || activeProjectId;
+  sel.innerHTML = projects.length
+    ? projects.map(p => {
+        const pid = p._id || p.id;
+        return `<option value="${pid}" ${pid===val?'selected':''}>${p.name}</option>`;
+      }).join('')
+    : '<option value="">— 请创建工程 —</option>';
+  activeProjectId = sel.value || null;
+}
+
+function getActiveProject() {
+  return projects.find(p => (p._id || p.id) === activeProjectId) || null;
+}
+
+async function onProjectSwitch(pid) {
+  activeProjectId = pid;
+  const page = document.querySelector('.page.active');
+  if (page) {
+    const pageName = page.id.replace('page-','');
+    if (pageName === 'dashboard') renderDashboard();
+    else if (pageName === 'list') renderLogList();
+    else if (pageName === 'create') setDefaultDate();
+    else if (pageName === 'project') { renderProjectList(); loadTasks(); }
+  }
+}
+
+// ==================== DASHBOARD ====================
+async function renderDashboard() {
+  const proj = getActiveProject();
+  if (!proj) {
+    const ov = document.getElementById('dash-overview');
+    if (ov) ov.innerHTML = '<div class="dash-card"><div class="dash-title">工程概览</div><div class="empty-state"><p>请先创建或选择工程</p></div></div>';
+    ['dash-today-tasks','dash-recent-logs','dash-deadline-tasks'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.innerHTML = '';
+    });
+    return;
+  }
+  const tasks = proj.tasks || [];
+  const logs = await fetchLogsByProject(proj.id);
+  const total = tasks.length;
+  const done = tasks.filter(t => t.status === 'completed').length;
+  const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+
+  const datedTasks = tasks.filter(t => t.start && t.end);
+  let totalDays = 0;
+  if (datedTasks.length > 0) {
+    const minStart = new Date(Math.min(...datedTasks.map(t => new Date(t.start))));
+    const maxEnd = new Date(Math.max(...datedTasks.map(t => new Date(t.end))));
+    totalDays = Math.ceil((maxEnd - minStart) / 86400000) + 1;
+  }
+  const dashOv = document.getElementById('dash-overview');
+  if (dashOv) dashOv.innerHTML = `
+    <div class="dash-card">
+      <div class="dash-title">${proj.name || ''}</div>
+      <div style="font-size:12px;color:var(--text2)">${proj.company || ''}</div>
+      <div class="dash-stat">
+        <div class="dash-stat-item"><div class="val">${total}</div><div class="lbl">总任务数</div></div>
+        <div class="dash-stat-item success"><div class="val">${done}</div><div class="lbl">已完成</div></div>
+        <div class="dash-stat-item warn"><div class="val">${inProgress}</div><div class="lbl">进行中</div></div>
+        <div class="dash-stat-item"><div class="val">${total-done-inProgress}</div><div class="lbl">未开始</div></div>
+        ${totalDays > 0 ? `<div class="dash-stat-item"><div class="val">${totalDays}</div><div class="lbl">总工期(天)</div></div>` : ''}
+      </div>
+      <div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div></div>
+      <div class="progress-label">工程进度 ${pct}%</div>
+    </div>
+  `;
+
+  const today = new Date().toISOString().split('T')[0];
+  const todayTasks = tasks.filter(t => t.start <= today && t.end >= today);
+  const todayEl = document.getElementById('dash-today-tasks');
+  const todayEmpty = document.getElementById('dash-today-empty');
+  if (todayEl && todayEmpty) {
+    if (todayTasks.length === 0) { todayEl.innerHTML = ''; todayEmpty.style.display = 'block'; }
+    else {
+      todayEmpty.style.display = 'none';
+      todayEl.innerHTML = todayTasks.map(t => {
+        let tag = t.status === 'pending' ? '<span class="tag today">今日</span>'
+          : t.status === 'in_progress' ? '<span class="tag today">进行中</span>'
+          : '<span class="tag upcoming">已完成</span>';
+        return `<div class="dash-todo-item" onclick="switchPage('create');document.getElementById('log-date').value='${today}'">
+          <span class="dot ${t.status}"></span>
+          <span>${t.name || ''} <small style="color:var(--text2)">${t.location || ''}</small></span>${tag}
+        </div>`;
+      }).join('');
+    }
+  }
+
+  const weekFromNow = new Date(); weekFromNow.setDate(weekFromNow.getDate() + 7);
+  const deadlineStr = weekFromNow.toISOString().split('T')[0];
+  const deadlineTasks = tasks.filter(t => t.status !== 'completed' && t.end && t.end <= deadlineStr).sort((a, b) => (a.end||'').localeCompare(b.end||''));
+  const dlEl = document.getElementById('dash-deadline-tasks');
+  const dlEmpty = document.getElementById('dash-deadline-empty');
+  if (dlEl && dlEmpty) {
+    if (deadlineTasks.length === 0) { dlEl.innerHTML = ''; dlEmpty.style.display = 'block'; }
+    else {
+      dlEmpty.style.display = 'none';
+      dlEl.innerHTML = deadlineTasks.map(t => {
+        const daysLeft = Math.ceil((new Date(t.end) - new Date()) / 86400000);
+        const overdue = daysLeft < 0;
+        const tag = overdue ? `<span class="tag late">已逾期${Math.abs(daysLeft)}天</span>`
+          : daysLeft === 0 ? `<span class="tag late">今天到期</span>`
+          : `<span class="tag ${daysLeft <= 3 ? 'late' : 'upcoming'}">剩余${daysLeft}天</span>`;
+        return `<div class="dash-todo-item" onclick="switchPage('project')">
+          <span class="dot ${overdue ? 'overdue' : t.status}"></span>
+          <span>${t.name || ''} <small style="color:var(--text2)">${t.end || ''}到期</small></span>${tag}
+        </div>`;
+      }).join('');
+    }
+  }
+
+  const recentLogs = logs.slice(0, 5);
+  const rlEl = document.getElementById('dash-recent-logs');
+  const rlEmpty = document.getElementById('dash-logs-empty');
+  if (rlEl && rlEmpty) {
+    if (recentLogs.length === 0) { rlEl.innerHTML = ''; rlEmpty.style.display = 'block'; }
+    else {
+      rlEmpty.style.display = 'none';
+      rlEl.innerHTML = recentLogs.map(l => {
+        const cStr = (l.production_record || '').replace(/\n/g, ' ').substring(0, 40);
+        return `<div class="dash-log-mini" onclick="switchPage('list')">
+          <span class="log-mini-date">${l.date || ''}</span> ${cStr || '无内容'}
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
+// ==================== LOG FORM ====================
+function setDefaultDate() {
+  if (!document.getElementById('log-id').value) {
+    document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+    const proj = getActiveProject();
+    if (proj) {
+      if (!document.getElementById('log-project-name').value) document.getElementById('log-project-name').value = proj.name || '';
+      if (!document.getElementById('log-unit').value) document.getElementById('log-unit').value = proj.company || '';
+      if (!document.getElementById('log-recorder').value) document.getElementById('log-recorder').value = proj.recorder || '';
+      if (!document.getElementById('log-manager').value) document.getElementById('log-manager').value = proj.manager || '';
+    }
+  }
+}
+
+function resetForm() {
+  document.getElementById('log-form').reset();
+  document.getElementById('log-id').value = '';
+  document.getElementById('form-title').textContent = '📝 新建施工日志';
+  setDefaultDate();
+}
+
+function clearForm() {
+  document.getElementById('log-form').reset();
+  document.getElementById('log-id').value = '';
+  setDefaultDate();
+}
+
+function getLogFormData() {
+  return {
+    id: document.getElementById('log-id').value || genId(),
+    project_id: activeProjectId,
+    project_name: document.getElementById('log-project-name').value,
+    unit: document.getElementById('log-unit').value,
+    date: document.getElementById('log-date').value,
+    weather: document.getElementById('log-weather').value,
+    temp_high: document.getElementById('log-temp-high').value,
+    temp_low: document.getElementById('log-temp-low').value,
+    wind: document.getElementById('log-wind').value,
+    location: document.getElementById('log-location').value,
+    incident: document.getElementById('log-incident').value,
+    production_record: document.getElementById('log-production-record').value,
+    tech_quality_safety: document.getElementById('log-tech-quality-safety').value,
+    manager: document.getElementById('log-manager').value,
+    recorder: document.getElementById('log-recorder').value
+  };
+}
+
+function fillLogForm(log) {
+  document.getElementById('log-id').value = log._id || log.id || '';
+  document.getElementById('log-project-name').value = log.project_name || '';
+  document.getElementById('log-unit').value = log.unit || '';
+  document.getElementById('log-date').value = log.date || '';
+  document.getElementById('log-weather').value = log.weather || '';
+  document.getElementById('log-temp-high').value = log.temp_high || '';
+  document.getElementById('log-temp-low').value = log.temp_low || '';
+  document.getElementById('log-wind').value = log.wind || '';
+  document.getElementById('log-location').value = log.location || '';
+  document.getElementById('log-incident').value = log.incident || '';
+  document.getElementById('log-production-record').value = log.production_record || '';
+  document.getElementById('log-tech-quality-safety').value = log.tech_quality_safety || '';
+  document.getElementById('log-manager').value = log.manager || '';
+  document.getElementById('log-recorder').value = log.recorder || '';
+  document.getElementById('form-title').textContent = '✏️ 编辑施工日志';
+}
+
+async function saveLog(e) {
+  e.preventDefault();
+  const data = getLogFormData();
+  const existingId = document.getElementById('log-id').value;
+  try {
+    if (existingId) {
+      // Edit existing log
+      await updateLog(existingId, data);
+      showToast('日志已更新！');
+    } else {
+      // Create new log
+      const newId = genId();
+      data.id = newId;
+      document.getElementById('log-id').value = newId;
+      await createLog(data);
+      showToast('日志已保存！');
+    }
+    if (continuousMode) {
+      const d = new Date(document.getElementById('log-date').value);
+      d.setDate(d.getDate() + 1);
+      document.getElementById('log-date').value = d.toISOString().split('T')[0];
+      document.getElementById('log-id').value = '';
+      document.getElementById('form-title').textContent = '📝 新建施工日志';
+    } else {
+      switchPage('list');
+    }
+  } catch (e) { showToast('保存失败: ' + e.message, 'error'); }
+}
+
+async function editLog(id) {
+  try {
+    const log = await fetchLogById(id);
+    if (log) { fillLogForm(log); switchPage('create'); }
+  } catch (e) { showToast('加载日志失败: ' + e.message, 'error'); }
+}
+
+async function deleteLog(id) {
+  if (!confirm('确定删除这条日志吗？此操作不可撤销。')) return;
+  try {
+    await deleteLog(id);
+    showToast('日志已删除', 'error');
+    renderLogList();
+  } catch (e) { showToast('删除失败: ' + e.message, 'error'); }
+}
+
+async function viewDetail(id) {
+  try {
+    currentDetailLog = await fetchLogById(id);
+    if (!currentDetailLog) return showToast('日志不存在', 'error');
+    const log = currentDetailLog;
+    const proj = getActiveProject() || {};
+    const weatherStr = [log.weather, log.temp_high && log.temp_low ? `${log.temp_high}°C ~ ${log.temp_low}°C` : '', log.wind].filter(Boolean).join('　');
+    document.getElementById('detail-content').innerHTML = renderLogTableHTML(log, proj, weatherStr);
+    document.getElementById('detail-modal').classList.add('show');
+  } catch (e) { showToast('加载详情失败: ' + e.message, 'error'); }
+}
+
+function renderLogTableHTML(log, proj, weatherStr) {
+  const nl2br = (s) => (s || '').replace(/\n/g, '<br>');
+  return `
+  <style>
+    .log-table-wrap { font-family: "SimSun", "宋体", serif; font-size: 14px; line-height: 1.8; color: #000; }
+    .log-table-wrap h2 { text-align: center; font-size: 22px; font-weight: bold; letter-spacing: 8px; margin: 0 0 6px 0; }
+    .log-table-wrap .sub-title { text-align: center; font-size: 13px; margin-bottom: 16px; color: #333; }
+    .log-table { width: 100%; border-collapse: collapse; border: 2px solid #000; }
+    .log-table td, .log-table th { border: 1px solid #000; padding: 8px 10px; vertical-align: top; }
+    .log-table .label { background: #f5f5f5; font-weight: bold; text-align: center; white-space: nowrap; width: 100px; }
+    .log-table .label-wide { background: #f5f5f5; font-weight: bold; text-align: center; }
+    .log-table .content { text-align: left; }
+    .log-table .section-title { background: #f5f5f5; font-weight: bold; text-align: center; font-size: 15px; }
+    .log-table .sign-row td { height: 50px; vertical-align: bottom; padding-bottom: 4px; }
+    .log-table .sign-label { text-align: right; padding-right: 8px; font-weight: bold; }
+    .log-table .sign-value { text-align: left; border-bottom: 1px solid #000; }
+  </style>
+  <div class="log-table-wrap">
+    <h2>施 工 日 志</h2>
+    <div class="sub-title">${proj.name || '工程名称未设置'}　|　${proj.company || ''}</div>
+    <table class="log-table">
+      <tr>
+        <td class="label">日志日期</td>
+        <td class="content">${log.date || ''}</td>
+        <td class="label">天气状况</td>
+        <td class="content" colspan="3">${weatherStr || ''}</td>
+      </tr>
+      <tr>
+        <td class="label">施工部位</td>
+        <td class="content" colspan="5">${log.location || ''}</td>
+      </tr>
+      <tr>
+        <td class="label">突发事件</td>
+        <td class="content" colspan="5">${log.incident || '无'}</td>
+      </tr>
+      <tr>
+        <td class="section-title" colspan="6">生 产 情 况 记 录</td>
+      </tr>
+      <tr>
+        <td class="content" colspan="6" style="min-height:200px;height:auto;padding:12px 10px;">${nl2br(log.production_record)}</td>
+      </tr>
+      <tr>
+        <td class="section-title" colspan="6">技 术 质 量 安 全 工 作 记 录</td>
+      </tr>
+      <tr>
+        <td class="content" colspan="6" style="min-height:200px;height:auto;padding:12px 10px;">${nl2br(log.tech_quality_safety)}</td>
+      </tr>
+      <tr class="sign-row">
+        <td class="sign-label">项目负责人：</td>
+        <td class="sign-value">${log.manager || ''}</td>
+        <td class="sign-label">记录人：</td>
+        <td class="sign-value">${log.recorder || ''}</td>
+        <td class="sign-label">日期：</td>
+        <td class="sign-value">${log.date || ''}</td>
+      </tr>
+    </table>
+  </div>`;
+}
+
+function closeDetailModal() { document.getElementById('detail-modal').classList.remove('show'); }
+
+function printLog() {
+  if (!currentDetailLog) return;
+  const log = currentDetailLog;
+  const proj = getActiveProject() || {};
+  const weatherStr = [log.weather, log.temp_high && log.temp_low ? `${log.temp_high}°C ~ ${log.temp_low}°C` : '', log.wind].filter(Boolean).join('　');
+  const html = renderLogTableHTML(log, proj, weatherStr);
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>施工日志 - ${log.date || ''}</title></head><body style="margin:20px;background:#fff">${html}</body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 300);
+}
+
+// ==================== SMART AUTO FILL ====================
+async function smartAutoFill() {
+  const proj = getActiveProject();
+  if (!proj) { showToast('请先选择工程', 'error'); return; }
+  const today = document.getElementById('log-date').value || new Date().toISOString().split('T')[0];
+
+  if (!document.getElementById('log-project-name').value) document.getElementById('log-project-name').value = proj.name || '';
+  if (!document.getElementById('log-unit').value) document.getElementById('log-unit').value = proj.company || '';
+  if (!document.getElementById('log-recorder').value) document.getElementById('log-recorder').value = proj.recorder || '';
+  if (!document.getElementById('log-manager').value) document.getElementById('log-manager').value = proj.manager || '';
+  if (!document.getElementById('log-date').value) document.getElementById('log-date').value = today;
+
+  // Weather API
+  try {
+    const city = proj.name || 'Beijing';
+    const resp = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
+    if (resp.ok) {
+      const wdata = await resp.json();
+      const todayWeather = wdata.weather?.[0];
+      if (todayWeather) {
+        const h = todayWeather.hourly[4] || todayWeather.hourly[0];
+        if (!document.getElementById('log-weather').value) document.getElementById('log-weather').value = h?.weatherDesc?.[0]?.value || '';
+        if (!document.getElementById('log-temp-high').value) document.getElementById('log-temp-high').value = todayWeather.maxtempC || '';
+        if (!document.getElementById('log-temp-low').value) document.getElementById('log-temp-low').value = todayWeather.mintempC || '';
+        if (!document.getElementById('log-wind').value) document.getElementById('log-wind').value = h?.winddir16Point || '';
+      }
+    }
+  } catch (e) { /* ignore */ }
+
+  const tasks = proj.tasks || [];
+  const todayTasks = tasks.filter(t => t.start <= today && t.end >= today);
+  if (todayTasks.length === 0) {
+    showToast('智能填充完成！（今日无施工任务，请检查工程计划）', 'info');
+    return;
+  }
+
+  const enrichedTasks = todayTasks.map(t => {
+    const parsed = parseTaskEnrichment(t.description || '');
+    return { ...t, ...parsed };
+  });
+
+  const locations = [...new Set(enrichedTasks.map(t => t.location).filter(Boolean))];
+  if (locations.length && !document.getElementById('log-location').value) {
+    document.getElementById('log-location').value = locations.join('、');
+  }
+  if (!document.getElementById('log-incident').value) {
+    document.getElementById('log-incident').value = '无';
+  }
+
+  if (!document.getElementById('log-production-record').value) {
+    const lines = [];
+    lines.push('一、当日施工项目内容');
+    enrichedTasks.forEach((t, i) => {
+      let line = `  ${i+1}. ${t.name || ''}`;
+      if (t.desc) line += `：${t.desc}`;
+      if (t.quantity) line += `（${t.quantity}）`;
+      lines.push(line);
+    });
+    lines.push('');
+    lines.push('二、机械作业情况');
+    const allEquips = [...new Set(enrichedTasks.map(t => t.equipment).filter(Boolean))];
+    if (allEquips.length) { lines.push('  今日使用机械：' + allEquips.join('、')); }
+    else { lines.push('  今日未使用大型机械设备。'); }
+    lines.push('');
+    lines.push('三、班组工作安排');
+    const teamMap = {};
+    enrichedTasks.forEach(t => {
+      if (t.team) { if (!teamMap[t.team]) teamMap[t.team] = []; teamMap[t.team].push(t.name); }
+    });
+    Object.entries(teamMap).forEach(([team, names], i) => {
+      lines.push(`  ${i+1}. ${team}班组：负责${names.join('、')}施工`);
+    });
+    lines.push('');
+    lines.push('四、进场材料');
+    enrichedTasks.forEach((t, i) => {
+      if (t.materials) lines.push(`  ${i+1}. ${t.name}所需材料：${t.materials} — 验收合格`);
+    });
+    lines.push('');
+    lines.push('五、生产存在问题');
+    lines.push('  今日施工按计划正常进行，暂未发现影响施工进度的问题。');
+    document.getElementById('log-production-record').value = lines.join('\n');
+  }
+
+  if (!document.getElementById('log-tech-quality-safety').value) {
+    const lines = [];
+    lines.push('一、技术质量安全活动');
+    lines.push('  1. 班前安全教育：强调当日施工安全注意事项，检查个人防护用品佩戴情况。');
+    const categories = [...new Set(enrichedTasks.map(t => t.category).filter(Boolean))];
+    if (categories.length) {
+      lines.push(`  2. 技术交底：针对${categories.join('、')}施工进行技术交底，明确施工工艺及质量标准。`);
+    }
+    lines.push('');
+    lines.push('二、技术质量安全问题');
+    enrichedTasks.forEach((t, i) => {
+      if (t.quality) lines.push(`  ${i+1}. ${t.name}质量要求：${t.quality}`);
+    });
+    lines.push('');
+    lines.push('三、检查验收情况');
+    const safeties = enrichedTasks.map(t => t.safety).filter(Boolean);
+    if (safeties.length) {
+      const allSafety = [...new Set(safeties.join('；').split('；').map(s => s.trim()).filter(Boolean))];
+      lines.push('  安全检查要点：');
+      allSafety.slice(0, 6).forEach((s, i) => lines.push(`    ${i+1}. ${s}`));
+      lines.push('  经检查，各项安全措施落实到位，今日施工安全无事故。');
+    } else {
+      lines.push('  今日安全检查正常，未发现安全隐患。');
+    }
+    document.getElementById('log-tech-quality-safety').value = lines.join('\n');
+  }
+
+  showToast('智能填充完成！');
+}
+
+function toggleQuickMode() {
+  quickMode = !quickMode;
+  const btn = document.getElementById('quick-mode-btn');
+  btn.classList.toggle('active', quickMode);
+  btn.textContent = quickMode ? '快速录入（开）' : '快速录入';
+}
+
+function toggleContinuous() {
+  continuousMode = !continuousMode;
+  const btn = document.getElementById('continuous-btn');
+  btn.classList.toggle('active', continuousMode);
+  btn.textContent = continuousMode ? '连续录入（开）' : '连续录入';
+}
+
+function saveDraft() {
+  const data = getLogFormData();
+  localStorage.setItem('log_draft', JSON.stringify(data));
+  showToast('草稿已暂存');
+}
+
+function loadDraft() {
+  const raw = localStorage.getItem('log_draft');
+  if (!raw) { showToast('没有可用的草稿', 'info'); return; }
+  try {
+    const data = JSON.parse(raw);
+    fillLogForm(data);
+    showToast('草稿已加载');
+  } catch (e) { showToast('草稿数据损坏', 'error'); }
+}
+
+// ==================== LOG LIST ====================
+async function renderLogList() {
+  const proj = getActiveProject();
+  if (!proj) {
+    const c = document.getElementById('log-list-container'); if (c) c.innerHTML = '<div class="empty-state"><p>请先选择工程</p></div>';
+    return;
+  }
+  try {
+    let logs = await fetchLogsByProject(proj.id);
+    const searchText = (document.getElementById('search-input')?.value || '').toLowerCase();
+    const dateFrom = document.getElementById('search-date-from')?.value || '';
+    const dateTo = document.getElementById('search-date-to')?.value || '';
+
+    if (searchText) logs = logs.filter(l =>
+      (l.date||'').includes(searchText) || (l.production_record||'').toLowerCase().includes(searchText) ||
+      (l.tech_quality_safety||'').toLowerCase().includes(searchText) ||
+      (l.location||'').toLowerCase().includes(searchText) || (l.weather||'').includes(searchText) ||
+      (l.recorder||'').toLowerCase().includes(searchText)
+    );
+    if (dateFrom) logs = logs.filter(l => (l.date||'') >= dateFrom);
+    if (dateTo) logs = logs.filter(l => (l.date||'') <= dateTo);
+
+    const lc = document.getElementById('log-count'); if (lc) lc.textContent = `共 ${logs.length} 条记录`;
+    const container = document.getElementById('log-list-container');
+    if (!container) return;
+
+    if (logs.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div>
+        <p>${searchText||dateFrom||dateTo?'没有匹配的日志记录':'暂无施工日志记录'}</p>
+        ${!searchText&&!dateFrom&&!dateTo?'<button class="btn btn-primary" style="margin-top:12px" onclick="switchPage(\'create\');resetForm()">创建第一条日志</button>':''}
+      </div>`;
+      return;
+    }
+    container.innerHTML = logs.map(l => {
+      const summary = ((l.production_record || '') + '').replace(/\n/g, ' ').substring(0, 60);
+      return `<div class="log-list-item" onclick="viewDetail('${l._id || l.id}')">
+        <div style="flex:1">
+          <div class="log-date">${l.date||''} ${l.weather ? '· '+l.weather : ''}</div>
+          <div class="log-summary">${summary || '无内容'}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">
+            ${l.project_name||''} · ${l.location||''} · ${l.recorder||''}
+            ${l.temp_high&&l.temp_low?` · ${l.temp_high}°C~${l.temp_low}°C`:''}
+          </div>
+        </div>
+        <div class="log-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-outline btn-xs" onclick="editLog('${l._id || l.id}')" title="编辑">✏️</button>
+          <button class="btn btn-outline btn-xs" onclick="deleteLog('${l._id || l.id}')" title="删除" style="color:var(--danger)">🗑️</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) { console.error('renderLogList error:', e); }
+}
+
+// ==================== PROJECT MANAGEMENT ====================
+function showProjectForm(proj) {
+  document.getElementById('proj-id').value = proj ? (proj._id || proj.id) : '';
+  document.getElementById('proj-name').value = proj ? proj.name : '';
+  document.getElementById('proj-type').value = proj ? proj.type : 'custom';
+  document.getElementById('proj-company').value = proj ? proj.company : '';
+  document.getElementById('proj-manager').value = proj ? proj.manager : '';
+  document.getElementById('proj-recorder').value = proj ? proj.recorder : '';
+  document.getElementById('project-modal-title').textContent = proj ? '✏️ 编辑工程' : '🏗️ 新建工程';
+  document.getElementById('project-modal').classList.add('show');
+}
+
+function closeProjectModal() { document.getElementById('project-modal').classList.remove('show'); }
+
+async function saveProject(e) {
+  e.preventDefault();
+  const nameVal = (document.getElementById('proj-name')?.value || '').trim();
+  if (!nameVal) { showToast('请输入工程名称', 'error'); return; }
+  const pid = document.getElementById('proj-id')?.value;
+  const type = document.getElementById('proj-type')?.value || 'custom';
+  const company = document.getElementById('proj-company')?.value || '';
+  const manager = document.getElementById('proj-manager')?.value || '';
+  const recorder = document.getElementById('proj-recorder')?.value || '';
+
+  try {
+    if (pid) {
+      await updateProject(pid, { name: nameVal, type, company, manager, recorder });
+      showToast('工程已更新！');
+    } else {
+      const newId = await createProject({ name: nameVal, type, company, manager, recorder });
+      activeProjectId = newId;
+
+      if (type && type !== 'custom' && TASK_TEMPLATES[type]) {
+        const templateTasks = generateTasksFromTemplate(type, activeProjectId);
+        if (templateTasks.length > 0) {
+          for (const t of templateTasks) {
+            await createTask(t);
+          }
+          showToast(`工程已创建！已从模板生成 ${templateTasks.length} 项任务`);
+        } else {
+          showToast('工程已创建！');
+        }
+      } else {
+        showToast('工程已创建！');
+      }
+    }
+    closeProjectModal();
+    loadProjects();
+    renderProjectList();
+    loadTasks();
+  } catch (e) { showToast('保存失败: ' + e.message, 'error'); }
+}
+
+async function deleteProject(id) {
+  if (!confirm('确定删除这个工程吗？所有关联的日志和任务也将被删除！此操作不可撤销。')) return;
+  try {
+    await deleteProject(id);
+    if (activeProjectId === id) activeProjectId = null;
+    loadProjects();
+    renderProjectList();
+    loadTasks();
+    showToast('工程已删除', 'error');
+  } catch (e) { showToast('删除失败: ' + e.message, 'error'); }
+}
+
+function switchToProject(pid) {
+  activeProjectId = pid;
+  loadProjects();
+  updateProjectSelect();
+  renderProjectList();
+  loadTasks();
+}
+
+function renderProjectList() {
+  const container = document.getElementById('project-list-container');
+  if (!container) return;
+  const atp = document.getElementById('active-project-tasks');
+  if (atp) atp.style.display = projects.length ? 'block' : 'none';
+  if (!projects.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏗️</div><p>还没有创建任何工程</p><button class="btn btn-primary" style="margin-top:12px" onclick="showProjectForm()">创建第一个工程</button></div>`;
+    return;
+  }
+  const names = { office:'办公楼', mall:'商场', hotel:'酒店', home:'住宅', restaurant:'餐厅', hospital:'医院', school:'学校', bank:'银行营业厅', exhibition:'展厅/展览馆', gym:'健身房/运动场馆', sales_office:'售楼处', factory:'厂房/车间', custom:'自定义' };
+  container.innerHTML = projects.map(p => {
+    const tasks = p.tasks || [];
+    const done = tasks.filter(t => t.status === 'completed').length;
+    const datedTasks = tasks.filter(t => t.start && t.end);
+    let calcDays = 0;
+    if (datedTasks.length > 0) {
+      const minStart = new Date(Math.min(...datedTasks.map(t => new Date(t.start))));
+      const maxEnd = new Date(Math.max(...datedTasks.map(t => new Date(t.end))));
+      calcDays = Math.ceil((maxEnd - minStart) / 86400000) + 1;
+    }
+    const pid = p._id || p.id;
+    const isActive = pid === activeProjectId;
+    return `<div class="log-list-item" style="${isActive?'border-color:var(--primary);background:var(--primary-bg)':''}">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:15px">${p.name}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">
+          ${names[p.type]||p.type||'自定义'} · ${p.company||''} · ${tasks.length}项任务${done>0?' · '+done+'已完成':''}${calcDays>0?' · 工期'+calcDays+'天':''}
+        </div>
+      </div>
+      <div class="log-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-outline btn-xs" onclick="switchToProject('${pid}')" title="切换">🔀</button>
+        <button class="btn btn-outline btn-xs" onclick="showProjectForm(projects.find(x=>(x._id||x.id)==='${pid}'))" title="编辑">✏️</button>
+        <button class="btn btn-outline btn-xs" onclick="deleteProject('${pid}')" title="删除" style="color:var(--danger)">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ==================== TASK MANAGEMENT ====================
+function loadTasks() {
+  if (currentProjectView === 'list') renderTaskList();
+  else renderGanttChart();
+}
+
+function showTaskForm(task) {
+  document.getElementById('task-id').value = task ? (task._id || task.id) : '';
+  document.getElementById('task-category').value = task ? task.category : '';
+  document.getElementById('task-name').value = task ? task.name : '';
+  document.getElementById('task-location').value = task ? task.location : '';
+  document.getElementById('task-start').value = task ? task.start : '';
+  document.getElementById('task-end').value = task ? task.end : '';
+  document.getElementById('task-team').value = task ? task.team : '';
+  document.getElementById('task-status').value = task ? task.status : 'pending';
+  document.getElementById('task-desc').value = task ? parseTaskEnrichment(task.description || '').desc : '';
+  document.getElementById('task-remark').value = task ? task.remark : '';
+  document.getElementById('task-modal-title').textContent = task ? '✏️ 编辑施工任务' : '➕ 添加施工任务';
+  document.getElementById('task-modal').classList.add('show');
+}
+
+function closeTaskModal() { document.getElementById('task-modal').classList.remove('show'); }
+
+async function saveTask(e) {
+  e.preventDefault();
+  const proj = getActiveProject();
+  if (!proj) { showToast('请先选择工程', 'error'); return; }
+  const tid = document.getElementById('task-id').value;
+  const category = document.getElementById('task-category').value;
+  const name = document.getElementById('task-name').value;
+  const location = document.getElementById('task-location').value;
+  const start = document.getElementById('task-start').value;
+  const end = document.getElementById('task-end').value;
+  const team = document.getElementById('task-team').value;
+  const status = document.getElementById('task-status').value;
+  const description = document.getElementById('task-desc').value;
+  const remark = document.getElementById('task-remark').value;
+
+  try {
+    if (tid) {
+      await updateTask(tid, { category, name, location, start, end, team, status, description, remark });
+      showToast('任务已更新！');
+    } else {
+      await createTask({ project_id: proj.id, category, name, location, start, end, team, status, description, remark });
+      showToast('任务已添加！');
+    }
+    closeTaskModal();
+    loadProjects();
+    renderProjectList();
+    loadTasks();
+  } catch (e) { showToast('保存失败: ' + e.message, 'error'); }
+}
+
+function editTask(id) {
+  const proj = getActiveProject();
+  if (!proj) return;
+  const task = (proj.tasks || []).find(t => (t._id || t.id) === id);
+  if (task) showTaskForm(task);
+}
+
+async function deleteTask(id) {
+  if (!confirm('确定删除这个任务吗？')) return;
+  try {
+    await deleteTask(id);
+    loadProjects();
+    renderProjectList();
+    loadTasks();
+    showToast('任务已删除', 'error');
+  } catch (e) { showToast('删除失败: ' + e.message, 'error'); }
+}
+
+async function toggleTaskStatus(id) {
+  const proj = getActiveProject();
+  if (!proj) return;
+  const task = (proj.tasks || []).find(t => t.id === id || t._id === id);
+  if (!task) return;
+  const order = ['pending', 'in_progress', 'completed'];
+  const next = order[(order.indexOf(task.status) + 1) % order.length];
+  try {
+    const taskId = task._id || task.id;
+    await updateTask(taskId, { 
+      category: task.category, name: task.name, location: task.location,
+      start: task.start, end: task.end, team: task.team, 
+      status: next, description: task.description, remark: task.remark
+    });
+    loadProjects();
+    renderProjectList();
+    loadTasks();
+  } catch (e) { showToast('更新失败: ' + e.message, 'error'); }
+}
+
+const STATUS_LABELS = { pending: ['未开始', 'info'], in_progress: ['进行中', 'warning'], completed: ['已完成', 'success'] };
+
+function renderTaskList() {
+  const proj = getActiveProject();
+  const container = document.getElementById('project-task-list');
+  if (!container) return;
+  if (!proj) { container.innerHTML = '<div class="empty-state"><p>请先选择工程</p></div>'; return; }
+  const tasks = proj.tasks || [];
+  if (tasks.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>还没有施工任务计划</p><button class="btn btn-primary" style="margin-top:12px" onclick="showTaskForm()">添加第一个任务</button></div>`;
+    return;
+  }
+  const groups = {};
+  tasks.forEach(t => { if (!groups[t.category]) groups[t.category] = []; groups[t.category].push(t); });
+  const catOrder = ['拆除工程', '水电改造', '防水工程', '泥瓦工程', '木工工程', '油漆工程', '安装工程', '竣工验收', '其他'];
+
+  container.innerHTML = catOrder.filter(c => groups[c]).map(cat => {
+    const phaseTasks = groups[cat];
+    const doneCount = phaseTasks.filter(t => t.status === 'completed').length;
+    return `<div class="phase-card">
+      <div class="phase-header">
+        <div><span class="phase-title">${cat}</span><span class="phase-meta">（${doneCount}/${phaseTasks.length} 完成）</span></div>
+        <span class="badge badge-${doneCount===phaseTasks.length?'success':'info'}">${doneCount===phaseTasks.length?'✅ 全部完成':'🔄 进行中'}</span>
+      </div>
+      <table class="data-table">
+        <thead><tr><th>任务</th><th>部位</th><th>起止日期</th><th>班组</th><th>状态</th><th style="width:80px">操作</th></tr></thead>
+        <tbody>${phaseTasks.map(t => {
+          const [stLabel, stType] = STATUS_LABELS[t.status] || ['未知', 'info'];
+          const tid = t._id || t.id;
+          return `<tr>
+            <td title="${parseTaskEnrichment(t.description||'').desc||''}"><strong>${t.name||''}</strong></td>
+            <td>${t.location||''}</td>
+            <td>${t.start||''} ~ ${t.end||''}</td>
+            <td>${t.team||'-'}</td>
+            <td><span class="badge badge-${stType}" style="cursor:pointer" onclick="toggleTaskStatus('${tid}')">${stLabel}</span></td>
+            <td class="actions">
+              <button class="btn btn-outline btn-xs" onclick="editTask('${tid}')">✏️</button>
+              <button class="btn btn-outline btn-xs" onclick="deleteTask('${tid}')" style="color:var(--danger)">🗑️</button>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+  }).join('');
+}
+
+// ==================== GANTT CHART ====================
+function setProjectView(view) {
+  currentProjectView = view;
+  document.getElementById('view-list-btn').classList.toggle('active', view === 'list');
+  document.getElementById('view-gantt-btn').classList.toggle('active', view === 'gantt');
+  document.getElementById('project-task-list').style.display = view === 'list' ? 'block' : 'none';
+  document.getElementById('project-gantt').style.display = view === 'gantt' ? 'block' : 'none';
+  loadTasks();
+}
+
+function renderGanttChart() {
+  const proj = getActiveProject();
+  const container = document.getElementById('project-gantt');
+  if (!container) return;
+  if (!proj) { container.innerHTML = '<div class="empty-state"><p>请先选择工程</p></div>'; return; }
+  const tasks = proj.tasks || [];
+  if (tasks.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📊</div><p>还没有施工任务计划</p><button class="btn btn-primary" style="margin-top:12px" onclick="showTaskForm()">添加第一个任务</button></div>`;
+    return;
+  }
+  const dated = tasks.filter(t => t.start && t.end);
+  if (dated.length === 0) { container.innerHTML = '<div class="empty-state"><p>任务缺少起止日期，无法生成甘特图</p></div>'; return; }
+
+  const allStarts = dated.map(t => new Date(t.start));
+  const allEnds = dated.map(t => new Date(t.end));
+  const minDate = new Date(Math.min(...allStarts));
+  const maxDate = new Date(Math.max(...allEnds));
+  const totalDays = Math.ceil((maxDate - minDate) / 86400000) + 1;
+  if (totalDays <= 0) { container.innerHTML = '<div class="empty-state"><p>任务日期范围无效</p></div>'; return; }
+
+  const months = [];
+  let cur = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+  while (cur <= maxDate) {
+    const mStart = Math.max(0, Math.ceil((cur - minDate) / 86400000));
+    const nextMonth = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+    const mEnd = Math.min(totalDays, Math.ceil((nextMonth - minDate) / 86400000));
+    months.push({ label: `${cur.getFullYear()}年${cur.getMonth()+1}月`, start: mStart, end: mEnd });
+    cur = nextMonth;
+  }
+
+  const colWidth = Math.max(30, Math.min(60, Math.floor(800 / totalDays)));
+
+  container.innerHTML = `
+    <div class="gantt-container">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
+        ${minDate.toISOString().split('T')[0]} ~ ${maxDate.toISOString().split('T')[0]} · 共${totalDays}天
+      </div>
+      <div class="gantt-header" style="margin-left:160px">
+        ${months.map(m => `<span style="flex:${m.end-m.start};min-width:${(m.end-m.start)*colWidth}px;border-right:1px solid var(--border);text-align:center">${m.label}</span>`).join('')}
+      </div>
+      ${dated.map(t => {
+        const startOff = Math.ceil((new Date(t.start) - minDate) / 86400000);
+        const duration = Math.max(1, Math.ceil((new Date(t.end) - new Date(t.start)) / 86400000) + 1);
+        return `<div class="gantt-row">
+          <div class="gantt-label" title="${t.name}">${t.name||''}</div>
+          <div class="gantt-bars" style="width:${totalDays*colWidth}px">
+            <div class="gantt-bar ${t.status}" style="left:${startOff*colWidth}px;width:${duration*colWidth}px" title="${t.start} ~ ${t.end}">
+              ${t.name} ${duration}天
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ==================== MODAL CLICK OUTSIDE ====================
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('show');
+  }
+});
+
+// ==================== INIT ====================
+async function init() {
+  try {
+    await initDatabase();
+    showToast('已连接到云数据库', 'info');
+    await loadProjects();
+    if (projects.length > 0) {
+      activeProjectId = projects[0]._id || projects[0].id;
+      updateProjectSelect();
+      switchPage('dashboard');
+    } else {
+      switchPage('project');
+      showToast('欢迎！请先创建一个工程', 'info');
+    }
+  } catch (e) {
+    console.error('初始化失败:', e);
+    showToast('初始化失败: ' + e.message, 'error');
+    switchPage('project');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
