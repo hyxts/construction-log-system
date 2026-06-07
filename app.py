@@ -29,8 +29,11 @@ def init_db():
             name TEXT NOT NULL,
             type TEXT DEFAULT 'custom',
             company TEXT DEFAULT '',
+            client TEXT DEFAULT '',
+            address TEXT DEFAULT '',
             manager TEXT DEFAULT '',
             recorder TEXT DEFAULT '',
+            duration INTEGER DEFAULT 0,
             created_at TEXT DEFAULT (datetime('now','localtime')),
             updated_at TEXT DEFAULT (datetime('now','localtime'))
         );
@@ -73,10 +76,30 @@ def init_db():
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
         );
 
+        CREATE TABLE IF NOT EXISTS daily_task_logs (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            task_id TEXT NOT NULL,
+            log_date TEXT DEFAULT '',
+            content TEXT DEFAULT '',
+            worker_count INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+            FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+        );
+
         CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
         CREATE INDEX IF NOT EXISTS idx_logs_project ON logs(project_id);
         CREATE INDEX IF NOT EXISTS idx_logs_date ON logs(date);
+        CREATE INDEX IF NOT EXISTS idx_daily_task_logs_project ON daily_task_logs(project_id);
+        CREATE INDEX IF NOT EXISTS idx_daily_task_logs_task ON daily_task_logs(task_id);
+        CREATE INDEX IF NOT EXISTS idx_daily_task_logs_date ON daily_task_logs(log_date);
     ''')
+    # Migration: add duration column if not exists
+    try:
+        conn.execute("ALTER TABLE projects ADD COLUMN duration INTEGER DEFAULT 0")
+    except:
+        pass
     conn.commit()
     conn.close()
 
@@ -125,9 +148,10 @@ def create_project():
     pid = data.get('id') or str(int(datetime.now().timestamp() * 1000))
     conn = get_db()
     conn.execute(
-        'INSERT INTO projects (id, name, type, company, manager, recorder) VALUES (?, ?, ?, ?, ?, ?)',
+        'INSERT INTO projects (id, name, type, company, client, address, manager, recorder, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         (pid, name, data.get('type', 'custom'), data.get('company', ''),
-         data.get('manager', ''), data.get('recorder', ''))
+         data.get('client', ''), data.get('address', ''), data.get('manager', ''), data.get('recorder', ''),
+         data.get('duration', 0))
     )
     conn.commit()
     project = dict_from_row(conn.execute('SELECT * FROM projects WHERE id = ?', (pid,)).fetchone())
@@ -140,9 +164,10 @@ def update_project(pid):
     data = request.get_json()
     conn = get_db()
     conn.execute(
-        "UPDATE projects SET name=?, type=?, company=?, manager=?, recorder=?, updated_at=datetime('now','localtime') WHERE id=?",
+        "UPDATE projects SET name=?, type=?, company=?, client=?, address=?, manager=?, recorder=?, duration=?, updated_at=datetime('now','localtime') WHERE id=?",
         (data.get('name', ''), data.get('type', 'custom'), data.get('company', ''),
-         data.get('manager', ''), data.get('recorder', ''), pid)
+         data.get('client', ''), data.get('address', ''), data.get('manager', ''), data.get('recorder', ''),
+         data.get('duration', 0), pid)
     )
     conn.commit()
     project = dict_from_row(conn.execute('SELECT * FROM projects WHERE id = ?', (pid,)).fetchone())
@@ -159,6 +184,7 @@ def update_project(pid):
 @app.route('/api/projects/<pid>', methods=['DELETE'])
 def delete_project(pid):
     conn = get_db()
+    conn.execute('DELETE FROM daily_task_logs WHERE project_id = ?', (pid,))
     conn.execute('DELETE FROM logs WHERE project_id = ?', (pid,))
     conn.execute('DELETE FROM tasks WHERE project_id = ?', (pid,))
     conn.execute('DELETE FROM projects WHERE id = ?', (pid,))
@@ -329,6 +355,74 @@ def delete_log(lid):
     conn.close()
     return jsonify({'success': True})
 
+# ==================== 每日任务施工日志 CRUD ====================
+
+@app.route('/api/daily-task-logs/project/<project_id>', methods=['GET'])
+def get_daily_task_logs(project_id):
+    """获取某工程所有每日任务施工日志"""
+    conn = get_db()
+    logs = dicts_from_rows(
+        conn.execute('SELECT * FROM daily_task_logs WHERE project_id = ? ORDER BY log_date ASC', (project_id,)).fetchall()
+    )
+    conn.close()
+    return jsonify({'success': True, 'data': logs})
+
+@app.route('/api/daily-task-logs/task/<task_id>', methods=['GET'])
+def get_task_daily_logs(task_id):
+    """获取某任务的所有每日施工日志"""
+    conn = get_db()
+    logs = dicts_from_rows(
+        conn.execute('SELECT * FROM daily_task_logs WHERE task_id = ? ORDER BY log_date ASC', (task_id,)).fetchall()
+    )
+    conn.close()
+    return jsonify({'success': True, 'data': logs})
+
+@app.route('/api/daily-task-logs', methods=['POST'])
+def create_daily_task_log():
+    """创建或更新每日任务施工日志（同一任务+日期唯一）"""
+    data = request.get_json()
+    task_id = data.get('task_id', '')
+    log_date = data.get('log_date', '')
+    project_id = data.get('project_id', '')
+    if not task_id or not log_date:
+        return jsonify({'success': False, 'error': 'task_id 和 log_date 不能为空'}), 400
+
+    conn = get_db()
+    # 查找是否已存在
+    existing = conn.execute(
+        'SELECT id FROM daily_task_logs WHERE task_id = ? AND log_date = ?', (task_id, log_date)
+    ).fetchone()
+
+    if existing:
+        # 更新
+        conn.execute(
+            "UPDATE daily_task_logs SET content=?, worker_count=?, created_at=datetime('now','localtime') WHERE id=?",
+            (data.get('content', ''), data.get('worker_count', 0), existing['id'])
+        )
+        lid = existing['id']
+    else:
+        # 创建
+        import uuid
+        lid = str(uuid.uuid4())
+        conn.execute(
+            '''INSERT INTO daily_task_logs (id, project_id, task_id, log_date, content, worker_count)
+               VALUES (?, ?, ?, ?, ?, ?)''',
+            (lid, project_id, task_id, log_date, data.get('content', ''), data.get('worker_count', 0))
+        )
+    conn.commit()
+    log = dict_from_row(conn.execute('SELECT * FROM daily_task_logs WHERE id = ?', (lid,)).fetchone())
+    conn.close()
+    return jsonify({'success': True, 'data': log})
+
+@app.route('/api/daily-task-logs/<lid>', methods=['DELETE'])
+def delete_daily_task_log(lid):
+    """删除每日任务施工日志"""
+    conn = get_db()
+    conn.execute('DELETE FROM daily_task_logs WHERE id = ?', (lid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
 # ==================== 数据导出/导入 ====================
 
 @app.route('/api/export', methods=['GET'])
@@ -337,15 +431,17 @@ def export_data():
     projects = dicts_from_rows(conn.execute('SELECT * FROM projects ORDER BY created_at DESC').fetchall())
     tasks = dicts_from_rows(conn.execute('SELECT * FROM tasks ORDER BY start, id').fetchall())
     logs = dicts_from_rows(conn.execute('SELECT * FROM logs ORDER BY date DESC').fetchall())
+    daily_task_logs = dicts_from_rows(conn.execute('SELECT * FROM daily_task_logs ORDER BY log_date').fetchall())
     conn.close()
     return jsonify({
         'success': True,
         'data': {
-            'version': '2.0',
+            'version': '2.1',
             'exported_at': datetime.now().isoformat(),
             'projects': projects,
             'tasks': tasks,
-            'logs': logs
+            'logs': logs,
+            'daily_task_logs': daily_task_logs
         }
     })
 
@@ -356,15 +452,16 @@ def import_data():
         return jsonify({'success': False, 'error': '无效数据'}), 400
     conn = get_db()
     # 清空现有数据
+    conn.execute('DELETE FROM daily_task_logs')
     conn.execute('DELETE FROM logs')
     conn.execute('DELETE FROM tasks')
     conn.execute('DELETE FROM projects')
     # 导入新数据
     for p in data.get('projects', []):
         conn.execute(
-            'INSERT INTO projects (id, name, type, company, manager, recorder, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO projects (id, name, type, company, client, address, manager, recorder, duration, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             (p.get('id'), p.get('name', ''), p.get('type', 'custom'), p.get('company', ''),
-             p.get('manager', ''), p.get('recorder', ''), p.get('created_at', ''), p.get('updated_at', ''))
+             p.get('client', ''), p.get('address', ''), p.get('manager', ''), p.get('recorder', ''), p.get('duration', 0), p.get('created_at', ''), p.get('updated_at', ''))
         )
     for t in data.get('tasks', []):
         conn.execute(
@@ -390,6 +487,27 @@ def import_data():
              l.get('manager', ''), l.get('recorder', ''),
              l.get('created_at', ''), l.get('updated_at', ''))
         )
+    for dtl in data.get('daily_task_logs', []):
+        conn.execute(
+            '''INSERT INTO daily_task_logs (id, project_id, task_id, log_date, content, worker_count, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            (dtl.get('id'), dtl.get('project_id', ''), dtl.get('task_id', ''),
+             dtl.get('log_date', ''), dtl.get('content', ''), dtl.get('worker_count', 0),
+             dtl.get('created_at', ''))
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+# ==================== 数据重置 ====================
+
+@app.route('/api/reset', methods=['POST'])
+def reset_data():
+    conn = get_db()
+    conn.execute('DELETE FROM daily_task_logs')
+    conn.execute('DELETE FROM logs')
+    conn.execute('DELETE FROM tasks')
+    conn.execute('DELETE FROM projects')
     conn.commit()
     conn.close()
     return jsonify({'success': True})

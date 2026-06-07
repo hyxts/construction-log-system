@@ -1,0 +1,14 @@
+{
+  "name": "construction-log-system",
+  "version": "1.0.0",
+  "description": "国标装修工装施工日志系统",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "sql.js": "^1.12.0"
+  }
+}

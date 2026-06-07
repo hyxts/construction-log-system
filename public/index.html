@@ -149,14 +149,23 @@ body{
 .detail-grid{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;font-size:14px}
 .detail-grid .dl{font-weight:600;color:var(--text2);text-align:right}
 .detail-grid .dd{padding:2px 0}
-.gantt-container{overflow-x:auto;font-size:12px}
-.gantt-row{display:flex;align-items:center;margin-bottom:6px;gap:0}
-.gantt-label{min-width:160px;padding:4px 8px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.gantt-bars{flex:1;position:relative;height:28px;background:#f8fafc;border-radius:3px}
-.gantt-bar{position:absolute;height:22px;top:3px;border-radius:4px;display:flex;align-items:center;padding:0 8px;font-size:10px;color:#fff;white-space:nowrap;overflow:hidden}
-.gantt-bar.pending{background:var(--text3)}.gantt-bar.in_progress{background:var(--primary)}.gantt-bar.completed{background:var(--success)}
-.gantt-header{display:flex;margin-bottom:8px;font-size:10px;color:var(--text2)}
-.gantt-header span{text-align:center}
+/* ====== 甘特图样式 ====== */
+.gantt-container{overflow-x:auto;font-size:12px;background:var(--card);border-radius:var(--radius);border:1px solid var(--border)}
+.gantt-toolbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:10px}
+.gantt-toolbar .gantt-info{font-size:13px;color:var(--text2);display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.gantt-toolbar .gantt-info strong{color:var(--text)}
+.gantt-legend{display:flex;gap:12px;align-items:center;font-size:11px}
+.gantt-legend-item{display:flex;align-items:center;gap:4px}
+.gantt-legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+.gantt-canvas-wrap{position:relative;overflow-x:auto;overflow-y:auto;max-height:600px}
+.gantt-canvas-wrap canvas{display:block}
+.gantt-tooltip{position:fixed;z-index:300;background:#1e293b;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:300px;line-height:1.7;display:none}
+.gantt-tooltip .tt-name{font-weight:700;font-size:14px;margin-bottom:4px}
+.gantt-tooltip .tt-row{display:flex;justify-content:space-between;gap:20px}
+.gantt-tooltip .tt-label{color:#94a3b8}
+.gantt-tooltip .tt-val{font-weight:500}
+.gantt-tooltip .tt-bar{height:4px;border-radius:2px;margin-top:4px}
+.gantt-empty{text-align:center;padding:40px 20px;color:var(--text2)}
 .mode-toggle{padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--card);cursor:pointer;font-size:12px;transition:var(--transition);font-family:inherit;color:var(--text)}
 .mode-toggle:hover{border-color:var(--primary);color:var(--primary)}
 .mode-toggle.active{background:var(--primary-bg);border-color:var(--primary);color:var(--primary)}
@@ -187,14 +196,11 @@ body{
     </div>
     <div class="nav-divider"></div>
     <div class="nav-item" data-page="project" onclick="switchPage('project')">
-      <span class="icon">⚙️</span>工程与数据
+      <span class="icon">🏗️</span>工程管理
     </div>
     <div class="nav-divider"></div>
-    <div class="nav-item" onclick="exportDatabase()">
-      <span class="icon">💾</span>导出数据备份
-    </div>
-    <div class="nav-item" onclick="importDatabasePrompt()">
-      <span class="icon">📥</span>导入数据备份
+    <div class="nav-item" data-page="settings" onclick="switchPage('settings')">
+      <span class="icon">⚙️</span>系统设置
     </div>
   </nav>
   <div class="sidebar-footer">v2.0 · SQLite本地数据库</div>
@@ -290,7 +296,7 @@ body{
         <div class="form-section">
           <div class="form-section-title">📝 签章</div>
           <div class="form-grid">
-            <div class="form-group"><label>项目负责人</label><input type="text" id="log-manager" placeholder="自动填入"></div>
+            <div class="form-group"><label>负责人</label><input type="text" id="log-manager" placeholder="自动填入"></div>
             <div class="form-group"><label>记录人</label><input type="text" id="log-recorder" placeholder="自动填入"></div>
           </div>
         </div>
@@ -322,62 +328,133 @@ body{
     </div>
   </div>
 
-  <!-- Project & Data -->
-  <div class="page" id="page-project">
+  <!-- Settings -->
+  <div class="page" id="page-settings">
     <div class="card">
-      <div class="card-header">
-        <h3>🏗️ 工程管理</h3>
-        <button class="btn btn-primary btn-sm" onclick="showProjectForm()">➕ 新建工程</button>
-      </div>
-      <div id="project-list-container"></div>
-    </div>
-    <div class="card" id="active-project-tasks" style="display:none">
-      <div class="card-header">
-        <h3>📋 施工任务计划</h3>
-        <div class="btn-group">
-          <button class="mode-toggle active" id="view-list-btn" onclick="setProjectView('list')">📋 列表</button>
-          <button class="mode-toggle" id="view-gantt-btn" onclick="setProjectView('gantt')">📊 甘特图</button>
-          <button class="btn btn-primary btn-sm" onclick="showTaskForm()">➕ 添加任务</button>
+      <div class="card-header"><h3>⚙️ 系统设置</h3></div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:24px">系统版本、数据管理及其他不常用功能</div>
+
+      <!-- 系统信息 -->
+      <div class="form-section">
+        <div class="form-section-title">ℹ️ 系统信息</div>
+        <div class="detail-grid" style="margin-top:12px">
+          <div class="dl">系统名称</div><div class="dd">国标装修工装施工日志系统</div>
+          <div class="dl">版本号</div><div class="dd">v2.0</div>
+          <div class="dl">数据存储</div><div class="dd">SQLite 本地数据库</div>
+          <div class="dl">后端框架</div><div class="dd">Flask (Python)</div>
+          <div class="dl">前端技术</div><div class="dd">纯 HTML/CSS/JS（无框架依赖）</div>
+          <div class="dl">数据表</div><div class="dd">projects · tasks · logs</div>
         </div>
       </div>
-      <div id="project-task-list"></div>
-      <div id="project-gantt" style="display:none"></div>
+
+      <!-- 数据管理 -->
+      <div class="form-section">
+        <div class="form-section-title">💾 数据备份与恢复</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px">导出全部数据为 JSON 文件备份，或从备份文件恢复数据（覆盖现有数据）</p>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="exportDatabase()">📤 导出全部数据</button>
+          <button class="btn btn-warning" onclick="importDatabasePrompt()">📥 从备份恢复</button>
+        </div>
+      </div>
+
+      <!-- 自动填充模板 -->
+      <div class="form-section">
+        <div class="form-section-title">📝 默认签名信息</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px">设置新建工程时的默认填写内容，方便快速创建</p>
+        <div class="form-grid">
+          <div class="form-group"><label>默认施工单位</label><input type="text" id="settings-default-company" placeholder="留空不设置默认值"></div>
+          <div class="form-group"><label>默认负责人</label><input type="text" id="settings-default-manager" placeholder="留空不设置默认值"></div>
+          <div class="form-group"><label>默认记录人</label><input type="text" id="settings-default-recorder" placeholder="留空不设置默认值"></div>
+        </div>
+        <div class="btn-group" style="margin-top:12px">
+          <button class="btn btn-primary" onclick="saveSettings()">💾 保存设置</button>
+        </div>
+      </div>
+
+      <!-- 数据统计 -->
+      <div class="form-section">
+        <div class="form-section-title">📊 数据统计</div>
+        <div id="settings-stats" style="font-size:13px;color:var(--text2)">加载中...</div>
+      </div>
+
+      <!-- 重置 -->
+      <div class="form-section">
+        <div class="form-section-title" style="color:var(--danger)">⚠️ 危险操作</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px">清空所有数据（工程、任务、日志），此操作不可撤销！建议先导出备份。</p>
+        <button class="btn btn-danger" onclick="resetAllData()">🗑️ 清空全部数据</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project & Data -->
+  <div class="page" id="page-project">
+    <!-- 子页1: 工程列表 -->
+    <div id="project-subpage-list">
+      <div class="card">
+        <div class="card-header">
+          <h3>🏗️ 工程管理</h3>
+          <button class="btn btn-primary btn-sm" onclick="showProjectEdit(null)">➕ 新建工程</button>
+        </div>
+        <div id="project-list-container"></div>
+      </div>
+      <div class="card" id="active-project-tasks" style="display:none">
+        <div class="card-header">
+          <h3>📋 施工任务计划 <span style="font-weight:400;font-size:12px;color:var(--text2)" id="task-import-hint"></span></h3>
+          <div class="btn-group">
+            <button class="mode-toggle active" id="view-list-btn" onclick="setProjectView('list')">📋 列表</button>
+            <button class="mode-toggle" id="view-gantt-btn" onclick="setProjectView('gantt')">📊 甘特图</button>
+            <button class="btn btn-outline btn-sm" onclick="importTasksFromTemplate()" title="根据工程类型自动生成施工任务">📥 从模板导入</button>
+            <button class="btn btn-primary btn-sm" onclick="showTaskForm()">➕ 添加任务</button>
+          </div>
+        </div>
+        <div id="project-task-list"></div>
+        <div id="project-gantt" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- 子页2: 工程编辑详情 -->
+    <div id="project-subpage-edit" style="display:none">
+      <div class="card">
+        <div class="card-header">
+          <h3 id="project-edit-title">🏗️ 新建工程</h3>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" onclick="showProjectList()">← 返回列表</button>
+          </div>
+        </div>
+        <div class="modal-body" style="padding:0">
+          <form id="project-edit-form" onsubmit="saveProjectDetail(event)">
+            <input type="hidden" id="proj-edit-id">
+            <div class="form-grid">
+              <div class="form-group"><label>工程名称 *</label><input type="text" id="proj-edit-name" required></div>
+              <div class="form-group"><label>工程类型</label>
+                <select id="proj-edit-type">
+                  <option value="custom">自定义</option><option value="office">办公楼</option><option value="mall">商场</option>
+                  <option value="hotel">酒店</option><option value="home">住宅</option><option value="restaurant">餐厅</option>
+                  <option value="hospital">医院</option><option value="school">学校</option><option value="bank">银行营业厅</option>
+                  <option value="exhibition">展厅/展览馆</option><option value="gym">健身房/运动场馆</option>
+                  <option value="sales_office">售楼处</option><option value="factory">厂房/车间</option>
+                </select>
+              </div>
+              <div class="form-group"><label>计划总工期（天）</label><input type="number" id="proj-edit-duration" placeholder="如：90" min="1" style="width:100%"></div>
+              <div class="form-group"><label>建设单位</label><input type="text" id="proj-edit-client" placeholder="甲方/业主"></div>
+              <div class="form-group"><label>施工单位</label><input type="text" id="proj-edit-company"></div>
+              <div class="form-group"><label>工程地址</label><input type="text" id="proj-edit-address" placeholder="工程所在地址"></div>
+              <div class="form-group"><label>负责人</label><input type="text" id="proj-edit-manager"></div>
+              <div class="form-group"><label>施工员（记录人）</label><input type="text" id="proj-edit-recorder"></div>
+            </div>
+            <div class="btn-group" style="margin-top:16px">
+              <button type="submit" class="btn btn-primary">💾 保存</button>
+              <button type="button" class="btn btn-outline" onclick="showProjectList()">取消</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 
 </main>
 
 <!-- Modals -->
-<div class="modal-overlay" id="project-modal">
-  <div class="modal">
-    <div class="modal-header"><h3 id="project-modal-title">🏗️ 新建工程</h3><button class="btn btn-outline btn-sm" onclick="closeProjectModal()">✕</button></div>
-    <div class="modal-body">
-      <form id="project-form" onsubmit="saveProject(event)">
-        <input type="hidden" id="proj-id">
-        <div class="form-grid">
-          <div class="form-group"><label>工程名称 *</label><input type="text" id="proj-name" required></div>
-          <div class="form-group"><label>工程类型</label>
-            <select id="proj-type">
-              <option value="custom">自定义</option><option value="office">办公楼</option><option value="mall">商场</option>
-              <option value="hotel">酒店</option><option value="home">住宅</option><option value="restaurant">餐厅</option>
-              <option value="hospital">医院</option><option value="school">学校</option><option value="bank">银行营业厅</option>
-              <option value="exhibition">展厅/展览馆</option><option value="gym">健身房/运动场馆</option>
-              <option value="sales_office">售楼处</option><option value="factory">厂房/车间</option>
-            </select>
-          </div>
-          <div class="form-group"><label>施工单位</label><input type="text" id="proj-company"></div>
-          <div class="form-group"><label>项目负责人</label><input type="text" id="proj-manager"></div>
-          <div class="form-group"><label>施工员（记录人）</label><input type="text" id="proj-recorder"></div>
-        </div>
-        <div class="btn-group" style="margin-top:16px">
-          <button type="submit" class="btn btn-primary">💾 保存</button>
-          <button type="button" class="btn btn-outline" onclick="closeProjectModal()">取消</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="task-modal">
   <div class="modal">
     <div class="modal-header"><h3 id="task-modal-title">➕ 添加施工任务</h3><button class="btn btn-outline btn-sm" onclick="closeTaskModal()">✕</button></div>
@@ -564,6 +641,25 @@ async function deleteAllLogsByProject(projectId) {
   await Promise.all(logs.map(l => apiDelete('/api/logs/' + (l._id || l.id))));
 }
 
+// --- Daily Task Logs ---
+async function fetchDailyTaskLogsByProject(projectId) {
+  return await apiGet('/api/daily-task-logs/project/' + projectId);
+}
+
+async function fetchDailyTaskLogsByTask(taskId) {
+  return await apiGet('/api/daily-task-logs/task/' + taskId);
+}
+
+async function saveDailyTaskLog(data) {
+  const id = genId();
+  const result = await apiPost('/api/daily-task-logs', { ...data, id });
+  return result;
+}
+
+async function deleteDailyTaskLog(id) {
+  await apiDelete('/api/daily-task-logs/' + id);
+}
+
 // ==================== EXPORT/IMPORT ====================
 async function exportDatabase() {
   try {
@@ -611,6 +707,7 @@ async function importDatabasePrompt() {
 // ==================== GLOBAL STATE ====================
 let activeProjectId = null;
 let projects = [];
+let dailyTaskLogs = {}; // { taskId: [ {log_date, content, worker_count, id}, ... ] }
 let quickMode = false;
 let continuousMode = false;
 let currentDetailLog = null;
@@ -635,8 +732,8 @@ function showToast(msg, type='success') {
 }
 
 // ==================== NAVIGATION ====================
-function switchPage(name) {
-  document.title = '施工日志 - ' + ({dashboard:'首页',create:'新建',list:'列表',project:'工程'}[name]||name);
+async function switchPage(name) {
+  document.title = '施工日志 - ' + ({dashboard:'首页',create:'新建',list:'列表',project:'工程',settings:'设置'}[name]||name);
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const pageEl = document.getElementById('page-'+name);
@@ -644,10 +741,11 @@ function switchPage(name) {
   pageEl.classList.add('active');
   const ni = document.querySelector('[data-page="'+name+'"]');
   if (ni) ni.classList.add('active');
-  if (name === 'dashboard') renderDashboard();
+  if (name === 'dashboard') { await loadDailyTaskLogs(); renderDashboard(); }
   else if (name === 'list') renderLogList();
   else if (name === 'create') { setDefaultDate(); }
-  else if (name === 'project') { renderProjectList(); loadTasks(); }
+  else if (name === 'project') { showProjectList(); renderProjectList(); loadDailyTaskLogs(); loadTasks(); }
+  else if (name === 'settings') { loadSettings(); renderSettingsStats(); }
 }
 
 // ==================== LOAD ALL DATA ====================
@@ -655,12 +753,27 @@ async function loadProjects() {
   try {
     const rawProjects = await fetchProjects();
     const tasksData = await Promise.all(rawProjects.map(async p => {
-      const tasks = await fetchTasksByProject(p._id);
-      return { ...p, tasks, id: p._id };
+      const tasks = await fetchTasksByProject(p.id);
+      return { ...p, tasks, id: p.id };
     }));
     projects = tasksData;
+    // 加载所有每日任务施工日志
+    await loadDailyTaskLogs();
     updateProjectSelect();
   } catch(e) { console.error('loadProjects:', e); }
+}
+
+async function loadDailyTaskLogs() {
+  try {
+    dailyTaskLogs = {};
+    const pid = activeProjectId;
+    if (!pid) return;
+    const logs = await fetchDailyTaskLogsByProject(pid);
+    logs.forEach(l => {
+      if (!dailyTaskLogs[l.task_id]) dailyTaskLogs[l.task_id] = [];
+      dailyTaskLogs[l.task_id].push(l);
+    });
+  } catch(e) { console.error('loadDailyTaskLogs:', e); }
 }
 
 function updateProjectSelect() {
@@ -681,6 +794,7 @@ function getActiveProject() {
 
 async function onProjectSwitch(pid) {
   activeProjectId = pid;
+  await loadDailyTaskLogs();
   const page = document.querySelector('.page.active');
   if (page) {
     const pageName = page.id.replace('page-','');
@@ -734,22 +848,41 @@ async function renderDashboard() {
   `;
 
   const today = new Date().toISOString().split('T')[0];
-  const todayTasks = tasks.filter(t => t.start <= today && t.end >= today);
+  // 今日待办 = 工期覆盖今天 + dailyTaskLogs 中没有今天的记录（没打卡的任务）
+  const todayAllTasks = tasks.filter(t => t.start && t.end && t.start <= today && t.end >= today && t.status !== 'completed');
+  const todayCheckedSet = new Set();
+  Object.entries(dailyTaskLogs).forEach(([taskId, logs]) => {
+    if (logs.some(l => l.log_date === today)) todayCheckedSet.add(taskId);
+  });
+  const todayTodoTasks = todayAllTasks.filter(t => !todayCheckedSet.has(t.id));
+  const todayDoneTasks = todayAllTasks.filter(t => todayCheckedSet.has(t.id));
+
   const todayEl = document.getElementById('dash-today-tasks');
   const todayEmpty = document.getElementById('dash-today-empty');
   if (todayEl && todayEmpty) {
-    if (todayTasks.length === 0) { todayEl.innerHTML = ''; todayEmpty.style.display = 'block'; }
-    else {
+    if (todayTodoTasks.length === 0 && todayDoneTasks.length === 0) {
+      todayEl.innerHTML = ''; todayEmpty.style.display = 'block';
+    } else {
       todayEmpty.style.display = 'none';
-      todayEl.innerHTML = todayTasks.map(t => {
-        let tag = t.status === 'pending' ? '<span class="tag today">今日</span>'
-          : t.status === 'in_progress' ? '<span class="tag today">进行中</span>'
-          : '<span class="tag upcoming">已完成</span>';
-        return `<div class="dash-todo-item" onclick="switchPage('create');document.getElementById('log-date').value='${today}'">
-          <span class="dot ${t.status}"></span>
-          <span>${t.name || ''} <small style="color:var(--text2)">${t.location || ''}</small></span>${tag}
+      const renderTodoItem = (t, done) => {
+        const statusDot = done ? 'completed' : (t.status === 'in_progress' ? 'in_progress' : 'pending');
+        const tag = done
+          ? '<span class="tag upcoming">已打卡</span>'
+          : (t.status === 'in_progress'
+            ? '<span class="tag today">待落实</span>'
+            : '<span class="tag today">待落实</span>');
+        const daysFromStart = Math.ceil((new Date(today) - new Date(t.start)) / 86400000) + 1;
+        const totalDays = Math.ceil((new Date(t.end) - new Date(t.start)) / 86400000) + 1;
+        return `<div class="dash-todo-item${done ? ' done' : ''}" onclick="${done ? '' : `switchPage('project');setTimeout(()=>{setProjectView('gantt');loadTasks();},200)`}" style="${done ? 'opacity:0.55' : ''}">
+          <span class="dot ${statusDot}"></span>
+          <span>${t.name || ''} <small style="color:var(--text2)">${t.location || ''}</small></span>
+          <small style="color:var(--text2);margin-left:auto;margin-right:6px">第${daysFromStart}/${totalDays}天</small>${tag}
         </div>`;
-      }).join('');
+      };
+      todayEl.innerHTML = [
+        ...todayTodoTasks.map(t => renderTodoItem(t, false)),
+        ...todayDoneTasks.map(t => renderTodoItem(t, true))
+      ].join('');
     }
   }
 
@@ -911,6 +1044,11 @@ async function viewDetail(id) {
     const proj = getActiveProject() || {};
     const weatherStr = [log.weather, log.temp_high && log.temp_low ? `${log.temp_high}°C ~ ${log.temp_low}°C` : '', log.wind].filter(Boolean).join('　');
     document.getElementById('detail-content').innerHTML = renderLogTableHTML(log, proj, weatherStr);
+    // 弹窗内不需要固定A4高度
+    const wrap = document.getElementById('detail-content').querySelector('.log-table-wrap');
+    if (wrap) { wrap.style.height = 'auto'; wrap.style.display = 'block'; }
+    const tbl = document.getElementById('detail-content').querySelector('.log-table');
+    if (tbl) { tbl.style.flex = 'none'; }
     document.getElementById('detail-modal').classList.add('show');
   } catch (e) { showToast('加载详情失败: ' + e.message, 'error'); }
 }
@@ -919,56 +1057,69 @@ function renderLogTableHTML(log, proj, weatherStr) {
   const nl2br = (s) => (s || '').replace(/\n/g, '<br>');
   return `
   <style>
-    .log-table-wrap { font-family: "SimSun", "宋体", serif; font-size: 14px; line-height: 1.8; color: #000; }
-    .log-table-wrap h2 { text-align: center; font-size: 22px; font-weight: bold; letter-spacing: 8px; margin: 0 0 6px 0; }
-    .log-table-wrap .sub-title { text-align: center; font-size: 13px; margin-bottom: 16px; color: #333; }
-    .log-table { width: 100%; border-collapse: collapse; border: 2px solid #000; }
-    .log-table td, .log-table th { border: 1px solid #000; padding: 8px 10px; vertical-align: top; }
-    .log-table .label { background: #f5f5f5; font-weight: bold; text-align: center; white-space: nowrap; width: 100px; }
-    .log-table .label-wide { background: #f5f5f5; font-weight: bold; text-align: center; }
+    @page { size: A4; margin: 12mm 15mm 12mm 15mm; }
+    html, body { margin: 0; padding: 0; height: 100%; }
+    .log-table-wrap { font-family: "SimSun", "宋体", serif; font-size: 13px; line-height: 1.6; color: #000; height: 100%; display: flex; flex-direction: column; }
+    .log-table-wrap h2 { text-align: center; font-size: 20px; font-weight: bold; letter-spacing: 6px; margin: 0 0 10px 0; flex-shrink: 0; }
+    .log-table { width: 100%; border-collapse: collapse; border: 1.5px solid #000; flex: 1; }
+    .log-table td, .log-table th { border: 1px solid #000; padding: 5px 8px; vertical-align: top; }
+    .log-table .label { background: #f0f0f0; font-weight: bold; text-align: center; white-space: nowrap; width: 90px; }
     .log-table .content { text-align: left; }
-    .log-table .section-title { background: #f5f5f5; font-weight: bold; text-align: center; font-size: 15px; }
-    .log-table .sign-row td { height: 50px; vertical-align: bottom; padding-bottom: 4px; }
-    .log-table .sign-label { text-align: right; padding-right: 8px; font-weight: bold; }
+    .log-table .section-title { background: #f0f0f0; font-weight: bold; text-align: center; font-size: 14px; padding: 4px 8px; }
+    .log-table .record-cell { padding: 8px 10px; }
+    .log-table .sign-row td { height: 40px; vertical-align: bottom; padding-bottom: 3px; }
+    .log-table .sign-label { text-align: right; padding-right: 6px; font-weight: bold; width: 70px; white-space: nowrap; }
     .log-table .sign-value { text-align: left; border-bottom: 1px solid #000; }
+    @media print {
+      .log-table-wrap { height: auto; min-height: 257mm; }
+      .log-table { height: auto; }
+      .log-table .record-cell { height: auto; }
+    }
   </style>
   <div class="log-table-wrap">
     <h2>施 工 日 志</h2>
-    <div class="sub-title">${proj.name || '工程名称未设置'}　|　${proj.company || ''}</div>
     <table class="log-table">
       <tr>
-        <td class="label">日志日期</td>
-        <td class="content">${log.date || ''}</td>
+        <td class="label" style="width:85px;">工程名称</td>
+        <td class="content" colspan="3">${log.project_name || proj.name || ''}</td>
+      </tr>
+      <tr>
+        <td class="label">工程地址</td>
+        <td class="content" colspan="3">${proj.address || ''}</td>
+      </tr>
+      <tr>
+        <td class="label">建设单位</td>
+        <td class="content">${proj.client || ''}</td>
+        <td class="label">施工单位</td>
+        <td class="content">${log.unit || proj.company || ''}</td>
+      </tr>
+      <tr>
         <td class="label">天气状况</td>
-        <td class="content" colspan="3">${weatherStr || ''}</td>
-      </tr>
-      <tr>
+        <td class="content">${weatherStr || ''}</td>
         <td class="label">施工部位</td>
-        <td class="content" colspan="5">${log.location || ''}</td>
+        <td class="content">${log.location || ''}</td>
       </tr>
       <tr>
-        <td class="label">突发事件</td>
-        <td class="content" colspan="5">${log.incident || '无'}</td>
+        <td class="section-title" colspan="4">生 产 情 况 记 录</td>
+      </tr>
+      <tr style="height:100%;">
+        <td class="content record-cell" colspan="4" style="vertical-align:top;">${nl2br(log.production_record)}</td>
       </tr>
       <tr>
-        <td class="section-title" colspan="6">生 产 情 况 记 录</td>
+        <td class="section-title" colspan="4">技 术 质 量 安 全 工 作 记 录</td>
       </tr>
-      <tr>
-        <td class="content" colspan="6" style="min-height:200px;height:auto;padding:12px 10px;">${nl2br(log.production_record)}</td>
-      </tr>
-      <tr>
-        <td class="section-title" colspan="6">技 术 质 量 安 全 工 作 记 录</td>
-      </tr>
-      <tr>
-        <td class="content" colspan="6" style="min-height:200px;height:auto;padding:12px 10px;">${nl2br(log.tech_quality_safety)}</td>
+      <tr style="height:100%;">
+        <td class="content record-cell" colspan="4" style="vertical-align:top;">${nl2br(log.tech_quality_safety)}</td>
       </tr>
       <tr class="sign-row">
-        <td class="sign-label">项目负责人：</td>
+        <td class="sign-label">负责人：</td>
         <td class="sign-value">${log.manager || ''}</td>
         <td class="sign-label">记录人：</td>
         <td class="sign-value">${log.recorder || ''}</td>
+      </tr>
+      <tr class="sign-row">
         <td class="sign-label">日期：</td>
-        <td class="sign-value">${log.date || ''}</td>
+        <td class="sign-value" colspan="3">${log.date || ''}</td>
       </tr>
     </table>
   </div>`;
@@ -983,9 +1134,9 @@ function printLog() {
   const weatherStr = [log.weather, log.temp_high && log.temp_low ? `${log.temp_high}°C ~ ${log.temp_low}°C` : '', log.wind].filter(Boolean).join('　');
   const html = renderLogTableHTML(log, proj, weatherStr);
   const win = window.open('', '_blank', 'width=900,height=700');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>施工日志 - ${log.date || ''}</title></head><body style="margin:20px;background:#fff">${html}</body></html>`);
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>施工日志 - ${log.date || ''}</title></head><body style="margin:0;padding:0;height:100vh;background:#fff">${html}</body></html>`);
   win.document.close();
-  setTimeout(() => win.print(), 300);
+  win.onload = () => setTimeout(() => win.print(), 200);
 }
 
 // ==================== SMART AUTO FILL ====================
@@ -1185,35 +1336,58 @@ async function renderLogList() {
 }
 
 // ==================== PROJECT MANAGEMENT ====================
-function showProjectForm(proj) {
-  document.getElementById('proj-id').value = proj ? (proj._id || proj.id) : '';
-  document.getElementById('proj-name').value = proj ? proj.name : '';
-  document.getElementById('proj-type').value = proj ? proj.type : 'custom';
-  document.getElementById('proj-company').value = proj ? proj.company : '';
-  document.getElementById('proj-manager').value = proj ? proj.manager : '';
-  document.getElementById('proj-recorder').value = proj ? proj.recorder : '';
-  document.getElementById('project-modal-title').textContent = proj ? '✏️ 编辑工程' : '🏗️ 新建工程';
-  document.getElementById('project-modal').classList.add('show');
+// 新子页模式: 显示工程编辑详情页
+function showProjectEdit(proj) {
+  document.getElementById('proj-edit-id').value = proj ? (proj._id || proj.id) : '';
+  document.getElementById('proj-edit-name').value = proj ? proj.name : '';
+  document.getElementById('proj-edit-type').value = proj ? (proj.type || 'custom') : 'custom';
+  document.getElementById('proj-edit-duration').value = proj ? (proj.duration || '') : '';
+  document.getElementById('proj-edit-client').value = proj ? (proj.client || '') : '';
+  document.getElementById('proj-edit-company').value = proj ? (proj.company || '') : '';
+  document.getElementById('proj-edit-address').value = proj ? (proj.address || '') : '';
+  document.getElementById('proj-edit-manager').value = proj ? (proj.manager || '') : '';
+  document.getElementById('proj-edit-recorder').value = proj ? (proj.recorder || '') : '';
+  document.getElementById('project-edit-title').textContent = proj ? '✏️ 编辑工程详情' : '🏗️ 新建工程';
+  // 新建时填入默认设置
+  if (!proj) {
+    const defaults = JSON.parse(localStorage.getItem('settings_defaults') || '{}');
+    if (defaults.company) document.getElementById('proj-edit-company').value = defaults.company || '';
+    if (defaults.manager) document.getElementById('proj-edit-manager').value = defaults.manager || '';
+    if (defaults.recorder) document.getElementById('proj-edit-recorder').value = defaults.recorder || '';
+  }
+  document.getElementById('project-subpage-list').style.display = 'none';
+  document.getElementById('project-subpage-edit').style.display = 'block';
 }
 
-function closeProjectModal() { document.getElementById('project-modal').classList.remove('show'); }
+// 回到工程列表子页
+function showProjectList() {
+  document.getElementById('project-subpage-edit').style.display = 'none';
+  document.getElementById('project-subpage-list').style.display = 'block';
+}
 
-async function saveProject(e) {
+// 保留旧接口兼容（弹窗模式，现在改为跳转到编辑子页）
+function showProjectForm(proj) { showProjectEdit(proj); }
+function closeProjectModal() { showProjectList(); }
+
+async function saveProjectDetail(e) {
   e.preventDefault();
-  const nameVal = (document.getElementById('proj-name')?.value || '').trim();
+  const nameVal = (document.getElementById('proj-edit-name')?.value || '').trim();
   if (!nameVal) { showToast('请输入工程名称', 'error'); return; }
-  const pid = document.getElementById('proj-id')?.value;
-  const type = document.getElementById('proj-type')?.value || 'custom';
-  const company = document.getElementById('proj-company')?.value || '';
-  const manager = document.getElementById('proj-manager')?.value || '';
-  const recorder = document.getElementById('proj-recorder')?.value || '';
+  const pid = document.getElementById('proj-edit-id')?.value;
+  const type = document.getElementById('proj-edit-type')?.value || 'custom';
+  const client = document.getElementById('proj-edit-client')?.value || '';
+  const company = document.getElementById('proj-edit-company')?.value || '';
+  const address = document.getElementById('proj-edit-address')?.value || '';
+  const manager = document.getElementById('proj-edit-manager')?.value || '';
+  const recorder = document.getElementById('proj-edit-recorder')?.value || '';
+  const duration = parseInt(document.getElementById('proj-edit-duration')?.value) || 0;
 
   try {
     if (pid) {
-      await updateProject(pid, { name: nameVal, type, company, manager, recorder });
+      await updateProject(pid, { name: nameVal, type, client, company, address, manager, recorder, duration });
       showToast('工程已更新！');
     } else {
-      const newId = await createProject({ name: nameVal, type, company, manager, recorder });
+      const newId = await createProject({ name: nameVal, type, client, company, address, manager, recorder, duration });
       activeProjectId = newId;
 
       if (type && type !== 'custom' && TASK_TEMPLATES[type]) {
@@ -1230,7 +1404,7 @@ async function saveProject(e) {
         showToast('工程已创建！');
       }
     }
-    closeProjectModal();
+    showProjectList();
     loadProjects();
     renderProjectList();
     loadTasks();
@@ -1262,8 +1436,9 @@ function renderProjectList() {
   if (!container) return;
   const atp = document.getElementById('active-project-tasks');
   if (atp) atp.style.display = projects.length ? 'block' : 'none';
+  updateTaskImportHint();
   if (!projects.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏗️</div><p>还没有创建任何工程</p><button class="btn btn-primary" style="margin-top:12px" onclick="showProjectForm()">创建第一个工程</button></div>`;
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🏗️</div><p>还没有创建任何工程</p><button class="btn btn-primary" style="margin-top:12px" onclick="showProjectEdit(null)">创建第一个工程</button></div>`;
     return;
   }
   const names = { office:'办公楼', mall:'商场', hotel:'酒店', home:'住宅', restaurant:'餐厅', hospital:'医院', school:'学校', bank:'银行营业厅', exhibition:'展厅/展览馆', gym:'健身房/运动场馆', sales_office:'售楼处', factory:'厂房/车间', custom:'自定义' };
@@ -1277,18 +1452,19 @@ function renderProjectList() {
       const maxEnd = new Date(Math.max(...datedTasks.map(t => new Date(t.end))));
       calcDays = Math.ceil((maxEnd - minStart) / 86400000) + 1;
     }
+    const plannedDays = p.duration || 0;
     const pid = p._id || p.id;
     const isActive = pid === activeProjectId;
     return `<div class="log-list-item" style="${isActive?'border-color:var(--primary);background:var(--primary-bg)':''}">
       <div style="flex:1">
         <div style="font-weight:600;font-size:15px">${p.name}</div>
         <div style="font-size:12px;color:var(--text2);margin-top:2px">
-          ${names[p.type]||p.type||'自定义'} · ${p.company||''} · ${tasks.length}项任务${done>0?' · '+done+'已完成':''}${calcDays>0?' · 工期'+calcDays+'天':''}
+          ${names[p.type]||p.type||'自定义'} · ${p.company||''} · ${tasks.length}项任务${done>0?' · '+done+'已完成':''}${plannedDays>0?' · 计划工期'+plannedDays+'天':''}${calcDays>0&&!plannedDays?' · 排期'+calcDays+'天':''}
         </div>
       </div>
       <div class="log-actions" onclick="event.stopPropagation()">
         <button class="btn btn-outline btn-xs" onclick="switchToProject('${pid}')" title="切换">🔀</button>
-        <button class="btn btn-outline btn-xs" onclick="showProjectForm(projects.find(x=>(x._id||x.id)==='${pid}'))" title="编辑">✏️</button>
+        <button class="btn btn-outline btn-xs" onclick="showProjectEdit(projects.find(x=>(x._id||x.id)==='${pid}'))" title="编辑">✏️</button>
         <button class="btn btn-outline btn-xs" onclick="deleteProject('${pid}')" title="删除" style="color:var(--danger)">🗑️</button>
       </div>
     </div>`;
@@ -1314,6 +1490,76 @@ function showTaskForm(task) {
   document.getElementById('task-remark').value = task ? task.remark : '';
   document.getElementById('task-modal-title').textContent = task ? '✏️ 编辑施工任务' : '➕ 添加施工任务';
   document.getElementById('task-modal').classList.add('show');
+}
+
+// 从模板导入任务（支持已有工程重新导入）
+async function importTasksFromTemplate() {
+  const proj = getActiveProject();
+  if (!proj) { showToast('请先选择工程', 'error'); return; }
+  const type = proj.type || 'custom';
+  if (type === 'custom' || !TASK_TEMPLATES[type]) {
+    showToast('当前工程类型不支持模板导入，请编辑工程选择具体类型（如：办公楼、酒店等）', 'info');
+    return;
+  }
+
+  const templateTasks = generateTasksFromTemplate(type, proj.id);
+  if (templateTasks.length === 0) {
+    showToast('模板为空，无法导入', 'error');
+    return;
+  }
+
+  // 如果已有任务，询问是否覆盖
+  const existingTasks = proj.tasks || [];
+  if (existingTasks.length > 0) {
+    if (!confirm(`当前工程已有 ${existingTasks.length} 项任务。\n\n从模板导入将清空现有任务并重新生成 ${templateTasks.length} 项施工任务。\n\n是否继续？`)) {
+      return;
+    }
+    // 先删除所有现有任务
+    showToast('正在清除现有任务...', 'info');
+    try {
+      await Promise.all(existingTasks.map(t => deleteTask(t._id || t.id)));
+    } catch (e) {
+      showToast('清除任务失败: ' + e.message, 'error');
+      return;
+    }
+  }
+
+  // 批量创建新任务
+  try {
+    showToast(`正在导入 ${templateTasks.length} 项任务...`, 'info');
+    const resp = await fetch('/api/tasks/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tasks: templateTasks })
+    });
+    const json = await resp.json();
+    if (!json.success) throw new Error(json.error || '导入失败');
+
+    showToast(`成功导入 ${templateTasks.length} 项施工任务！`);
+    await loadProjects();
+    renderProjectList();
+    loadTasks();
+    updateTaskImportHint();
+  } catch (e) {
+    showToast('导入任务失败: ' + e.message, 'error');
+  }
+}
+
+// 更新导入提示
+function updateTaskImportHint() {
+  const hint = document.getElementById('task-import-hint');
+  if (!hint) return;
+  const proj = getActiveProject();
+  if (!proj) { hint.textContent = ''; return; }
+  const type = proj.type || 'custom';
+  const template = TASK_TEMPLATES[type];
+  const tasks = proj.tasks || [];
+  if (template && tasks.length === 0) {
+    hint.textContent = '— 建议从模板导入，快速生成施工计划';
+    hint.style.color = 'var(--warning)';
+  } else {
+    hint.textContent = '';
+  }
 }
 
 function closeTaskModal() { document.getElementById('task-modal').classList.remove('show'); }
@@ -1388,6 +1634,370 @@ async function toggleTaskStatus(id) {
 
 const STATUS_LABELS = { pending: ['未开始', 'info'], in_progress: ['进行中', 'warning'], completed: ['已完成', 'success'] };
 
+// ==================== 施工任务模板 ====================
+// 按工程类型分类，每个模板包含完整的施工阶段和任务
+const TASK_TEMPLATES = {
+  office: [
+    { category:'拆除工程', name:'现场勘查及放线', location:'全区域', team:'测量班组', duration:2 },
+    { category:'拆除工程', name:'旧装饰拆除', location:'全区域', team:'拆除班组', duration:5 },
+    { category:'拆除工程', name:'垃圾清运', location:'全区域', team:'拆除班组', duration:2 },
+    { category:'水电改造', name:'强弱电管线敷设', location:'天花及墙面', team:'水电班组', duration:8 },
+    { category:'水电改造', name:'给排水管道安装', location:'卫生间/茶水间', team:'水电班组', duration:5 },
+    { category:'水电改造', name:'配电箱安装及接线', location:'强电井', team:'水电班组', duration:3 },
+    { category:'水电改造', name:'灯具开关插座安装', location:'全区域', team:'水电班组', duration:4 },
+    { category:'防水工程', name:'卫生间地面找平', location:'卫生间', team:'泥瓦班组', duration:2 },
+    { category:'防水工程', name:'防水涂料施工', location:'卫生间/茶水间', team:'防水班组', duration:3 },
+    { category:'防水工程', name:'闭水试验', location:'卫生间', team:'防水班组', duration:2 },
+    { category:'泥瓦工程', name:'墙面抹灰找平', location:'全区域', team:'泥瓦班组', duration:6 },
+    { category:'泥瓦工程', name:'地面找平', location:'全区域', team:'泥瓦班组', duration:4 },
+    { category:'泥瓦工程', name:'墙地砖铺贴', location:'卫生间/茶水间', team:'泥瓦班组', duration:7 },
+    { category:'木工工程', name:'轻钢龙骨隔墙安装', location:'全区域', team:'木工班组', duration:10 },
+    { category:'木工工程', name:'石膏板吊顶安装', location:'全区域', team:'木工班组', duration:8 },
+    { category:'木工工程', name:'木门及门套安装', location:'各办公室', team:'木工班组', duration:5 },
+    { category:'木工工程', name:'踢脚线安装', location:'全区域', team:'木工班组', duration:3 },
+    { category:'油漆工程', name:'墙面批刮腻子', location:'全区域', team:'油漆班组', duration:8 },
+    { category:'油漆工程', name:'墙面打磨', location:'全区域', team:'油漆班组', duration:2 },
+    { category:'油漆工程', name:'底漆及面漆施工', location:'全区域', team:'油漆班组', duration:6 },
+    { category:'安装工程', name:'空调风口安装', location:'天花', team:'安装班组', duration:3 },
+    { category:'安装工程', name:'消防设施安装', location:'全区域', team:'安装班组', duration:4 },
+    { category:'安装工程', name:'卫浴洁具安装', location:'卫生间', team:'安装班组', duration:3 },
+    { category:'安装工程', name:'办公家具组装', location:'全区域', team:'安装班组', duration:5 },
+    { category:'竣工验收', name:'工程自检', location:'全区域', team:'管理班组', duration:2 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:2 },
+    { category:'竣工验收', name:'竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ],
+  mall: [
+    { category:'拆除工程', name:'原装饰面层拆除', location:'公共区域', team:'拆除班组', duration:8 },
+    { category:'拆除工程', name:'建筑垃圾清运', location:'全区域', team:'拆除班组', duration:3 },
+    { category:'水电改造', name:'强弱电桥架安装', location:'天花', team:'水电班组', duration:10 },
+    { category:'水电改造', name:'照明配电系统安装', location:'全区域', team:'水电班组', duration:8 },
+    { category:'水电改造', name:'给排水系统改造', location:'卫生间', team:'水电班组', duration:6 },
+    { category:'水电改造', name:'消防喷淋系统改造', location:'天花', team:'消防班组', duration:8 },
+    { category:'防水工程', name:'卫生间防水施工', location:'卫生间', team:'防水班组', duration:4 },
+    { category:'防水工程', name:'闭水试验验收', location:'卫生间', team:'防水班组', duration:2 },
+    { category:'泥瓦工程', name:'地面找平层施工', location:'公共区域', team:'泥瓦班组', duration:8 },
+    { category:'泥瓦工程', name:'公共区域地砖铺贴', location:'公共走道', team:'泥瓦班组', duration:12 },
+    { category:'泥瓦工程', name:'卫生间墙地砖铺贴', location:'卫生间', team:'泥瓦班组', duration:7 },
+    { category:'木工工程', name:'轻钢龙骨隔墙施工', location:'商铺分隔', team:'木工班组', duration:14 },
+    { category:'木工工程', name:'造型天花吊顶', location:'中庭/入口', team:'木工班组', duration:12 },
+    { category:'木工工程', name:'商铺门头基础', location:'各商铺', team:'木工班组', duration:10 },
+    { category:'油漆工程', name:'天花墙面批灰', location:'公共区域', team:'油漆班组', duration:10 },
+    { category:'油漆工程', name:'墙面乳胶漆', location:'公共区域', team:'油漆班组', duration:8 },
+    { category:'安装工程', name:'中央空调系统安装', location:'天花', team:'暖通班组', duration:10 },
+    { category:'安装工程', name:'电梯安装调试', location:'电梯井', team:'电梯班组', duration:15 },
+    { category:'安装工程', name:'自动扶梯安装', location:'中庭', team:'电梯班组', duration:12 },
+    { category:'安装工程', name:'消防报警系统', location:'全区域', team:'消防班组', duration:8 },
+    { category:'安装工程', name:'安防监控系统', location:'全区域', team:'弱电班组', duration:6 },
+    { category:'安装工程', name:'导视系统安装', location:'公共区域', team:'安装班组', duration:4 },
+    { category:'竣工验收', name:'分项验收', location:'全区域', team:'管理班组', duration:3 },
+    { category:'竣工验收', name:'消防验收', location:'全区域', team:'管理班组', duration:1 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:3 },
+    { category:'竣工验收', name:'整体竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ],
+  hotel: [
+    { category:'拆除工程', name:'旧装饰拆除', location:'客房/公区', team:'拆除班组', duration:10 },
+    { category:'拆除工程', name:'垃圾清运', location:'全区域', team:'拆除班组', duration:4 },
+    { category:'水电改造', name:'客房强弱电布线', location:'各客房', team:'水电班组', duration:15 },
+    { category:'水电改造', name:'给排水管路改造', location:'卫生间', team:'水电班组', duration:10 },
+    { category:'水电改造', name:'热水系统安装', location:'设备间', team:'水电班组', duration:5 },
+    { category:'水电改造', name:'智能客控布线', location:'各客房', team:'弱电班组', duration:8 },
+    { category:'防水工程', name:'卫生间防水施工', location:'客房卫生间', team:'防水班组', duration:8 },
+    { category:'防水工程', name:'闭水试验', location:'客房卫生间', team:'防水班组', duration:2 },
+    { category:'泥瓦工程', name:'地面找平', location:'客房/走道', team:'泥瓦班组', duration:10 },
+    { category:'泥瓦工程', name:'卫生间墙地砖铺贴', location:'客房卫生间', team:'泥瓦班组', duration:12 },
+    { category:'木工工程', name:'轻钢龙骨隔墙', location:'客房分隔', team:'木工班组', duration:15 },
+    { category:'木工工程', name:'天花吊顶', location:'客房/走道', team:'木工班组', duration:14 },
+    { category:'木工工程', name:'木饰面安装', location:'公区/客房', team:'木工班组', duration:10 },
+    { category:'木工工程', name:'定制家具安装', location:'各客房', team:'木工班组', duration:8 },
+    { category:'油漆工程', name:'墙面基层处理', location:'全区域', team:'油漆班组', duration:12 },
+    { category:'油漆工程', name:'墙面涂料施工', location:'全区域', team:'油漆班组', duration:10 },
+    { category:'安装工程', name:'卫浴洁具安装', location:'客房卫生间', team:'安装班组', duration:8 },
+    { category:'安装工程', name:'灯具安装', location:'全区域', team:'安装班组', duration:6 },
+    { category:'安装工程', name:'窗帘及布艺安装', location:'各客房', team:'安装班组', duration:4 },
+    { category:'安装工程', name:'弱电设备安装', location:'全区域', team:'弱电班组', duration:6 },
+    { category:'竣工验收', name:'分户验收', location:'各客房', team:'管理班组', duration:3 },
+    { category:'竣工验收', name:'系统调试', location:'全区域', team:'各班组', duration:3 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:3 },
+    { category:'竣工验收', name:'竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ],
+  home: [
+    { category:'拆除工程', name:'现场交底及放线', location:'全屋', team:'管理班组', duration:1 },
+    { category:'拆除工程', name:'墙体拆改', location:'指定区域', team:'拆除班组', duration:3 },
+    { category:'拆除工程', name:'垃圾清运', location:'全屋', team:'拆除班组', duration:1 },
+    { category:'水电改造', name:'水电路开槽', location:'全屋', team:'水电班组', duration:3 },
+    { category:'水电改造', name:'水管布设及打压', location:'厨卫阳台', team:'水电班组', duration:3 },
+    { category:'水电改造', name:'电路布设及穿线', location:'全屋', team:'水电班组', duration:4 },
+    { category:'水电改造', name:'水电验收', location:'全屋', team:'管理班组', duration:1 },
+    { category:'防水工程', name:'厨卫阳台防水', location:'厨卫阳台', team:'防水班组', duration:2 },
+    { category:'防水工程', name:'闭水试验', location:'厨卫阳台', team:'防水班组', duration:2 },
+    { category:'泥瓦工程', name:'墙面抹灰', location:'全屋', team:'泥瓦班组', duration:5 },
+    { category:'泥瓦工程', name:'厨卫墙地砖铺贴', location:'厨卫阳台', team:'泥瓦班组', duration:7 },
+    { category:'泥瓦工程', name:'客厅地砖铺贴', location:'客餐厅', team:'泥瓦班组', duration:5 },
+    { category:'木工工程', name:'天花吊顶制作', location:'客餐厅/卧室', team:'木工班组', duration:5 },
+    { category:'木工工程', name:'背景墙制作', location:'客厅/卧室', team:'木工班组', duration:3 },
+    { category:'木工工程', name:'定制柜体安装', location:'全屋', team:'木工班组', duration:5 },
+    { category:'油漆工程', name:'墙面刮腻子', location:'全屋', team:'油漆班组', duration:5 },
+    { category:'油漆工程', name:'墙面打磨', location:'全屋', team:'油漆班组', duration:2 },
+    { category:'油漆工程', name:'乳胶漆/壁纸施工', location:'全屋', team:'油漆班组', duration:4 },
+    { category:'安装工程', name:'开关插座面板安装', location:'全屋', team:'水电班组', duration:2 },
+    { category:'安装工程', name:'灯具安装', location:'全屋', team:'安装班组', duration:2 },
+    { category:'安装工程', name:'卫浴洁具安装', location:'卫生间', team:'安装班组', duration:2 },
+    { category:'安装工程', name:'厨电安装', location:'厨房', team:'安装班组', duration:1 },
+    { category:'安装工程', name:'木地板铺设', location:'卧室', team:'安装班组', duration:2 },
+    { category:'竣工验收', name:'竣工清理', location:'全屋', team:'清洁班组', duration:2 },
+    { category:'竣工验收', name:'竣工验收', location:'全屋', team:'管理班组', duration:1 }
+  ],
+  restaurant: [
+    { category:'拆除工程', name:'原装修拆除', location:'全区域', team:'拆除班组', duration:5 },
+    { category:'拆除工程', name:'垃圾清运', location:'全区域', team:'拆除班组', duration:2 },
+    { category:'水电改造', name:'后厨水电改造', location:'厨房', team:'水电班组', duration:8 },
+    { category:'水电改造', name:'前厅强弱电布线', location:'用餐区', team:'水电班组', duration:5 },
+    { category:'水电改造', name:'排烟系统管道安装', location:'厨房天花', team:'安装班组', duration:4 },
+    { category:'防水工程', name:'厨房地面防水', location:'厨房', team:'防水班组', duration:3 },
+    { category:'防水工程', name:'卫生间防水', location:'卫生间', team:'防水班组', duration:2 },
+    { category:'泥瓦工程', name:'厨房墙地砖铺贴', location:'厨房', team:'泥瓦班组', duration:6 },
+    { category:'泥瓦工程', name:'用餐区地砖铺贴', location:'用餐区', team:'泥瓦班组', duration:5 },
+    { category:'泥瓦工程', name:'卫生间墙地砖铺贴', location:'卫生间', team:'泥瓦班组', duration:4 },
+    { category:'木工工程', name:'天花造型吊顶', location:'用餐区', team:'木工班组', duration:8 },
+    { category:'木工工程', name:'隔断及装饰造型', location:'用餐区', team:'木工班组', duration:5 },
+    { category:'木工工程', name:'吧台/收银台制作', location:'入口区', team:'木工班组', duration:4 },
+    { category:'油漆工程', name:'墙面基层处理', location:'全区域', team:'油漆班组', duration:5 },
+    { category:'油漆工程', name:'装饰涂料施工', location:'用餐区', team:'油漆班组', duration:4 },
+    { category:'安装工程', name:'厨房设备安装', location:'厨房', team:'安装班组', duration:4 },
+    { category:'安装工程', name:'空调新风系统', location:'全区域', team:'暖通班组', duration:5 },
+    { category:'安装工程', name:'灯具及装饰照明', location:'用餐区', team:'安装班组', duration:3 },
+    { category:'安装工程', name:'家具及软装', location:'用餐区', team:'安装班组', duration:3 },
+    { category:'竣工验收', name:'设备调试', location:'全区域', team:'各班组', duration:2 },
+    { category:'竣工验收', name:'卫生许可验收', location:'全区域', team:'管理班组', duration:1 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:2 },
+    { category:'竣工验收', name:'整体竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ],
+  hospital: [
+    { category:'拆除工程', name:'原装修拆除', location:'施工区域', team:'拆除班组', duration:8 },
+    { category:'拆除工程', name:'医疗废物合规清运', location:'全区域', team:'专业清运', duration:3 },
+    { category:'水电改造', name:'医用强弱电系统', location:'全区域', team:'水电班组', duration:12 },
+    { category:'水电改造', name:'医用气体管道安装', location:'病房/手术室', team:'专业班组', duration:10 },
+    { category:'水电改造', name:'给排水系统改造', location:'卫生间/污洗间', team:'水电班组', duration:8 },
+    { category:'防水工程', name:'卫生间防水', location:'卫生间', team:'防水班组', duration:5 },
+    { category:'防水工程', name:'污洗间/设备间防水', location:'污洗间', team:'防水班组', duration:3 },
+    { category:'泥瓦工程', name:'地面找平层施工', location:'全区域', team:'泥瓦班组', duration:10 },
+    { category:'泥瓦工程', name:'墙地砖铺贴', location:'卫生间/走道', team:'泥瓦班组', duration:12 },
+    { category:'泥瓦工程', name:'PVC地板基层处理', location:'病房/诊室', team:'泥瓦班组', duration:6 },
+    { category:'木工工程', name:'轻钢龙骨隔墙', location:'诊室分隔', team:'木工班组', duration:14 },
+    { category:'木工工程', name:'抗菌天花吊顶', location:'全区域', team:'木工班组', duration:12 },
+    { category:'木工工程', name:'医疗柜体安装', location:'诊室/护士站', team:'木工班组', duration:8 },
+    { category:'油漆工程', name:'抗菌涂料施工', location:'全区域', team:'油漆班组', duration:10 },
+    { category:'安装工程', name:'医用门安装', location:'各科室', team:'安装班组', duration:6 },
+    { category:'安装工程', name:'护士站安装', location:'各病区', team:'安装班组', duration:5 },
+    { category:'安装工程', name:'呼叫系统安装', location:'病房', team:'弱电班组', duration:5 },
+    { category:'安装工程', name:'净化空调系统', location:'手术室', team:'暖通班组', duration:8 },
+    { category:'安装工程', name:'医疗设备安装配合', location:'各科室', team:'安装班组', duration:6 },
+    { category:'竣工验收', name:'分项验收', location:'全区域', team:'管理班组', duration:3 },
+    { category:'竣工验收', name:'院感验收', location:'全区域', team:'管理班组', duration:1 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:3 },
+    { category:'竣工验收', name:'整体竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ],
+  school: [
+    { category:'拆除工程', name:'旧装饰拆除', location:'施工区域', team:'拆除班组', duration:6 },
+    { category:'拆除工程', name:'垃圾清运', location:'全区域', team:'拆除班组', duration:2 },
+    { category:'水电改造', name:'强弱电管线敷设', location:'教室/走廊', team:'水电班组', duration:10 },
+    { category:'水电改造', name:'给排水管道安装', location:'卫生间', team:'水电班组', duration:6 },
+    { category:'水电改造', name:'多媒体线路预埋', location:'教室', team:'弱电班组', duration:5 },
+    { category:'防水工程', name:'卫生间防水施工', location:'卫生间', team:'防水班组', duration:4 },
+    { category:'防水工程', name:'闭水试验', location:'卫生间', team:'防水班组', duration:2 },
+    { category:'泥瓦工程', name:'地面找平', location:'教室/走道', team:'泥瓦班组', duration:8 },
+    { category:'泥瓦工程', name:'卫生间墙地砖铺贴', location:'卫生间', team:'泥瓦班组', duration:6 },
+    { category:'泥瓦工程', name:'走廊地砖铺贴', location:'走廊', team:'泥瓦班组', duration:5 },
+    { category:'木工工程', name:'天花吊顶', location:'教室/走廊', team:'木工班组', duration:10 },
+    { category:'木工工程', name:'教室门安装', location:'各教室', team:'木工班组', duration:5 },
+    { category:'木工工程', name:'黑板/展示墙安装', location:'教室', team:'木工班组', duration:4 },
+    { category:'油漆工程', name:'墙面基层处理', location:'全区域', team:'油漆班组', duration:8 },
+    { category:'油漆工程', name:'环保涂料施工', location:'全区域', team:'油漆班组', duration:6 },
+    { category:'安装工程', name:'照明灯具安装', location:'全区域', team:'安装班组', duration:5 },
+    { category:'安装工程', name:'多媒体设备安装', location:'教室/多功能厅', team:'弱电班组', duration:4 },
+    { category:'安装工程', name:'课桌椅及家具安装', location:'各教室', team:'安装班组', duration:4 },
+    { category:'安装工程', name:'消防设施安装', location:'全区域', team:'消防班组', duration:4 },
+    { category:'竣工验收', name:'环保检测', location:'全区域', team:'检测单位', duration:1 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:2 },
+    { category:'竣工验收', name:'竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ],
+  bank: [
+    { category:'拆除工程', name:'原装修拆除', location:'营业厅', team:'拆除班组', duration:5 },
+    { category:'拆除工程', name:'垃圾清运', location:'全区域', team:'拆除班组', duration:2 },
+    { category:'水电改造', name:'强弱电布线', location:'营业厅/办公区', team:'水电班组', duration:8 },
+    { category:'水电改造', name:'UPS电源系统安装', location:'机房', team:'水电班组', duration:3 },
+    { category:'水电改造', name:'安防线路预埋', location:'全区域', team:'弱电班组', duration:5 },
+    { category:'防水工程', name:'卫生间防水', location:'卫生间', team:'防水班组', duration:2 },
+    { category:'泥瓦工程', name:'地面找平', location:'全区域', team:'泥瓦班组', duration:5 },
+    { category:'泥瓦工程', name:'营业厅地砖铺贴', location:'营业厅', team:'泥瓦班组', duration:6 },
+    { category:'木工工程', name:'天花吊顶', location:'营业厅', team:'木工班组', duration:8 },
+    { category:'木工工程', name:'防弹玻璃隔断基础', location:'柜台区', team:'木工班组', duration:4 },
+    { category:'木工工程', name:'木饰面及柜台制作', location:'营业厅', team:'木工班组', duration:6 },
+    { category:'油漆工程', name:'墙面基层处理', location:'全区域', team:'油漆班组', duration:5 },
+    { category:'油漆工程', name:'涂料施工', location:'全区域', team:'油漆班组', duration:4 },
+    { category:'安装工程', name:'防弹玻璃安装', location:'柜台区', team:'专业班组', duration:3 },
+    { category:'安装工程', name:'金库门安装', location:'金库', team:'专业班组', duration:2 },
+    { category:'安装工程', name:'安防监控系统', location:'全区域', team:'弱电班组', duration:6 },
+    { category:'安装工程', name:'叫号系统安装', location:'营业厅', team:'弱电班组', duration:2 },
+    { category:'安装工程', name:'ATM机安装', location:'自助区', team:'安装班组', duration:2 },
+    { category:'安装工程', name:'办公家具安装', location:'办公区', team:'安装班组', duration:3 },
+    { category:'竣工验收', name:'安防验收', location:'全区域', team:'管理班组', duration:1 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:2 },
+    { category:'竣工验收', name:'竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ],
+  exhibition: [
+    { category:'拆除工程', name:'现场勘查放线', location:'全区域', team:'测量班组', duration:2 },
+    { category:'拆除工程', name:'原展陈拆除', location:'展览区', team:'拆除班组', duration:4 },
+    { category:'水电改造', name:'强弱电布线', location:'全区域', team:'水电班组', duration:6 },
+    { category:'水电改造', name:'展览灯光线路预埋', location:'天花/墙面', team:'水电班组', duration:5 },
+    { category:'泥瓦工程', name:'地面找平', location:'全区域', team:'泥瓦班组', duration:4 },
+    { category:'泥瓦工程', name:'地砖/自流平施工', location:'展览区', team:'泥瓦班组', duration:5 },
+    { category:'木工工程', name:'轻钢龙骨隔墙', location:'展区分隔', team:'木工班组', duration:8 },
+    { category:'木工工程', name:'展墙制作', location:'各展区', team:'木工班组', duration:10 },
+    { category:'木工工程', name:'展台/展柜制作', location:'各展区', team:'木工班组', duration:8 },
+    { category:'木工工程', name:'天花造型', location:'入口/主展区', team:'木工班组', duration:6 },
+    { category:'油漆工程', name:'展墙基层处理', location:'各展区', team:'油漆班组', duration:6 },
+    { category:'油漆工程', name:'展墙涂料/饰面', location:'各展区', team:'油漆班组', duration:5 },
+    { category:'安装工程', name:'展览灯光系统', location:'全区域', team:'安装班组', duration:5 },
+    { category:'安装工程', name:'多媒体设备安装', location:'各展区', team:'弱电班组', duration:4 },
+    { category:'安装工程', name:'展品陈列安装', location:'各展区', team:'安装班组', duration:4 },
+    { category:'安装工程', name:'导视系统安装', location:'全区域', team:'安装班组', duration:2 },
+    { category:'竣工验收', name:'灯光调试', location:'全区域', team:'安装班组', duration:2 },
+    { category:'竣工验收', name:'展陈效果验收', location:'全区域', team:'管理班组', duration:1 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:2 },
+    { category:'竣工验收', name:'竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ],
+  gym: [
+    { category:'拆除工程', name:'原装修拆除', location:'全区域', team:'拆除班组', duration:6 },
+    { category:'拆除工程', name:'垃圾清运', location:'全区域', team:'拆除班组', duration:2 },
+    { category:'水电改造', name:'强弱电布线', location:'全区域', team:'水电班组', duration:8 },
+    { category:'水电改造', name:'给排水系统改造', location:'淋浴间/卫生间', team:'水电班组', duration:6 },
+    { category:'防水工程', name:'淋浴间防水', location:'淋浴间', team:'防水班组', duration:3 },
+    { category:'防水工程', name:'卫生间防水', location:'卫生间', team:'防水班组', duration:2 },
+    { category:'泥瓦工程', name:'地面找平', location:'全区域', team:'泥瓦班组', duration:6 },
+    { category:'泥瓦工程', name:'淋浴间墙地砖', location:'淋浴间', team:'泥瓦班组', duration:5 },
+    { category:'木工工程', name:'天花吊顶', location:'全区域', team:'木工班组', duration:8 },
+    { category:'木工工程', name:'更衣柜制作安装', location:'更衣室', team:'木工班组', duration:6 },
+    { category:'油漆工程', name:'墙面基层处理', location:'全区域', team:'油漆班组', duration:6 },
+    { category:'油漆工程', name:'运动涂料施工', location:'运动区', team:'油漆班组', duration:4 },
+    { category:'安装工程', name:'运动地板铺设', location:'运动区', team:'安装班组', duration:5 },
+    { category:'安装工程', name:'健身器材安装', location:'器械区', team:'安装班组', duration:3 },
+    { category:'安装工程', name:'空调新风系统', location:'全区域', team:'暖通班组', duration:5 },
+    { category:'安装工程', name:'音响系统安装', location:'全区域', team:'弱电班组', duration:3 },
+    { category:'安装工程', name:'淋浴设备安装', location:'淋浴间', team:'安装班组', duration:3 },
+    { category:'竣工验收', name:'器材调试', location:'全区域', team:'安装班组', duration:2 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:2 },
+    { category:'竣工验收', name:'竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ],
+  sales_office: [
+    { category:'拆除工程', name:'原装修拆除', location:'全区域', team:'拆除班组', duration:4 },
+    { category:'拆除工程', name:'垃圾清运', location:'全区域', team:'拆除班组', duration:1 },
+    { category:'水电改造', name:'强弱电布线', location:'全区域', team:'水电班组', duration:6 },
+    { category:'水电改造', name:'灯光线路预埋', location:'天花', team:'水电班组', duration:4 },
+    { category:'防水工程', name:'卫生间防水', location:'卫生间', team:'防水班组', duration:2 },
+    { category:'泥瓦工程', name:'地面找平', location:'全区域', team:'泥瓦班组', duration:3 },
+    { category:'泥瓦工程', name:'地砖铺贴', location:'全区域', team:'泥瓦班组', duration:5 },
+    { category:'木工工程', name:'天花造型吊顶', location:'接待区/沙盘区', team:'木工班组', duration:6 },
+    { category:'木工工程', name:'隔墙及造型', location:'洽谈区', team:'木工班组', duration:5 },
+    { category:'木工工程', name:'接待台制作', location:'入口区', team:'木工班组', duration:3 },
+    { category:'油漆工程', name:'墙面基层处理', location:'全区域', team:'油漆班组', duration:4 },
+    { category:'油漆工程', name:'涂料及饰面施工', location:'全区域', team:'油漆班组', duration:4 },
+    { category:'安装工程', name:'沙盘模型安装', location:'沙盘区', team:'安装班组', duration:2 },
+    { category:'安装工程', name:'灯光系统安装', location:'全区域', team:'安装班组', duration:4 },
+    { category:'安装工程', name:'影音设备安装', location:'影音室', team:'弱电班组', duration:2 },
+    { category:'安装工程', name:'家具及软装布置', location:'全区域', team:'安装班组', duration:3 },
+    { category:'竣工验收', name:'灯光调试', location:'全区域', team:'安装班组', duration:1 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:1 },
+    { category:'竣工验收', name:'竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ],
+  factory: [
+    { category:'拆除工程', name:'现场勘查', location:'全区域', team:'测量班组', duration:2 },
+    { category:'拆除工程', name:'旧设备基础拆除', location:'生产区', team:'拆除班组', duration:8 },
+    { category:'拆除工程', name:'垃圾清运', location:'全区域', team:'拆除班组', duration:3 },
+    { category:'水电改造', name:'动力电系统安装', location:'生产区', team:'水电班组', duration:12 },
+    { category:'水电改造', name:'照明系统安装', location:'全区域', team:'水电班组', duration:8 },
+    { category:'水电改造', name:'压缩空气管路', location:'生产区', team:'安装班组', duration:6 },
+    { category:'水电改造', name:'给排水系统', location:'全区域', team:'水电班组', duration:6 },
+    { category:'防水工程', name:'卫生间防水', location:'卫生间', team:'防水班组', duration:3 },
+    { category:'防水工程', name:'屋面防水', location:'屋面', team:'防水班组', duration:5 },
+    { category:'泥瓦工程', name:'车间地面硬化', location:'生产区', team:'泥瓦班组', duration:10 },
+    { category:'泥瓦工程', name:'环氧地坪施工', location:'生产区', team:'专业班组', duration:6 },
+    { category:'泥瓦工程', name:'办公区墙地砖', location:'办公区', team:'泥瓦班组', duration:5 },
+    { category:'木工工程', name:'办公区天花吊顶', location:'办公区', team:'木工班组', duration:6 },
+    { category:'木工工程', name:'门窗安装', location:'全区域', team:'木工班组', duration:5 },
+    { category:'油漆工程', name:'墙面涂料施工', location:'办公区', team:'油漆班组', duration:6 },
+    { category:'油漆工程', name:'钢结构防火涂料', location:'生产区', team:'油漆班组', duration:5 },
+    { category:'安装工程', name:'通风除尘系统', location:'生产区', team:'暖通班组', duration:8 },
+    { category:'安装工程', name:'消防系统安装', location:'全区域', team:'消防班组', duration:6 },
+    { category:'安装工程', name:'行吊/起重设备安装', location:'生产区', team:'安装班组', duration:5 },
+    { category:'安装工程', name:'办公家具安装', location:'办公区', team:'安装班组', duration:3 },
+    { category:'竣工验收', name:'设备调试', location:'全区域', team:'各班组', duration:3 },
+    { category:'竣工验收', name:'消防验收', location:'全区域', team:'管理班组', duration:1 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:3 },
+    { category:'竣工验收', name:'竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ]
+};
+
+// ==================== 任务模板生成与解析 ====================
+
+// 根据模板生成任务列表（带日期计算）
+function generateTasksFromTemplate(type, projectId) {
+  const template = TASK_TEMPLATES[type];
+  if (!template) return [];
+
+  // 从明天开始排期
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() + 1);
+  startDate.setHours(0, 0, 0, 0);
+
+  let currentDate = new Date(startDate);
+  const tasks = [];
+
+  template.forEach((tpl, idx) => {
+    const taskStart = formatDate(currentDate);
+    const taskEnd = new Date(currentDate);
+    taskEnd.setDate(taskEnd.getDate() + (tpl.duration || 1) - 1);
+    const taskEndStr = formatDate(taskEnd);
+
+    tasks.push({
+      id: genId(),
+      project_id: projectId,
+      category: tpl.category,
+      name: tpl.name,
+      location: tpl.location || '',
+      start: taskStart,
+      end: taskEndStr,
+      team: tpl.team || '',
+      status: 'pending',
+      description: tpl.description || '',
+      remark: ''
+    });
+
+    // 下一任务从当前任务结束的下一天开始
+    currentDate = new Date(taskEnd);
+    currentDate.setDate(currentDate.getDate() + 1);
+  });
+
+  return tasks;
+}
+
+// 解析任务描述（兼容旧格式的 enrichment 数据）
+function parseTaskEnrichment(description) {
+  const result = { desc: '', equipment: '', quantity: '', materials: '', quality: '', safety: '' };
+  if (!description) return result;
+  const text = String(description);
+  // 尝试解析 JSON 格式的 enrichment
+  if (text.trim().startsWith('{')) {
+    try {
+      const parsed = JSON.parse(text);
+      return { ...result, ...parsed };
+    } catch (e) { /* 不是 JSON，当普通文本 */ }
+  }
+  // 普通文本当描述
+  result.desc = text;
+  return result;
+}
+
 function renderTaskList() {
   const proj = getActiveProject();
   const container = document.getElementById('project-task-list');
@@ -1432,7 +2042,20 @@ function renderTaskList() {
   }).join('');
 }
 
-// ==================== GANTT CHART ====================
+// ==================== GANTT CHART (Canvas 专业版) ====================
+const GANTT_COLORS = {
+  pending:    { bg: '#94a3b8', border: '#64748b', text: '#fff' },
+  in_progress:{ bg: '#3b82f6', border: '#1d4ed8', text: '#fff' },
+  completed:  { bg: '#22c55e', border: '#16a34a', text: '#fff' },
+  overdue:    { bg: '#ef4444', border: '#dc2626', text: '#fff' }
+};
+const CATEGORY_COLORS = {
+  '拆除工程': '#f97316', '水电改造': '#06b6d4', '防水工程': '#3b82f6',
+  '泥瓦工程': '#8b5cf6', '木工工程': '#d97706', '油漆工程': '#ec4899',
+  '安装工程': '#10b981', '竣工验收': '#6366f1', '其他': '#94a3b8',
+  '': '#94a3b8'
+};
+
 function setProjectView(view) {
   currentProjectView = view;
   document.getElementById('view-list-btn').classList.toggle('active', view === 'list');
@@ -1455,47 +2078,494 @@ function renderGanttChart() {
   const dated = tasks.filter(t => t.start && t.end);
   if (dated.length === 0) { container.innerHTML = '<div class="empty-state"><p>任务缺少起止日期，无法生成甘特图</p></div>'; return; }
 
+  // 数据准备
   const allStarts = dated.map(t => new Date(t.start));
   const allEnds = dated.map(t => new Date(t.end));
   const minDate = new Date(Math.min(...allStarts));
   const maxDate = new Date(Math.max(...allEnds));
+  // 扩展前后各3天留白
+  minDate.setDate(minDate.getDate() - 3);
+  maxDate.setDate(maxDate.getDate() + 3);
   const totalDays = Math.ceil((maxDate - minDate) / 86400000) + 1;
   if (totalDays <= 0) { container.innerHTML = '<div class="empty-state"><p>任务日期范围无效</p></div>'; return; }
 
-  const months = [];
-  let cur = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
-  while (cur <= maxDate) {
-    const mStart = Math.max(0, Math.ceil((cur - minDate) / 86400000));
-    const nextMonth = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
-    const mEnd = Math.min(totalDays, Math.ceil((nextMonth - minDate) / 86400000));
-    months.push({ label: `${cur.getFullYear()}年${cur.getMonth()+1}月`, start: mStart, end: mEnd });
-    cur = nextMonth;
-  }
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayOffset = Math.ceil((today - minDate) / 86400000);
+  const showTodayLine = today >= minDate && today <= maxDate;
 
-  const colWidth = Math.max(30, Math.min(60, Math.floor(800 / totalDays)));
+  // 布局参数 - 单行显示，计划条+每日标记在同一行
+  const LEFT_PANEL = 200;
+  const ROW_H = 36;        // 单行行高
+  const HEADER_H = 56;
+  const DAY_W = Math.max(24, Math.min(48, Math.floor((window.innerWidth - LEFT_PANEL - 80) / totalDays)));
+  const CHART_W = totalDays * DAY_W;
+  const CHART_H = dated.length * ROW_H;
+  const CANVAS_W = LEFT_PANEL + CHART_W;
+  const CANVAS_H = HEADER_H + CHART_H;
+  const DPR = window.devicePixelRatio || 1;
+
+  // 构建容器HTML
+  const total = tasks.length;
+  const done = tasks.filter(t => t.status === 'completed').length;
+  const inProg = tasks.filter(t => t.status === 'in_progress').length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const startStr = minDate.toISOString().split('T')[0];
+  const endStr = maxDate.toISOString().split('T')[0];
+
+  // 统计已标记施工的天数
+  let markedDays = 0;
+  Object.values(dailyTaskLogs).forEach(arr => { markedDays += arr.length; });
 
   container.innerHTML = `
-    <div class="gantt-container">
-      <div style="font-size:12px;color:var(--text2);margin-bottom:12px">
-        ${minDate.toISOString().split('T')[0]} ~ ${maxDate.toISOString().split('T')[0]} · 共${totalDays}天
+    <div class="gantt-container" id="gantt-root">
+      <div class="gantt-toolbar">
+        <div class="gantt-info">
+          <strong>📊 ${proj.name || ''} · 施工横道图</strong>
+          <span>工期：${startStr} ~ ${endStr} · ${totalDays}天</span>
+          <span>任务：${total}项 / 完成${done}项 / 进行中${inProg}项</span>
+          <span style="color:var(--primary);font-weight:600">进度 ${pct}%</span>
+        </div>
+        <div class="gantt-legend">
+          <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#3b82f6;opacity:0.5"></div>计划</div>
+          <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#22c55e;opacity:0.6"></div>实际</div>
+          <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#22c55e;border-radius:50%;width:8px;height:8px"></div>施工日</div>
+          <div class="gantt-legend-item"><div class="gantt-legend-dot" style="background:#e2e8f0;border-radius:50%;width:6px;height:6px"></div>未施工</div>
+        </div>
       </div>
-      <div class="gantt-header" style="margin-left:160px">
-        ${months.map(m => `<span style="flex:${m.end-m.start};min-width:${(m.end-m.start)*colWidth}px;border-right:1px solid var(--border);text-align:center">${m.label}</span>`).join('')}
+      <div class="gantt-canvas-wrap" id="gantt-scroll">
+        <canvas id="gantt-canvas" style="width:${CANVAS_W}px;height:${CANVAS_H}px"></canvas>
       </div>
-      ${dated.map(t => {
-        const startOff = Math.ceil((new Date(t.start) - minDate) / 86400000);
-        const duration = Math.max(1, Math.ceil((new Date(t.end) - new Date(t.start)) / 86400000) + 1);
-        return `<div class="gantt-row">
-          <div class="gantt-label" title="${t.name}">${t.name||''}</div>
-          <div class="gantt-bars" style="width:${totalDays*colWidth}px">
-            <div class="gantt-bar ${t.status}" style="left:${startOff*colWidth}px;width:${duration*colWidth}px" title="${t.start} ~ ${t.end}">
-              ${t.name} ${duration}天
-            </div>
-          </div>
-        </div>`;
-      }).join('')}
     </div>
   `;
+
+  // 延迟获取Canvas确保DOM渲染完毕
+  setTimeout(() => {
+    const canvas = document.getElementById('gantt-canvas');
+    if (!canvas) return;
+    canvas.width = CANVAS_W * DPR;
+    canvas.height = CANVAS_H * DPR;
+    canvas.style.width = CANVAS_W + 'px';
+    canvas.style.height = CANVAS_H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+
+    // ===== 绘制 =====
+    // 背景
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+    // 左侧面板背景
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, LEFT_PANEL, CANVAS_H);
+
+    // 左侧面板右边框
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(LEFT_PANEL, 0);
+    ctx.lineTo(LEFT_PANEL, CANVAS_H);
+    ctx.stroke();
+
+    // ===== 月头部 =====
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(0, 0, LEFT_PANEL, HEADER_H);
+    ctx.fillStyle = '#475569';
+    ctx.font = 'bold 12px -apple-system,"Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('施工任务', LEFT_PANEL / 2, HEADER_H / 2);
+
+    // 月列
+    const months = [];
+    let cur = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+    while (cur <= maxDate) {
+      const nextMonth = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+      const mStart = Math.max(0, Math.ceil((cur - minDate) / 86400000));
+      const mEnd = Math.min(totalDays, Math.ceil((nextMonth - minDate) / 86400000));
+      const label = `${cur.getMonth()+1}月`;
+      months.push({ label, start: mStart, end: mEnd });
+      cur = nextMonth;
+    }
+
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(LEFT_PANEL, 0, CHART_W, HEADER_H);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold 11px -apple-system,"Microsoft YaHei",sans-serif';
+    ctx.fillStyle = '#475569';
+    months.forEach(m => {
+      const x = LEFT_PANEL + m.start * DAY_W;
+      const w = (m.end - m.start) * DAY_W;
+      ctx.fillText(m.label, x + w / 2, 18);
+
+      // 日期小标 - 每天显示
+      ctx.font = '9px -apple-system,"Microsoft YaHei",sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      for (let d = m.start; d < m.end; d++) {
+        const dayNum = new Date(minDate.getTime() + d * 86400000).getDate();
+        const dx = LEFT_PANEL + d * DAY_W;
+        if (DAY_W >= 24) ctx.fillText(dayNum, dx + DAY_W / 2, 44);
+      }
+      ctx.font = 'bold 11px -apple-system,"Microsoft YaHei",sans-serif';
+      ctx.fillStyle = '#475569';
+    });
+
+    // ===== 网格线 =====
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= dated.length; i++) {
+      const y = HEADER_H + i * ROW_H;
+      ctx.beginPath(); ctx.moveTo(LEFT_PANEL, y); ctx.lineTo(CANVAS_W, y); ctx.stroke();
+    }
+    // 周竖线
+    for (let d = 0; d <= totalDays; d++) {
+      const day = new Date(minDate.getTime() + d * 86400000);
+      if (day.getDay() === 1 || d === 0) {
+        const x = LEFT_PANEL + d * DAY_W;
+        ctx.strokeStyle = d === 0 ? '#cbd5e1' : '#e2e8f0';
+        ctx.lineWidth = d === 0 ? 1 : 0.5;
+        ctx.beginPath(); ctx.moveTo(x, HEADER_H); ctx.lineTo(x, CANVAS_H); ctx.stroke();
+      }
+    }
+    // 每天竖虚线
+    ctx.strokeStyle = '#f8fafc';
+    ctx.lineWidth = 0.3;
+    ctx.setLineDash([1, 3]);
+    for (let d = 0; d <= totalDays; d++) {
+      const day = new Date(minDate.getTime() + d * 86400000);
+      if (day.getDay() !== 1 && d !== 0) {
+        const x = LEFT_PANEL + d * DAY_W;
+        ctx.beginPath(); ctx.moveTo(x, HEADER_H); ctx.lineTo(x, CANVAS_H); ctx.stroke();
+      }
+    }
+    ctx.setLineDash([]);
+
+    // ===== 今日竖线 =====
+    if (showTodayLine && todayOffset >= 0 && todayOffset < totalDays) {
+      const tx = LEFT_PANEL + todayOffset * DAY_W + DAY_W / 2;
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 3]);
+      ctx.beginPath();
+      ctx.moveTo(tx, HEADER_H);
+      ctx.lineTo(tx, CANVAS_H);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.fillStyle = '#ef4444';
+      ctx.font = 'bold 10px -apple-system,"Microsoft YaHei",sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('▼ 今天', tx, HEADER_H - 6);
+    }
+
+    // ===== 任务行（单行：蓝色计划条 + 绿色实际施工条 + 每日标记点） =====
+    dated.forEach((t, i) => {
+      const y = HEADER_H + i * ROW_H;
+      const startOff = Math.ceil((new Date(t.start) - minDate) / 86400000);
+      const duration = Math.max(1, Math.ceil((new Date(t.end) - new Date(t.start)) / 86400000) + 1);
+      const planBarX = LEFT_PANEL + startOff * DAY_W;
+      const planBarW = duration * DAY_W;
+      const planBarH = 10;        // 计划条（细）
+      const planBarY = y + 5;     // 偏上
+
+      // 斑马纹行背景
+      if (i % 2 === 0) {
+        ctx.fillStyle = '#fafbfc';
+        ctx.fillRect(0, y, CANVAS_W, ROW_H);
+      }
+
+      // 左侧任务名
+      ctx.fillStyle = '#1e293b';
+      ctx.font = '12px -apple-system,"Microsoft YaHei",sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      const label = t.name && t.name.length > 14 ? t.name.substring(0,13) + '…' : (t.name || '');
+      ctx.fillText(label, 10, y + ROW_H / 2);
+
+      // 类别色条
+      const catColor = CATEGORY_COLORS[t.category] || CATEGORY_COLORS[''];
+      ctx.fillStyle = catColor;
+      ctx.fillRect(LEFT_PANEL - 6, planBarY, 3, ROW_H - 10);
+
+      // ===== 计划工期条（蓝色，半透明） =====
+      const planAlpha = (t.status === 'completed') ? 0.25 : 0.5;
+      ctx.fillStyle = `rgba(59,130,246,${planAlpha})`;
+      roundRect(ctx, planBarX, planBarY, planBarW, planBarH, 3);
+      ctx.fill();
+      ctx.strokeStyle = t.status === 'completed' ? 'rgba(29,78,216,0.25)' : 'rgba(29,78,216,0.65)';
+      ctx.lineWidth = 0.8;
+      roundRect(ctx, planBarX, planBarY, planBarW, planBarH, 3);
+      ctx.stroke();
+
+      // ===== 实际施工条（绿色，连贯横道，根据 dailyTaskLogs） =====
+      const taskId = t._id || t.id;
+      const taskLogs = dailyTaskLogs[taskId] || [];
+      const taskLogDates = new Set(taskLogs.map(l => l.log_date));
+
+      // 收集所有在时间轴范围内的施工日期
+      const actualDates = [];
+      for (let d = 0; d < totalDays; d++) {
+        const dateStr = formatDateOffset(minDate, d);
+        if (taskLogDates.has(dateStr)) actualDates.push(d);
+      }
+
+      // 合并连续日期为绿色横道段
+      const actualBarY = planBarY + planBarH + 3;
+      const actualBarH = 9;
+      if (actualDates.length > 0) {
+        const segments = [];
+        let segStart = actualDates[0];
+        let segEnd = actualDates[0];
+        for (let k = 1; k < actualDates.length; k++) {
+          if (actualDates[k] === segEnd + 1) {
+            segEnd = actualDates[k];
+          } else {
+            segments.push({ start: segStart, end: segEnd });
+            segStart = actualDates[k];
+            segEnd = actualDates[k];
+          }
+        }
+        segments.push({ start: segStart, end: segEnd });
+
+        segments.forEach(seg => {
+          const segX = LEFT_PANEL + seg.start * DAY_W;
+          const segW = (seg.end - seg.start + 1) * DAY_W;
+          ctx.fillStyle = 'rgba(34,197,94,0.6)';
+          roundRect(ctx, segX, actualBarY, segW, actualBarH, 3);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(22,163,74,0.65)';
+          ctx.lineWidth = 0.7;
+          roundRect(ctx, segX, actualBarY, segW, actualBarH, 3);
+          ctx.stroke();
+        });
+      }
+
+      // ===== 每日施工标记（小圆点） =====
+      const dotSize = Math.max(3, Math.min(6, DAY_W * 0.28));
+      const dotY = actualBarY + actualBarH + 5;
+
+      for (let d = 0; d < totalDays; d++) {
+        const dateStr = formatDateOffset(minDate, d);
+        const dotX = LEFT_PANEL + d * DAY_W + DAY_W / 2;
+        const isLogged = taskLogDates.has(dateStr);
+        const isToday = (d === todayOffset);
+
+        if (isLogged) {
+          ctx.fillStyle = '#22c55e';
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, dotSize, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = '#e2e8f0';
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, dotSize * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+          if (isToday) {
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, dotSize + 1, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // 存储任务数据用于交互
+      t._ganttY = y;
+      t._ganttH = ROW_H;
+      t._ganttBarX = planBarX;
+      t._ganttBarW = planBarW;
+      t._ganttBarY = planBarY;
+      t._ganttBarH = planBarH;
+      t._ganttStartOff = startOff;
+      t._ganttDuration = duration;
+      t._ganttDotY = dotY;
+      t._ganttDotSize = dotSize;
+    });
+
+    // 绑定新交互
+    bindGanttInteraction(canvas, dated, CANVAS_W, CANVAS_H, minDate, totalDays, DAY_W, LEFT_PANEL, HEADER_H, ROW_H);
+  }, 50);
+}
+
+// ===== 甘特图交互（单行：点击圆点区域 toggle 标记，点击计划条编辑任务） =====
+function bindGanttInteraction(canvas, tasks, cw, ch, minDate, totalDays, DAY_W, LEFT_PANEL, HEADER_H, ROW_H) {
+  const tooltip = getOrCreateTooltip();
+  const scrollWrap = document.getElementById('gantt-scroll');
+
+  canvas.onmousemove = function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = cw / rect.width;
+    const scaleY = ch / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+
+    let hitTask = null;
+    let hitDotDate = null;
+    let inDotZone = false;
+    for (const t of tasks) {
+      if (t._ganttY === undefined) continue;
+      if (my >= t._ganttY && my < t._ganttY + t._ganttH) {
+        hitTask = t;
+        // 圆点区域：计划条下方整个区域
+        const dotZoneTop = t._ganttBarY + t._ganttBarH + 2;
+        if (my >= dotZoneTop) {
+          inDotZone = true;
+          const cellCol = Math.floor((mx - LEFT_PANEL) / DAY_W);
+          if (cellCol >= 0 && cellCol < totalDays) {
+            hitDotDate = formatDateOffset(minDate, cellCol);
+          }
+        }
+        break;
+      }
+    }
+
+    if (hitTask) {
+      const catColor = CATEGORY_COLORS[hitTask.category] || CATEGORY_COLORS[''];
+      const taskId = hitTask._id || hitTask.id;
+      const isMarked = hitDotDate && ((dailyTaskLogs[taskId] || []).some(l => l.log_date === hitDotDate));
+
+      if (hitDotDate) {
+        canvas.style.cursor = 'pointer';
+        tooltip.innerHTML = `
+          <div class="tt-name">${hitTask.name || ''}</div>
+          <div class="tt-row"><span class="tt-label">${hitDotDate}</span><span class="tt-val" style="color:${isMarked?'#22c55e':'#94a3b8'}">${isMarked ? '✅ 已施工' : '○ 点击确认施工'}</span></div>
+          <div class="tt-bar" style="background:${catColor}"></div>
+        `;
+      } else {
+        // 悬停在计划条上
+        const duration = Math.max(1, Math.ceil((new Date(hitTask.end) - new Date(hitTask.start)) / 86400000) + 1);
+        canvas.style.cursor = 'pointer';
+        tooltip.innerHTML = `
+          <div class="tt-name">${hitTask.name || ''}</div>
+          <div class="tt-row"><span class="tt-label">工期</span><span class="tt-val">${hitTask.start} ~ ${hitTask.end} (${duration}天)</span></div>
+          <div class="tt-row"><span class="tt-label">班组</span><span class="tt-val">${hitTask.team || '-'}</span></div>
+          <div class="tt-bar" style="background:${catColor}"></div>
+        `;
+      }
+      tooltip.style.display = 'block';
+      tooltip.style.left = (e.clientX + 16) + 'px';
+      tooltip.style.top = (e.clientY - 10) + 'px';
+    } else {
+      canvas.style.cursor = 'default';
+      tooltip.style.display = 'none';
+    }
+  };
+
+  canvas.onmouseleave = function() {
+    canvas.style.cursor = 'default';
+    tooltip.style.display = 'none';
+  };
+
+  canvas.onclick = async function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = cw / rect.width;
+    const scaleY = ch / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+
+    for (const t of tasks) {
+      if (t._ganttY === undefined) continue;
+      if (my >= t._ganttY && my < t._ganttY + t._ganttH) {
+        // 圆点区域（计划条下方） → 点击任意日期 toggle 标记
+        const dotZoneTop = t._ganttBarY + t._ganttBarH + 2;
+        if (my >= dotZoneTop) {
+          const cellCol = Math.floor((mx - LEFT_PANEL) / DAY_W);
+          if (cellCol >= 0 && cellCol < totalDays) {
+            const dateStr = formatDateOffset(minDate, cellCol);
+            await toggleDailyMark(t, dateStr);
+            return;
+          }
+        }
+        // 点击计划条区域 → 编辑任务
+        editTask(t._id || t.id);
+        return;
+      }
+    }
+  };
+
+  // 滚动同步tooltip隐藏
+  if (scrollWrap) {
+    scrollWrap.onscroll = () => { tooltip.style.display = 'none'; };
+  }
+}
+
+function getOrCreateTooltip() {
+  let tt = document.getElementById('gantt-tooltip');
+  if (!tt) {
+    tt = document.createElement('div');
+    tt.id = 'gantt-tooltip';
+    tt.className = 'gantt-tooltip';
+    document.body.appendChild(tt);
+  }
+  return tt;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+
+// ===== 每日施工标记 toggle（点击即确认，无需弹窗） =====
+async function toggleDailyMark(task, dateStr) {
+  const taskId = task._id || task.id;
+  const proj = getActiveProject();
+  if (!proj) { showToast('请先选择工程', 'error'); return; }
+  const pid = proj._id || proj.id;
+  const taskLogs = (dailyTaskLogs[taskId] || []).filter(l => l.log_date === dateStr);
+  const existingLog = taskLogs.length > 0 ? taskLogs[0] : null;
+
+  try {
+    if (existingLog) {
+      // 已标记 → 取消标记
+      await deleteDailyTaskLog(existingLog.id || existingLog._id);
+      showToast(`已取消 ${task.name || ''} ${dateStr} 的施工标记`);
+    } else {
+      // 未标记 → 确认施工（无弹窗，直接标记）
+      await saveDailyTaskLog({
+        project_id: pid,
+        task_id: taskId,
+        log_date: dateStr,
+        content: '',
+        worker_count: 0
+      });
+      showToast(`✅ ${task.name || ''} ${dateStr} 已确认施工`);
+    }
+    await loadDailyTaskLogs();
+    renderGanttChart();
+  } catch (e) {
+    showToast('操作失败: ' + e.message, 'error');
+  }
+}
+
+// ===== Canvas 辅助函数 =====
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function lightenColor(hex, amount) {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, (num >> 16) + 40);
+  const g = Math.min(255, ((num >> 8) & 0x00FF) + 40);
+  const b = Math.min(255, (num & 0x0000FF) + 40);
+  return `rgb(${r},${g},${b})`;
+}
+
+function formatDateOffset(baseDate, offset) {
+  const d = new Date(baseDate.getTime() + offset * 86400000);
+  return d.toISOString().split('T')[0];
 }
 
 // ==================== MODAL CLICK OUTSIDE ====================
@@ -1504,6 +2574,69 @@ document.addEventListener('click', function(e) {
     e.target.classList.remove('show');
   }
 });
+
+// ==================== SETTINGS ====================
+function loadSettings() {
+  const defaults = JSON.parse(localStorage.getItem('settings_defaults') || '{}');
+  document.getElementById('settings-default-company').value = defaults.company || '';
+  document.getElementById('settings-default-manager').value = defaults.manager || '';
+  document.getElementById('settings-default-recorder').value = defaults.recorder || '';
+}
+
+function saveSettings() {
+  const settings = {
+    company: document.getElementById('settings-default-company').value.trim(),
+    manager: document.getElementById('settings-default-manager').value.trim(),
+    recorder: document.getElementById('settings-default-recorder').value.trim()
+  };
+  localStorage.setItem('settings_defaults', JSON.stringify(settings));
+  showToast('设置已保存！新建工程时会自动填入默认值');
+}
+
+async function renderSettingsStats() {
+  const el = document.getElementById('settings-stats');
+  if (!el) return;
+  try {
+    const [projList, allLogs] = await Promise.all([
+      fetchProjects(),
+      fetch('/api/export').then(r => r.json()).then(j => j.data || {})
+    ]);
+    const totalProjects = (projList || []).length;
+    const totalLogs = (allLogs.logs || []).length;
+    let totalTasks = 0;
+    try {
+      for (const p of (projList || [])) {
+        const tasks = await fetchTasksByProject(p._id || p.id);
+        totalTasks += (tasks || []).length;
+      }
+    } catch(e) {}
+    el.innerHTML = `<div class="dash-stat">
+      <div class="dash-stat-item"><div class="val">${totalProjects}</div><div class="lbl">工程数</div></div>
+      <div class="dash-stat-item"><div class="val">${totalTasks}</div><div class="lbl">任务数</div></div>
+      <div class="dash-stat-item success"><div class="val">${totalLogs}</div><div class="lbl">日志数</div></div>
+    </div>`;
+  } catch(e) {
+    el.innerHTML = '<span style="color:var(--text3)">无法加载统计信息</span>';
+  }
+}
+
+async function resetAllData() {
+  if (!confirm('⚠️ 确定要清空全部数据吗？\n\n此操作将删除所有工程、任务和日志，且不可撤销！\n\n建议先导出备份。')) return;
+  if (!confirm('再次确认：真的要删除所有数据吗？')) return;
+  try {
+    const resp = await fetch('/api/reset', { method: 'POST' });
+    const json = await resp.json();
+    if (!json.success) throw new Error(json.error || '重置失败');
+    showToast('所有数据已清空');
+    projects = [];
+    activeProjectId = null;
+    updateProjectSelect();
+    switchPage('dashboard');
+    renderDashboard();
+  } catch(e) {
+    showToast('重置失败: ' + e.message, 'error');
+  }
+}
 
 // ==================== INIT ====================
 async function init() {
