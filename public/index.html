@@ -1310,7 +1310,7 @@ window.switchPage = async function(name) {
   const ni = document.querySelector('[data-page="'+name+'"]');
   if (ni) ni.classList.add('active');
   if (name === 'dashboard') { await loadDailyTaskLogs(); await renderDashboard(); }
-  else if (name === 'project') { switchProjectSub('project'); renderProjectList(); loadDailyTaskLogs(); loadTasks(); }
+  else if (name === 'project') { switchProjectSub('project'); renderProjectList(); await loadProjects(); await loadDailyTaskLogs(); loadTasks(); }
   else if (name === 'personnel') { switchResourceTab('teams'); }
   else if (name === 'acceptance') { loadAcceptanceList(); }
   else if (name === 'settings') { loadSettings(); renderSettingsStats(); }
