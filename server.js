@@ -14,6 +14,8 @@ app.use('/api/projects', require('./routes/projects'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/logs', require('./routes/logs'));
 app.use('/api/daily-task-logs', require('./routes/daily-task-logs'));
+app.use('/api/personnel', require('./routes/personnel'));
+app.use('/api/acceptances', require('./routes/acceptances'));
 
 // 前端 SPA fallback
 app.get('*', (req, res) => {

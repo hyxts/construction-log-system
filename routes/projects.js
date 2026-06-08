@@ -38,13 +38,13 @@ router.get('/:id', (req, res) => {
 router.post('/', (req, res) => {
   try {
     const db = getDb();
-    const { id, name, type, company, manager, recorder } = req.body;
+    const { id, name, type, company, manager, recorder, client, address, duration, start_date, end_date } = req.body;
     if (!name) return res.status(400).json({ success: false, error: '工程名称不能为空' });
     const pid = id || String(Date.now());
     db.prepare(`
-      INSERT INTO projects (id, name, type, company, manager, recorder)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(pid, name, type || 'custom', company || '', manager || '', recorder || '');
+      INSERT INTO projects (id, name, type, company, manager, recorder, client, address, duration, start_date, end_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(pid, name, type || 'custom', company || '', manager || '', recorder || '', client || '', address || '', duration || 0, start_date || '', end_date || '');
     const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(pid);
     res.json({ success: true, data: { ...project, tasks: [] } });
   } catch (e) {
@@ -56,11 +56,11 @@ router.post('/', (req, res) => {
 router.put('/:id', (req, res) => {
   try {
     const db = getDb();
-    const { name, type, company, manager, recorder } = req.body;
+    const { name, type, company, manager, recorder, client, address, duration, start_date, end_date } = req.body;
     db.prepare(`
-      UPDATE projects SET name=?, type=?, company=?, manager=?, recorder=?, updated_at=datetime('now','localtime')
+      UPDATE projects SET name=?, type=?, company=?, manager=?, recorder=?, client=?, address=?, duration=?, start_date=?, end_date=?, updated_at=datetime('now','localtime')
       WHERE id=?
-    `).run(name, type, company, manager, recorder, req.params.id);
+    `).run(name, type, company, manager, recorder, client || '', address || '', duration || 0, start_date || '', end_date || '', req.params.id);
     const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(req.params.id);
     if (!project) return res.status(404).json({ success: false, error: '工程不存在' });
     const tasks = db.prepare('SELECT * FROM tasks WHERE project_id = ? ORDER BY start, id').all(req.params.id);

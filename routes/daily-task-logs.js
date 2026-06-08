@@ -33,7 +33,7 @@ router.get('/task/:taskId', (req, res) => {
 router.post('/', (req, res) => {
   try {
     const db = getDb();
-    const { id, project_id, task_id, log_date, content, worker_count } = req.body;
+    const { id, project_id, task_id, log_date, content, weather, team, worker_count, materials, equipments } = req.body;
     if (!task_id || !log_date) {
       return res.status(400).json({ success: false, error: 'task_id 和 log_date 不能为空' });
     }
@@ -47,13 +47,13 @@ router.post('/', (req, res) => {
     if (existing) {
       lid = existing.id;
       db.prepare(
-        "UPDATE daily_task_logs SET content=?, worker_count=?, created_at=datetime('now','localtime') WHERE id=?"
-      ).run(content || '', worker_count || 0, lid);
+        "UPDATE daily_task_logs SET content=?, weather=?, team=?, worker_count=?, materials=?, equipments=?, created_at=datetime('now','localtime') WHERE id=?"
+      ).run(content || '', weather || '', team || '', worker_count || 0, materials || '', equipments || '', lid);
     } else {
       lid = id || String(Date.now()) + Math.random().toString(36).substr(2, 9);
       db.prepare(
-        'INSERT INTO daily_task_logs (id, project_id, task_id, log_date, content, worker_count) VALUES (?, ?, ?, ?, ?, ?)'
-      ).run(lid, project_id || '', task_id, log_date, content || '', worker_count || 0);
+        'INSERT INTO daily_task_logs (id, project_id, task_id, log_date, content, weather, team, worker_count, materials, equipments) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).run(lid, project_id || '', task_id, log_date, content || '', weather || '', team || '', worker_count || 0, materials || '', equipments || '');
     }
     const log = db.prepare('SELECT * FROM daily_task_logs WHERE id = ?').get(lid);
     res.json({ success: true, data: log });
