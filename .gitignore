@@ -1,5 +1,16 @@
-node_modules/
+# SQLite 数据库（含用户数据，不应提交）
+*.db
+
+# 日志文件
+*.log
+
+# Python
 __pycache__/
 *.pyc
-.env
-data.db
+*.pyo
+.venv/
+venv/
+
+# 系统文件
+.DS_Store
+Thumbs.db
