@@ -34,6 +34,8 @@ def init_db():
             manager TEXT DEFAULT '',
             recorder TEXT DEFAULT '',
             duration INTEGER DEFAULT 0,
+            start_date TEXT DEFAULT '',
+            end_date TEXT DEFAULT '',
             created_at TEXT DEFAULT (datetime('now','localtime')),
             updated_at TEXT DEFAULT (datetime('now','localtime'))
         );
@@ -47,9 +49,17 @@ def init_db():
             start TEXT DEFAULT '',
             end TEXT DEFAULT '',
             team TEXT DEFAULT '',
+            workers INTEGER DEFAULT 0,
             status TEXT DEFAULT 'pending',
             description TEXT DEFAULT '',
             remark TEXT DEFAULT '',
+            is_rework INTEGER DEFAULT 0,
+            rework_reason TEXT DEFAULT '',
+            rework_source_task_id TEXT DEFAULT '',
+            demolish_qty REAL DEFAULT 0,
+            demolish_unit TEXT DEFAULT '',
+            rebuild_desc TEXT DEFAULT '',
+            inspection_status TEXT DEFAULT 'pending',
             created_at TEXT DEFAULT (datetime('now','localtime')),
             updated_at TEXT DEFAULT (datetime('now','localtime')),
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
@@ -71,6 +81,9 @@ def init_db():
             tech_quality_safety TEXT DEFAULT '',
             manager TEXT DEFAULT '',
             recorder TEXT DEFAULT '',
+            materials TEXT DEFAULT '',
+            equipments TEXT DEFAULT '',
+            daily_task_log_ids TEXT DEFAULT '',
             created_at TEXT DEFAULT (datetime('now','localtime')),
             updated_at TEXT DEFAULT (datetime('now','localtime')),
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
@@ -82,10 +95,81 @@ def init_db():
             task_id TEXT NOT NULL,
             log_date TEXT DEFAULT '',
             content TEXT DEFAULT '',
+            weather TEXT DEFAULT '',
+            team TEXT DEFAULT '',
             worker_count INTEGER DEFAULT 0,
+            materials TEXT DEFAULT '',
+            equipments TEXT DEFAULT '',
             created_at TEXT DEFAULT (datetime('now','localtime')),
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
             FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS teams (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            name TEXT NOT NULL DEFAULT '',
+            leader TEXT DEFAULT '',
+            phone TEXT DEFAULT '',
+            specialty TEXT DEFAULT '',
+            worker_count INTEGER DEFAULT 0,
+            remark TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            updated_at TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS materials (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            name TEXT NOT NULL DEFAULT '',
+            spec TEXT DEFAULT '',
+            unit TEXT DEFAULT '',
+            quantity REAL DEFAULT 0,
+            min_quantity REAL DEFAULT 0,
+            supplier TEXT DEFAULT '',
+            status TEXT DEFAULT 'in_stock',
+            remark TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            updated_at TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS equipments (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            name TEXT NOT NULL DEFAULT '',
+            model TEXT DEFAULT '',
+            count INTEGER DEFAULT 1,
+            status TEXT DEFAULT 'normal',
+            remark TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            updated_at TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS acceptances (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            task_id TEXT DEFAULT '',
+            rework_task_id TEXT DEFAULT '',
+            acceptance_type TEXT DEFAULT 'normal',
+            name TEXT NOT NULL DEFAULT '',
+            location TEXT DEFAULT '',
+            unit TEXT DEFAULT '',
+            basis TEXT DEFAULT '',
+            design_qty REAL DEFAULT 0,
+            actual_qty REAL DEFAULT 0,
+            unit_price REAL DEFAULT 0,
+            total_price REAL DEFAULT 0,
+            calc_formula TEXT DEFAULT '',
+            quantity_type TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            date TEXT DEFAULT '',
+            remark TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            updated_at TEXT DEFAULT (datetime('now','localtime')),
+            FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
         );
 
         CREATE INDEX IF NOT EXISTS idx_tasks_project ON tasks(project_id);
@@ -94,12 +178,46 @@ def init_db():
         CREATE INDEX IF NOT EXISTS idx_daily_task_logs_project ON daily_task_logs(project_id);
         CREATE INDEX IF NOT EXISTS idx_daily_task_logs_task ON daily_task_logs(task_id);
         CREATE INDEX IF NOT EXISTS idx_daily_task_logs_date ON daily_task_logs(log_date);
+        CREATE INDEX IF NOT EXISTS idx_teams_project ON teams(project_id);
+        CREATE INDEX IF NOT EXISTS idx_materials_project ON materials(project_id);
+        CREATE INDEX IF NOT EXISTS idx_equipments_project ON equipments(project_id);
+        CREATE INDEX IF NOT EXISTS idx_acceptances_project ON acceptances(project_id);
     ''')
-    # Migration: add duration column if not exists
-    try:
-        conn.execute("ALTER TABLE projects ADD COLUMN duration INTEGER DEFAULT 0")
-    except:
-        pass
+    # Migration: add missing columns (silently skip if exist)
+    for table, col, col_def in [
+        ('projects', 'duration', 'INTEGER DEFAULT 0'),
+        ('projects', 'start_date', "TEXT DEFAULT ''"),
+        ('projects', 'end_date', "TEXT DEFAULT ''"),
+        ('tasks', 'workers', 'INTEGER DEFAULT 0'),
+        ('tasks', 'is_rework', 'INTEGER DEFAULT 0'),
+        ('tasks', 'rework_reason', "TEXT DEFAULT ''"),
+        ('tasks', 'rework_source_task_id', "TEXT DEFAULT ''"),
+        ('tasks', 'demolish_qty', 'REAL DEFAULT 0'),
+        ('tasks', 'demolish_unit', "TEXT DEFAULT ''"),
+        ('tasks', 'rebuild_desc', "TEXT DEFAULT ''"),
+        ('tasks', 'inspection_status', "TEXT DEFAULT 'pending'"),
+        ('logs', 'materials', "TEXT DEFAULT ''"),
+        ('logs', 'equipments', "TEXT DEFAULT ''"),
+        ('logs', 'daily_task_log_ids', "TEXT DEFAULT ''"),
+        ('daily_task_logs', 'weather', "TEXT DEFAULT ''"),
+        ('daily_task_logs', 'team', "TEXT DEFAULT ''"),
+        ('daily_task_logs', 'worker_count', 'INTEGER DEFAULT 0'),
+        ('daily_task_logs', 'materials', "TEXT DEFAULT ''"),
+        ('daily_task_logs', 'equipments', "TEXT DEFAULT ''"),
+        ('acceptances', 'basis', "TEXT DEFAULT ''"),
+        ('acceptances', 'calc_formula', "TEXT DEFAULT ''"),
+        ('acceptances', 'task_id', "TEXT DEFAULT ''"),
+        ('acceptances', 'rework_task_id', "TEXT DEFAULT ''"),
+        ('acceptances', 'acceptance_type', "TEXT DEFAULT 'normal'"),
+        ('acceptances', 'quantity_type', "TEXT DEFAULT ''"),
+        ('acceptances', 'unit_price', 'REAL DEFAULT 0'),
+        ('acceptances', 'total_price', 'REAL DEFAULT 0'),
+        ('materials', 'min_quantity', 'REAL DEFAULT 0'),
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_def}")
+        except:
+            pass
     conn.commit()
     conn.close()
 
@@ -148,10 +266,10 @@ def create_project():
     pid = data.get('id') or str(int(datetime.now().timestamp() * 1000))
     conn = get_db()
     conn.execute(
-        'INSERT INTO projects (id, name, type, company, client, address, manager, recorder, duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO projects (id, name, type, company, client, address, manager, recorder, duration, start_date, end_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         (pid, name, data.get('type', 'custom'), data.get('company', ''),
          data.get('client', ''), data.get('address', ''), data.get('manager', ''), data.get('recorder', ''),
-         data.get('duration', 0))
+         data.get('duration', 0), data.get('start_date', ''), data.get('end_date', ''))
     )
     conn.commit()
     project = dict_from_row(conn.execute('SELECT * FROM projects WHERE id = ?', (pid,)).fetchone())
@@ -164,10 +282,10 @@ def update_project(pid):
     data = request.get_json()
     conn = get_db()
     conn.execute(
-        "UPDATE projects SET name=?, type=?, company=?, client=?, address=?, manager=?, recorder=?, duration=?, updated_at=datetime('now','localtime') WHERE id=?",
+        "UPDATE projects SET name=?, type=?, company=?, client=?, address=?, manager=?, recorder=?, duration=?, start_date=?, end_date=?, updated_at=datetime('now','localtime') WHERE id=?",
         (data.get('name', ''), data.get('type', 'custom'), data.get('company', ''),
          data.get('client', ''), data.get('address', ''), data.get('manager', ''), data.get('recorder', ''),
-         data.get('duration', 0), pid)
+         data.get('duration', 0), data.get('start_date', ''), data.get('end_date', ''), pid)
     )
     conn.commit()
     project = dict_from_row(conn.execute('SELECT * FROM projects WHERE id = ?', (pid,)).fetchone())
@@ -186,6 +304,10 @@ def delete_project(pid):
     conn = get_db()
     conn.execute('DELETE FROM daily_task_logs WHERE project_id = ?', (pid,))
     conn.execute('DELETE FROM logs WHERE project_id = ?', (pid,))
+    conn.execute('DELETE FROM acceptances WHERE project_id = ?', (pid,))
+    conn.execute('DELETE FROM materials WHERE project_id = ?', (pid,))
+    conn.execute('DELETE FROM equipments WHERE project_id = ?', (pid,))
+    conn.execute('DELETE FROM teams WHERE project_id = ?', (pid,))
     conn.execute('DELETE FROM tasks WHERE project_id = ?', (pid,))
     conn.execute('DELETE FROM projects WHERE id = ?', (pid,))
     conn.commit()
@@ -212,12 +334,16 @@ def create_task():
     tid = data.get('id') or str(int(datetime.now().timestamp() * 1000))
     conn = get_db()
     conn.execute(
-        '''INSERT INTO tasks (id, project_id, category, name, location, start, end, team, status, description, remark)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        '''INSERT INTO tasks (id, project_id, category, name, location, start, end, team, workers, status, description, remark, is_rework, rework_reason, rework_source_task_id, demolish_qty, demolish_unit, rebuild_desc, inspection_status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         (tid, project_id, data.get('category', ''), data.get('name', ''),
          data.get('location', ''), data.get('start', ''), data.get('end', ''),
-         data.get('team', ''), data.get('status', 'pending'),
-         data.get('description', ''), data.get('remark', ''))
+         data.get('team', ''), data.get('workers', 0), data.get('status', 'pending'),
+         data.get('description', ''), data.get('remark', ''),
+         data.get('is_rework', 0), data.get('rework_reason', ''),
+         data.get('rework_source_task_id', ''), data.get('demolish_qty', 0),
+         data.get('demolish_unit', ''), data.get('rebuild_desc', ''),
+         data.get('inspection_status', 'pending'))
     )
     conn.commit()
     task = dict_from_row(conn.execute('SELECT * FROM tasks WHERE id = ?', (tid,)).fetchone())
@@ -229,10 +355,15 @@ def update_task(tid):
     data = request.get_json()
     conn = get_db()
     conn.execute(
-        "UPDATE tasks SET category=?, name=?, location=?, start=?, end=?, team=?, status=?, description=?, remark=?, updated_at=datetime('now','localtime') WHERE id=?",
+        "UPDATE tasks SET category=?, name=?, location=?, start=?, end=?, team=?, workers=?, status=?, description=?, remark=?, is_rework=?, rework_reason=?, rework_source_task_id=?, demolish_qty=?, demolish_unit=?, rebuild_desc=?, inspection_status=?, updated_at=datetime('now','localtime') WHERE id=?",
         (data.get('category', ''), data.get('name', ''), data.get('location', ''),
          data.get('start', ''), data.get('end', ''), data.get('team', ''),
-         data.get('status', 'pending'), data.get('description', ''), data.get('remark', ''), tid)
+         data.get('workers', 0), data.get('status', 'pending'),
+         data.get('description', ''), data.get('remark', ''),
+         data.get('is_rework', 0), data.get('rework_reason', ''),
+         data.get('rework_source_task_id', ''), data.get('demolish_qty', 0),
+         data.get('demolish_unit', ''), data.get('rebuild_desc', ''),
+         data.get('inspection_status', 'pending'), tid)
     )
     conn.commit()
     task = dict_from_row(conn.execute('SELECT * FROM tasks WHERE id = ?', (tid,)).fetchone())
@@ -253,8 +384,9 @@ def delete_task(tid):
 def update_task_status(tid):
     data = request.get_json()
     status = data.get('status', 'pending')
+    inspection_status = data.get('inspection_status', 'pending')
     conn = get_db()
-    conn.execute("UPDATE tasks SET status=?, updated_at=datetime('now','localtime') WHERE id=?", (status, tid))
+    conn.execute("UPDATE tasks SET status=?, inspection_status=?, updated_at=datetime('now','localtime') WHERE id=?", (status, inspection_status, tid))
     conn.commit()
     task = dict_from_row(conn.execute('SELECT * FROM tasks WHERE id = ?', (tid,)).fetchone())
     conn.close()
@@ -271,12 +403,16 @@ def batch_create_tasks():
     for t in tasks:
         tid = t.get('id') or str(int(datetime.now().timestamp() * 1000)) + str(count)
         conn.execute(
-            '''INSERT INTO tasks (id, project_id, category, name, location, start, end, team, status, description, remark)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            '''INSERT INTO tasks (id, project_id, category, name, location, start, end, team, workers, status, description, remark, is_rework, rework_reason, rework_source_task_id, demolish_qty, demolish_unit, rebuild_desc, inspection_status)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             (tid, t.get('project_id', ''), t.get('category', ''), t.get('name', ''),
              t.get('location', ''), t.get('start', ''), t.get('end', ''),
-             t.get('team', ''), t.get('status', 'pending'),
-             t.get('description', ''), t.get('remark', ''))
+             t.get('team', ''), t.get('workers', 0), t.get('status', 'pending'),
+             t.get('description', ''), t.get('remark', ''),
+             t.get('is_rework', 0), t.get('rework_reason', ''),
+             t.get('rework_source_task_id', ''), t.get('demolish_qty', 0),
+             t.get('demolish_unit', ''), t.get('rebuild_desc', ''),
+             t.get('inspection_status', 'pending'))
         )
         count += 1
     conn.commit()
@@ -314,14 +450,17 @@ def create_log():
     conn.execute(
         '''INSERT INTO logs (id, project_id, project_name, unit, date, weather,
             temp_high, temp_low, wind, location, incident,
-            production_record, tech_quality_safety, manager, recorder)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            production_record, tech_quality_safety, manager, recorder, materials, equipments, daily_task_log_ids)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         (lid, project_id, data.get('project_name', ''), data.get('unit', ''),
          data.get('date', ''), data.get('weather', ''),
          data.get('temp_high', ''), data.get('temp_low', ''), data.get('wind', ''),
          data.get('location', ''), data.get('incident', ''),
          data.get('production_record', ''), data.get('tech_quality_safety', ''),
-         data.get('manager', ''), data.get('recorder', ''))
+         data.get('manager', ''), data.get('recorder', ''),
+         json.dumps(data.get('materials', []), ensure_ascii=False) if data.get('materials') else '',
+         json.dumps(data.get('equipments', []), ensure_ascii=False) if data.get('equipments') else '',
+         data.get('daily_task_log_ids', ''))
     )
     conn.commit()
     log = dict_from_row(conn.execute('SELECT * FROM logs WHERE id = ?', (lid,)).fetchone())
@@ -333,12 +472,15 @@ def update_log(lid):
     data = request.get_json()
     conn = get_db()
     conn.execute(
-        "UPDATE logs SET project_name=?, unit=?, date=?, weather=?, temp_high=?, temp_low=?, wind=?, location=?, incident=?, production_record=?, tech_quality_safety=?, manager=?, recorder=?, updated_at=datetime('now','localtime') WHERE id=?",
+        "UPDATE logs SET project_name=?, unit=?, date=?, weather=?, temp_high=?, temp_low=?, wind=?, location=?, incident=?, production_record=?, tech_quality_safety=?, manager=?, recorder=?, materials=?, equipments=?, daily_task_log_ids=?, updated_at=datetime('now','localtime') WHERE id=?",
         (data.get('project_name', ''), data.get('unit', ''), data.get('date', ''),
          data.get('weather', ''), data.get('temp_high', ''), data.get('temp_low', ''),
          data.get('wind', ''), data.get('location', ''), data.get('incident', ''),
          data.get('production_record', ''), data.get('tech_quality_safety', ''),
-         data.get('manager', ''), data.get('recorder', ''), lid)
+         data.get('manager', ''), data.get('recorder', ''),
+         json.dumps(data.get('materials', []), ensure_ascii=False) if data.get('materials') else '',
+         json.dumps(data.get('equipments', []), ensure_ascii=False) if data.get('equipments') else '',
+         data.get('daily_task_log_ids', ''), lid)
     )
     conn.commit()
     log = dict_from_row(conn.execute('SELECT * FROM logs WHERE id = ?', (lid,)).fetchone())
@@ -396,8 +538,12 @@ def create_daily_task_log():
     if existing:
         # 更新
         conn.execute(
-            "UPDATE daily_task_logs SET content=?, worker_count=?, created_at=datetime('now','localtime') WHERE id=?",
-            (data.get('content', ''), data.get('worker_count', 0), existing['id'])
+            "UPDATE daily_task_logs SET content=?, weather=?, team=?, worker_count=?, materials=?, equipments=?, created_at=datetime('now','localtime') WHERE id=?",
+            (data.get('content', ''), data.get('weather', ''), data.get('team', ''),
+             data.get('worker_count', 0),
+             json.dumps(data.get('materials', []), ensure_ascii=False) if data.get('materials') else '',
+             json.dumps(data.get('equipments', []), ensure_ascii=False) if data.get('equipments') else '',
+             existing['id'])
         )
         lid = existing['id']
     else:
@@ -405,9 +551,12 @@ def create_daily_task_log():
         import uuid
         lid = str(uuid.uuid4())
         conn.execute(
-            '''INSERT INTO daily_task_logs (id, project_id, task_id, log_date, content, worker_count)
-               VALUES (?, ?, ?, ?, ?, ?)''',
-            (lid, project_id, task_id, log_date, data.get('content', ''), data.get('worker_count', 0))
+            '''INSERT INTO daily_task_logs (id, project_id, task_id, log_date, content, weather, team, worker_count, materials, equipments)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (lid, project_id, task_id, log_date, data.get('content', ''),
+             data.get('weather', ''), data.get('team', ''), data.get('worker_count', 0),
+             json.dumps(data.get('materials', []), ensure_ascii=False) if data.get('materials') else '',
+             json.dumps(data.get('equipments', []), ensure_ascii=False) if data.get('equipments') else '')
         )
     conn.commit()
     log = dict_from_row(conn.execute('SELECT * FROM daily_task_logs WHERE id = ?', (lid,)).fetchone())
@@ -419,6 +568,172 @@ def delete_daily_task_log(lid):
     """删除每日任务施工日志"""
     conn = get_db()
     conn.execute('DELETE FROM daily_task_logs WHERE id = ?', (lid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+# ==================== 人员/班组/材料/设备 管理 (personnel) ====================
+
+@app.route('/api/personnel/<resource_type>/project/<project_id>', methods=['GET'])
+def get_personnel(resource_type, project_id):
+    """获取班组/材料/设备列表"""
+    table_map = {'teams': 'teams', 'materials': 'materials', 'equipments': 'equipments'}
+    table = table_map.get(resource_type)
+    if not table:
+        return jsonify({'success': False, 'error': '无效资源类型'}), 400
+    conn = get_db()
+    items = dicts_from_rows(
+        conn.execute(f'SELECT * FROM {table} WHERE project_id = ? ORDER BY created_at DESC', (project_id,)).fetchall()
+    )
+    conn.close()
+    return jsonify({'success': True, 'data': items})
+
+@app.route('/api/personnel/<resource_type>', methods=['POST'])
+def create_personnel(resource_type):
+    """创建班组/材料/设备"""
+    table_map = {'teams': 'teams', 'materials': 'materials', 'equipments': 'equipments'}
+    table = table_map.get(resource_type)
+    if not table:
+        return jsonify({'success': False, 'error': '无效资源类型'}), 400
+    data = request.get_json()
+    project_id = data.get('project_id', '')
+    if not project_id:
+        return jsonify({'success': False, 'error': 'project_id 不能为空'}), 400
+    rid = data.get('id') or str(int(datetime.now().timestamp() * 1000))
+    conn = get_db()
+    if table == 'teams':
+        conn.execute(
+            f'INSERT INTO {table} (id, project_id, name, leader, phone, specialty, worker_count, remark) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            (rid, project_id, data.get('name', ''), data.get('leader', ''), data.get('phone', ''),
+             data.get('specialty', ''), data.get('worker_count', 0), data.get('remark', ''))
+        )
+    elif table == 'materials':
+        conn.execute(
+            f'INSERT INTO {table} (id, project_id, name, spec, unit, quantity, min_quantity, supplier, status, remark) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (rid, project_id, data.get('name', ''), data.get('spec', ''), data.get('unit', ''),
+             data.get('quantity', 0), data.get('min_quantity', 0), data.get('supplier', ''),
+             data.get('status', 'in_stock'), data.get('remark', ''))
+        )
+    elif table == 'equipments':
+        conn.execute(
+            f'INSERT INTO {table} (id, project_id, name, model, count, status, remark) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (rid, project_id, data.get('name', ''), data.get('model', ''),
+             data.get('count', 1), data.get('status', 'normal'), data.get('remark', ''))
+        )
+    conn.commit()
+    item = dict_from_row(conn.execute(f'SELECT * FROM {table} WHERE id = ?', (rid,)).fetchone())
+    conn.close()
+    return jsonify({'success': True, 'data': item})
+
+@app.route('/api/personnel/<resource_type>/<rid>', methods=['PUT'])
+def update_personnel(resource_type, rid):
+    """更新班组/材料/设备"""
+    table_map = {'teams': 'teams', 'materials': 'materials', 'equipments': 'equipments'}
+    table = table_map.get(resource_type)
+    if not table:
+        return jsonify({'success': False, 'error': '无效资源类型'}), 400
+    data = request.get_json()
+    conn = get_db()
+    if table == 'teams':
+        conn.execute(
+            f"UPDATE {table} SET name=?, leader=?, phone=?, specialty=?, worker_count=?, remark=?, updated_at=datetime('now','localtime') WHERE id=?",
+            (data.get('name', ''), data.get('leader', ''), data.get('phone', ''),
+             data.get('specialty', ''), data.get('worker_count', 0), data.get('remark', ''), rid)
+        )
+    elif table == 'materials':
+        conn.execute(
+            f"UPDATE {table} SET name=?, spec=?, unit=?, quantity=?, min_quantity=?, supplier=?, status=?, remark=?, updated_at=datetime('now','localtime') WHERE id=?",
+            (data.get('name', ''), data.get('spec', ''), data.get('unit', ''),
+             data.get('quantity', 0), data.get('min_quantity', 0), data.get('supplier', ''),
+             data.get('status', 'in_stock'), data.get('remark', ''), rid)
+        )
+    elif table == 'equipments':
+        conn.execute(
+            f"UPDATE {table} SET name=?, model=?, count=?, status=?, remark=?, updated_at=datetime('now','localtime') WHERE id=?",
+            (data.get('name', ''), data.get('model', ''), data.get('count', 1),
+             data.get('status', 'normal'), data.get('remark', ''), rid)
+        )
+    conn.commit()
+    item = dict_from_row(conn.execute(f'SELECT * FROM {table} WHERE id = ?', (rid,)).fetchone())
+    conn.close()
+    return jsonify({'success': True, 'data': item})
+
+@app.route('/api/personnel/<resource_type>/<rid>', methods=['DELETE'])
+def delete_personnel(resource_type, rid):
+    """删除班组/材料/设备"""
+    table_map = {'teams': 'teams', 'materials': 'materials', 'equipments': 'equipments'}
+    table = table_map.get(resource_type)
+    if not table:
+        return jsonify({'success': False, 'error': '无效资源类型'}), 400
+    conn = get_db()
+    conn.execute(f'DELETE FROM {table} WHERE id = ?', (rid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+# ==================== 收方管理 (acceptances) ====================
+
+@app.route('/api/acceptances/project/<project_id>', methods=['GET'])
+def get_acceptances(project_id):
+    """获取某工程所有收方记录"""
+    conn = get_db()
+    items = dicts_from_rows(
+        conn.execute('SELECT * FROM acceptances WHERE project_id = ? ORDER BY date DESC, created_at DESC', (project_id,)).fetchall()
+    )
+    conn.close()
+    return jsonify({'success': True, 'data': items})
+
+@app.route('/api/acceptances', methods=['POST'])
+def create_acceptance():
+    """创建收方记录"""
+    data = request.get_json()
+    project_id = data.get('project_id', '')
+    if not project_id:
+        return jsonify({'success': False, 'error': 'project_id 不能为空'}), 400
+    aid = data.get('id') or str(int(datetime.now().timestamp() * 1000))
+    conn = get_db()
+    conn.execute(
+        '''INSERT INTO acceptances (id, project_id, task_id, rework_task_id, acceptance_type,
+            name, location, unit, basis, design_qty, actual_qty, unit_price, total_price,
+            calc_formula, quantity_type, status, date, remark)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        (aid, project_id, data.get('task_id', ''), data.get('rework_task_id', ''),
+         data.get('acceptance_type', 'normal'), data.get('name', ''),
+         data.get('location', ''), data.get('unit', ''), data.get('basis', ''),
+         data.get('design_qty', 0), data.get('actual_qty', 0),
+         data.get('unit_price', 0), data.get('total_price', 0),
+         data.get('calc_formula', ''), data.get('quantity_type', ''),
+         data.get('status', 'pending'), data.get('date', ''), data.get('remark', ''))
+    )
+    conn.commit()
+    item = dict_from_row(conn.execute('SELECT * FROM acceptances WHERE id = ?', (aid,)).fetchone())
+    conn.close()
+    return jsonify({'success': True, 'data': item})
+
+@app.route('/api/acceptances/<aid>', methods=['PUT'])
+def update_acceptance(aid):
+    """更新收方记录"""
+    data = request.get_json()
+    conn = get_db()
+    conn.execute(
+        "UPDATE acceptances SET task_id=?, rework_task_id=?, acceptance_type=?, name=?, location=?, unit=?, basis=?, design_qty=?, actual_qty=?, unit_price=?, total_price=?, calc_formula=?, quantity_type=?, status=?, date=?, remark=?, updated_at=datetime('now','localtime') WHERE id=?",
+        (data.get('task_id', ''), data.get('rework_task_id', ''), data.get('acceptance_type', 'normal'),
+         data.get('name', ''), data.get('location', ''), data.get('unit', ''),
+         data.get('basis', ''), data.get('design_qty', 0), data.get('actual_qty', 0),
+         data.get('unit_price', 0), data.get('total_price', 0),
+         data.get('calc_formula', ''), data.get('quantity_type', ''),
+         data.get('status', 'pending'), data.get('date', ''), data.get('remark', ''), aid)
+    )
+    conn.commit()
+    item = dict_from_row(conn.execute('SELECT * FROM acceptances WHERE id = ?', (aid,)).fetchone())
+    conn.close()
+    return jsonify({'success': True, 'data': item})
+
+@app.route('/api/acceptances/<aid>', methods=['DELETE'])
+def delete_acceptance(aid):
+    """删除收方记录"""
+    conn = get_db()
+    conn.execute('DELETE FROM acceptances WHERE id = ?', (aid,))
     conn.commit()
     conn.close()
     return jsonify({'success': True})
@@ -506,6 +821,10 @@ def reset_data():
     conn = get_db()
     conn.execute('DELETE FROM daily_task_logs')
     conn.execute('DELETE FROM logs')
+    conn.execute('DELETE FROM acceptances')
+    conn.execute('DELETE FROM materials')
+    conn.execute('DELETE FROM equipments')
+    conn.execute('DELETE FROM teams')
     conn.execute('DELETE FROM tasks')
     conn.execute('DELETE FROM projects')
     conn.commit()
