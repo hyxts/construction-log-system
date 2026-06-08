@@ -866,7 +866,9 @@ def static_files(path):
 
 # ==================== 启动 ====================
 
+# 应用导入时自动初始化数据库
+init_db()
+
 if __name__ == '__main__':
-    init_db()
     print('施工日志系统已启动: http://localhost:5000')
     app.run(host='0.0.0.0', port=5000, debug=True)
