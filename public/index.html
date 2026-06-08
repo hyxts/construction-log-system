@@ -2792,13 +2792,25 @@ async function saveDashProjectEdit(e) {
 
 function renderProjectList() {
   const atp = document.getElementById('active-project-tasks');
-  if (atp) atp.style.display = projects.length ? 'block' : 'none';
+  const container = document.getElementById('project-subpage-list');
+  if (!container) return;
+
   updateTaskImportHint();
+
   if (!projects.length) {
-    const container = document.getElementById('project-subpage-list');
-    if (container) container.innerHTML = `<div class="card"><div class="empty-state"><p>还没有创建任何工程</p><button class="btn btn-primary" style="margin-top:12px" onclick="showProjectEdit(null)">创建第一个工程</button></div></div>`;
+    // 没有工程：显示空状态提示，隐藏任务区域
+    if (atp) atp.style.display = 'none';
+    // 检查是否已有空状态元素，避免重复创建
+    if (!document.getElementById('empty-projects-msg')) {
+      container.insertAdjacentHTML('beforeend', `<div id="empty-projects-msg" class="card"><div class="empty-state"><p>还没有创建任何工程</p><button class="btn btn-primary" style="margin-top:12px" onclick="showProjectEdit(null)">创建第一个工程</button></div></div>`);
+    }
     return;
   }
+
+  // 有工程：移除空状态提示，显示任务区域
+  const emptyMsg = document.getElementById('empty-projects-msg');
+  if (emptyMsg) emptyMsg.remove();
+  if (atp) atp.style.display = 'block';
 }
 
 // ==================== TASK MANAGEMENT ====================
