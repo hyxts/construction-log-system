@@ -6,19 +6,42 @@
 import os
 import json
 import sqlite3
+import traceback
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory
 
 app = Flask(__name__, static_folder='public', static_url_path='')
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB 限制
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.db')
+
+# ==================== 全局错误处理 ====================
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """全局异常处理，返回 JSON 格式错误"""
+    app.logger.error(f"Unhandled exception: {str(e)}\n{traceback.format_exc()}")
+    return jsonify({'success': False, 'error': f'服务器错误: {str(e)}'}), 500
+
+@app.errorhandler(400)
+def handle_400(e):
+    return jsonify({'success': False, 'error': '请求参数错误'}), 400
+
+@app.errorhandler(404)
+def handle_404(e):
+    return jsonify({'success': False, 'error': '资源不存在'}), 404
+
+@app.errorhandler(405)
+def handle_405(e):
+    return jsonify({'success': False, 'error': '请求方法不允许'}), 405
 
 # ==================== 数据库工具 ====================
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
     return conn
 
 def init_db():
@@ -259,7 +282,7 @@ def get_project(pid):
 
 @app.route('/api/projects', methods=['POST'])
 def create_project():
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     name = data.get('name', '')
     if not name:
         return jsonify({'success': False, 'error': '工程名称不能为空'}), 400
@@ -279,7 +302,7 @@ def create_project():
 
 @app.route('/api/projects/<pid>', methods=['PUT'])
 def update_project(pid):
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     conn = get_db()
     conn.execute(
         "UPDATE projects SET name=?, type=?, company=?, client=?, address=?, manager=?, recorder=?, duration=?, start_date=?, end_date=?, updated_at=datetime('now','localtime') WHERE id=?",
@@ -327,7 +350,7 @@ def get_tasks(project_id):
 
 @app.route('/api/tasks', methods=['POST'])
 def create_task():
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     project_id = data.get('project_id', '')
     if not project_id:
         return jsonify({'success': False, 'error': 'project_id 不能为空'}), 400
@@ -352,7 +375,7 @@ def create_task():
 
 @app.route('/api/tasks/<tid>', methods=['PUT'])
 def update_task(tid):
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     conn = get_db()
     conn.execute(
         "UPDATE tasks SET category=?, name=?, location=?, start=?, end=?, team=?, workers=?, status=?, description=?, remark=?, is_rework=?, rework_reason=?, rework_source_task_id=?, demolish_qty=?, demolish_unit=?, rebuild_desc=?, inspection_status=?, updated_at=datetime('now','localtime') WHERE id=?",
@@ -382,7 +405,7 @@ def delete_task(tid):
 
 @app.route('/api/tasks/<tid>/status', methods=['PATCH'])
 def update_task_status(tid):
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     status = data.get('status', 'pending')
     inspection_status = data.get('inspection_status', 'pending')
     conn = get_db()
@@ -394,7 +417,7 @@ def update_task_status(tid):
 
 @app.route('/api/tasks/batch', methods=['POST'])
 def batch_create_tasks():
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     tasks = data.get('tasks', [])
     if not tasks:
         return jsonify({'success': False, 'error': 'tasks 不能为空'}), 400
@@ -441,7 +464,7 @@ def get_log(lid):
 
 @app.route('/api/logs', methods=['POST'])
 def create_log():
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     project_id = data.get('project_id', '')
     if not project_id:
         return jsonify({'success': False, 'error': 'project_id 不能为空'}), 400
@@ -469,7 +492,7 @@ def create_log():
 
 @app.route('/api/logs/<lid>', methods=['PUT'])
 def update_log(lid):
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     conn = get_db()
     conn.execute(
         "UPDATE logs SET project_name=?, unit=?, date=?, weather=?, temp_high=?, temp_low=?, wind=?, location=?, incident=?, production_record=?, tech_quality_safety=?, manager=?, recorder=?, materials=?, equipments=?, daily_task_log_ids=?, updated_at=datetime('now','localtime') WHERE id=?",
@@ -522,7 +545,7 @@ def get_task_daily_logs(task_id):
 @app.route('/api/daily-task-logs', methods=['POST'])
 def create_daily_task_log():
     """创建或更新每日任务施工日志（同一任务+日期唯一）"""
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     task_id = data.get('task_id', '')
     log_date = data.get('log_date', '')
     project_id = data.get('project_id', '')
@@ -595,7 +618,7 @@ def create_personnel(resource_type):
     table = table_map.get(resource_type)
     if not table:
         return jsonify({'success': False, 'error': '无效资源类型'}), 400
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     project_id = data.get('project_id', '')
     if not project_id:
         return jsonify({'success': False, 'error': 'project_id 不能为空'}), 400
@@ -632,7 +655,7 @@ def update_personnel(resource_type, rid):
     table = table_map.get(resource_type)
     if not table:
         return jsonify({'success': False, 'error': '无效资源类型'}), 400
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     conn = get_db()
     if table == 'teams':
         conn.execute(
@@ -686,7 +709,7 @@ def get_acceptances(project_id):
 @app.route('/api/acceptances', methods=['POST'])
 def create_acceptance():
     """创建收方记录"""
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     project_id = data.get('project_id', '')
     if not project_id:
         return jsonify({'success': False, 'error': 'project_id 不能为空'}), 400
@@ -713,7 +736,7 @@ def create_acceptance():
 @app.route('/api/acceptances/<aid>', methods=['PUT'])
 def update_acceptance(aid):
     """更新收方记录"""
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     conn = get_db()
     conn.execute(
         "UPDATE acceptances SET task_id=?, rework_task_id=?, acceptance_type=?, name=?, location=?, unit=?, basis=?, design_qty=?, actual_qty=?, unit_price=?, total_price=?, calc_formula=?, quantity_type=?, status=?, date=?, remark=?, updated_at=datetime('now','localtime') WHERE id=?",
@@ -762,7 +785,7 @@ def export_data():
 
 @app.route('/api/import', methods=['POST'])
 def import_data():
-    data = request.get_json()
+    data = (request.get_json(silent=True) or {})
     if not data:
         return jsonify({'success': False, 'error': '无效数据'}), 400
     conn = get_db()
