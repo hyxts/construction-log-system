@@ -804,14 +804,6 @@ body{
     <div id="project-sub-project" class="project-subpage">
     <!-- 子页1: 工程概览 -->
     <div id="project-subpage-list">
-      <!-- 工程列表卡片 -->
-      <div class="card" id="project-list-card">
-        <div class="card-header">
-          <h3>工程列表 <span style="font-weight:400;font-size:12px;color:var(--text2)" id="project-count-hint"></span></h3>
-          <button class="btn btn-primary btn-sm" onclick="showProjectEdit(null)">新建工程</button>
-        </div>
-        <div class="project-cards-grid" id="project-cards-grid"></div>
-      </div>
       <!-- 工程甘特图 & 任务计划 -->
       <div class="card" id="active-project-tasks" style="display:none">
         <div class="card-header">
@@ -2803,14 +2795,9 @@ function renderProjectList() {
   const atp = document.getElementById('active-project-tasks');
   const container = document.getElementById('project-subpage-list');
   if (!container) return;
-
-  console.log('renderProjectList: projects.length =', projects.length, 'projects:', projects);
   updateTaskImportHint();
 
   if (!projects.length) {
-    // 没有工程：隐藏工程列表卡片和任务区域，显示空状态提示
-    const listCard = document.getElementById('project-list-card');
-    if (listCard) listCard.style.display = 'none';
     if (atp) atp.style.display = 'none';
     if (!document.getElementById('empty-projects-msg')) {
       container.insertAdjacentHTML('beforeend', `<div id="empty-projects-msg" class="card"><div class="empty-state"><p>还没有创建任何工程</p><button class="btn btn-primary" style="margin-top:12px" onclick="showProjectEdit(null)">创建第一个工程</button></div></div>`);
@@ -2818,66 +2805,9 @@ function renderProjectList() {
     return;
   }
 
-  // 有工程：移除空状态提示，显示工程列表和任务区域
   const emptyMsg = document.getElementById('empty-projects-msg');
   if (emptyMsg) emptyMsg.remove();
-
-  // 渲染工程卡片列表
-  const listCard = document.getElementById('project-list-card');
-  const grid = document.getElementById('project-cards-grid');
-  const countHint = document.getElementById('project-count-hint');
-  if (listCard) listCard.style.display = 'block';
-  if (countHint) countHint.textContent = `(${projects.length}个工程)`;
-  if (grid) {
-    const names = { office:'办公楼', mall:'商场', hotel:'酒店', home:'住宅', restaurant:'餐厅', hospital:'医院', school:'学校', bank:'银行营业厅', exhibition:'展厅/展览馆', gym:'健身房/运动场馆', sales_office:'售楼处', factory:'厂房/车间', custom:'自定义' };
-    grid.innerHTML = projects.map(p => {
-      const tasks = p.tasks || [];
-      const done = tasks.filter(t => t.status === 'completed').length;
-      const inProg = tasks.filter(t => t.status === 'in_progress').length;
-      const pending = tasks.filter(t => t.status === 'pending').length;
-      const reworkCnt = tasks.filter(t => t.is_rework).length;
-      const pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
-      const pid = p._id || p.id;
-      const isActive = String(pid) === String(activeProjectId);
-      const plannedDays = p.duration || 0;
-      const typeName = names[p.type] || p.type || '自定义';
-      const startStr = p.start_date || '';
-      const endStr = p.end_date || '';
-      const dateRange = (startStr && endStr) ? `${startStr} ~ ${endStr}` : (plannedDays > 0 ? `${plannedDays}天` : '');
-      return `<div class="project-card-item${isActive?' active':''}" data-project-pid="${pid}" onclick="onProjectListCardClick('${pid}')">
-        ${isActive ? '<div class="card-active-badge">当前工程</div>' : ''}
-        <div class="project-card-header">
-          <div class="project-card-name">${p.name || '未命名工程'}</div>
-          <div class="project-card-type">${typeName}</div>
-        </div>
-        <div class="project-card-info">
-          ${p.company ? `<span>${p.company}</span>` : ''}
-          ${p.manager ? `<span>${p.manager}</span>` : ''}
-          ${dateRange ? `<span>📅 ${dateRange}</span>` : ''}
-          ${p.address ? `<span>${p.address}</span>` : ''}
-        </div>
-        <div class="project-card-progress">
-          <div class="progress-label"><span>工程进度</span><strong>${pct}%</strong></div>
-          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
-        </div>
-        <div class="project-card-stats">
-          <div class="stat-item"><span class="stat-val">${tasks.length}</span><span class="stat-lbl">总任务</span></div>
-          <div class="stat-item"><span class="stat-val done">${done}</span><span class="stat-lbl">已完成</span></div>
-          <div class="stat-item"><span class="stat-val progress">${inProg}</span><span class="stat-lbl">进行中</span></div>
-          <div class="stat-item"><span class="stat-val">${pending}</span><span class="stat-lbl">待开始</span></div>
-          ${reworkCnt > 0 ? `<div class="stat-item"><span class="stat-val" style="color:var(--danger)">${reworkCnt}</span><span class="stat-lbl">返工</span></div>` : ''}
-        </div>
-      </div>`;
-    }).join('');
-  }
-
   if (atp) atp.style.display = 'block';
-}
-
-// 工程管理页面卡片点击：选中工程并跳转到编辑
-function onProjectListCardClick(pid) {
-  const proj = projects.find(p => String(p._id || p.id) === String(pid));
-  if (proj) showProjectEdit(proj);
 }
 
 // ==================== TASK MANAGEMENT ====================
