@@ -1341,15 +1341,15 @@ function switchProjectSub(sub) {
 async function loadProjects() {
   try {
     const rawProjects = await fetchProjects();
-    const tasksData = await Promise.all(rawProjects.map(async p => {
-      const tasks = await fetchTasksByProject(p.id);
-      return { ...p, tasks, id: p.id };
-    }));
-    projects = tasksData;
+    // 后端 get_projects 已包含 tasks，直接使用
+    projects = rawProjects.map(p => ({ ...p, id: p.id }));
     // 加载所有每日任务施工日志
     await loadDailyTaskLogs();
     updateProjectSelect();
-  } catch(e) { console.error('loadProjects:', e); }
+  } catch(e) {
+    console.error('loadProjects:', e);
+    showToast('加载工程列表失败: ' + e.message, 'error');
+  }
 }
 
 async function loadDailyTaskLogs() {
@@ -2804,6 +2804,7 @@ function renderProjectList() {
   const container = document.getElementById('project-subpage-list');
   if (!container) return;
 
+  console.log('renderProjectList: projects.length =', projects.length, 'projects:', projects);
   updateTaskImportHint();
 
   if (!projects.length) {
