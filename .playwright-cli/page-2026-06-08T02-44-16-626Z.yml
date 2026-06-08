@@ -1,0 +1,27 @@
+- generic [active] [ref=e1]:
+  - complementary [ref=e2]:
+    - generic [ref=e3]:
+      - heading "施工日志系统" [level=2] [ref=e4]
+      - paragraph [ref=e5]: 国标装修工装 v2.0
+    - generic [ref=e6]:
+      - generic [ref=e7]: 当前工程
+      - combobox [ref=e8] [cursor=pointer]
+    - navigation [ref=e9]:
+      - generic [ref=e10] [cursor=pointer]: 首页看板
+      - generic [ref=e12] [cursor=pointer]: 工程管理
+      - generic [ref=e14] [cursor=pointer]: 资源管理
+      - generic [ref=e16] [cursor=pointer]: 收方管理
+      - generic [ref=e18] [cursor=pointer]: 系统设置
+    - generic [ref=e19]: v2.0 · SQLite本地数据库
+  - main [ref=e20]:
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e24]: 今日待办
+        - generic [ref=e26]: 最近日志
+      - generic [ref=e28]: 到期提醒
+      - generic [ref=e29]:
+        - generic [ref=e30]: 快速操作
+        - generic [ref=e31]:
+          - button "新建日志" [ref=e32] [cursor=pointer]
+          - button "管理工程" [ref=e33] [cursor=pointer]
+          - button "查看日志" [ref=e34] [cursor=pointer]
