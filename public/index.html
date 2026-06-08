@@ -2,7 +2,10 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f172a">
 <title>国标装修工装施工日志系统 v2.0</title>
 
 <style>
@@ -21,8 +24,13 @@
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
   background:var(--bg);color:var(--text);min-height:100vh;display:flex;line-height:1.6;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);
 }
-.sidebar{width:240px;background:var(--sidebar-bg);color:var(--sidebar-text);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
+.sidebar{width:240px;background:var(--sidebar-bg);color:var(--sidebar-text);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform .3s ease}
+.hamburger{display:none;position:fixed;top:12px;left:12px;z-index:150;width:40px;height:40px;background:var(--primary);border:none;border-radius:8px;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.hamburger span{display:block;width:20px;height:2px;background:#fff;border-radius:2px;transition:var(--transition)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 .sidebar-header{padding:20px 16px 12px}
 .sidebar-header h2{color:#fff;font-size:17px;margin-bottom:2px;letter-spacing:.5px}
 .sidebar-header p{font-size:11px;opacity:.5}
@@ -308,11 +316,82 @@ body{
 .project-card-stats .stat-lbl{font-size:10px;color:var(--text3)}
 .project-card-item .card-active-badge{position:absolute;top:0;right:0;background:var(--primary);color:#fff;font-size:10px;padding:3px 10px;border-radius:0 0 0 var(--radius-sm);display:none}
 .project-card-item.active .card-active-badge{display:block}
-@media(max-width:768px){.sidebar{width:200px}.main{margin-left:200px;padding:16px}.form-grid{grid-template-columns:1fr}.dash-grid{grid-template-columns:1fr}.detail-grid{grid-template-columns:1fr}.detail-grid .dl{text-align:left}.project-cards-grid{grid-template-columns:1fr}}
+/* ===== 移动端响应式 ===== */
+@media(max-width:768px){
+  .sidebar{width:240px;transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-overlay{display:block}
+  .sidebar-overlay.hidden{display:none}
+  .hamburger{display:flex}
+  .main{margin-left:0!important;padding:60px 12px 16px!important;width:100%}
+  .card{padding:16px;margin-bottom:12px;border-radius:8px}
+  .card-header{flex-direction:column;align-items:flex-start;gap:8px}
+  .card-header h3{font-size:16px}
+  .form-grid{grid-template-columns:1fr}
+  .dash-grid{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr}
+  .detail-grid .dl{text-align:left}
+  .project-cards-grid{grid-template-columns:1fr}
+  .project-subnav{flex-wrap:wrap;gap:4px}
+  .project-subnav-btn{padding:8px 12px;font-size:12px}
+  .search-bar{flex-direction:column;gap:8px}
+  .search-bar input,.search-bar select{width:100%}
+  .btn-group{flex-wrap:wrap}
+  .btn-group .btn{flex:1;min-width:80px;text-align:center}
+  .data-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -12px;padding:0 12px}
+  .data-table{font-size:12px}
+  .data-table th,.data-table td{padding:8px 6px}
+  .log-list-item{padding:12px;gap:8px}
+  .personnel-card-list{grid-template-columns:1fr}
+  .personnel-tabs{gap:4px}
+  .personnel-tab{padding:8px 12px;font-size:12px}
+  .acc-info-grid,.acc-unit-grid,.acc-qty-grid{grid-template-columns:1fr}
+  .toast-container{top:10px;right:10px;left:10px}
+  .toast{max-width:100%}
+  /* 甘特图 */
+  .gantt-toolbar{flex-wrap:wrap;gap:8px}
+  .gantt-toolbar>*{flex:1;min-width:100px}
+  .gantt-canvas-wrap canvas{width:100%!important;height:auto!important}
+  /* 弹窗 */
+  .modal-overlay{padding:0;align-items:flex-end}
+  .modal{max-width:100%!important;max-height:92vh;border-radius:16px 16px 0 0;width:100%}
+  .modal-header{padding:14px 16px}
+  .modal-body{padding:14px 16px}
+  .modal-footer{padding:12px 16px;position:sticky;bottom:0;background:var(--card)}
+  /* 每日标记浮窗 */
+  .daily-mark-popup{width:100%!important;max-width:100%!important;border-radius:16px 16px 0 0;bottom:0;top:auto;transform:none}
+  .weather-picker{gap:4px}
+  .weather-opt{padding:6px 8px;font-size:13px}
+  /* 看板快捷按钮 */
+  .dash-quick-btn{padding:12px 16px;font-size:13px;flex:1;min-width:0}
+  /* 表单 */
+  .form-group input,.form-group select,.form-group textarea{font-size:16px!important;padding:12px!important}
+  .form-field input,.form-field select,.form-field textarea{font-size:16px!important;padding:12px!important}
+  /* 触摸优化 */
+  .nav-item{padding:14px 20px;font-size:15px}
+  .btn,.btn-sm{padding:10px 16px;font-size:14px;min-height:40px}
+  .btn-xs{padding:6px 12px;font-size:12px;min-height:32px}
+  /* 日志列表项 */
+  .log-list-item-header{flex-direction:column;gap:4px}
+  .log-list-item-actions{flex-wrap:wrap}
+  /* 智能填充 */
+  .smart-fill-bar{flex-direction:column;text-align:center;gap:8px}
+}
+@media(max-width:480px){
+  .dash-card{padding:14px}
+  .dash-card .stat-val{font-size:24px}
+  .dash-card .stat-lbl{font-size:11px}
+  .sidebar{width:100%}
+}
 @media print{.sidebar,.toast-container,.btn,.modal-overlay,.nav-item:not(.active){display:none!important}.main{margin-left:0!important;padding:0!important}.page{display:block!important}.card{box-shadow:none!important;border:none!important;padding:10px 0!important}}
 </style>
 </head>
 <body>
+
+<button class="hamburger" onclick="toggleSidebar()" aria-label="菜单">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-overlay hidden" onclick="closeSidebar()"></div>
 
 <aside class="sidebar">
   <div class="sidebar-header">
@@ -1205,8 +1284,22 @@ function showToast(msg, type='success') {
   setTimeout(() => { toast.style.opacity='0'; toast.style.transition='opacity .3s'; setTimeout(() => toast.remove(), 300); }, 2500);
 }
 
+
+
 // ==================== NAVIGATION ====================
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  const isOpen = sidebar.classList.toggle('open');
+  overlay.classList.toggle('hidden', !isOpen);
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.querySelector('.sidebar-overlay').classList.add('hidden');
+}
 window.switchPage = async function(name) {
+  // 移动端切换页面后关闭侧边栏
+  if (window.innerWidth <= 768) closeSidebar();
   document.title = '施工日志 - ' + ({dashboard:'首页',project:'工程',personnel:'资源',acceptance:'收方',settings:'设置'}[name]||name);
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -3847,6 +3940,33 @@ function bindGanttInteraction(canvas, tasks, cw, ch, minDate, totalDays, DAY_W, 
       }
     }
   };
+
+  // 触控支持：使用touchstart模拟hover + touchend模拟click
+  let touchTimeout = null;
+  canvas.addEventListener('touchstart', function(e) {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      canvas.onmousemove({ clientX: touch.clientX, clientY: touch.clientY });
+      touchTimeout = setTimeout(() => {
+        tooltip.style.display = 'none';
+      }, 2000);
+    }
+  }, { passive: true });
+  canvas.addEventListener('touchmove', function(e) {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      canvas.onmousemove({ clientX: touch.clientX, clientY: touch.clientY });
+      if (touchTimeout) clearTimeout(touchTimeout);
+    }
+  }, { passive: true });
+  canvas.addEventListener('touchend', function(e) {
+    if (touchTimeout) clearTimeout(touchTimeout);
+    const lastTouch = e.changedTouches[0];
+    if (lastTouch) {
+      canvas.onclick({ clientX: lastTouch.clientX, clientY: lastTouch.clientY });
+    }
+    canvas.onmouseleave();
+  });
 
   // 滚动同步tooltip隐藏
   if (scrollWrap) {
