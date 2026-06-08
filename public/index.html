@@ -316,6 +316,9 @@ body{
 .project-card-stats .stat-lbl{font-size:10px;color:var(--text3)}
 .project-card-item .card-active-badge{position:absolute;top:0;right:0;background:var(--primary);color:#fff;font-size:10px;padding:3px 10px;border-radius:0 0 0 var(--radius-sm);display:none}
 .project-card-item.active .card-active-badge{display:block}
+.project-card-delete{position:absolute;top:6px;right:6px;width:22px;height:22px;border:none;background:transparent;color:var(--text3);font-size:16px;line-height:22px;text-align:center;cursor:pointer;border-radius:50%;transition:all .15s;z-index:2;padding:0}
+.project-card-delete:hover{background:var(--danger);color:#fff}
+.project-card-item.active .project-card-delete{top:26px}
 /* ===== 移动端响应式 ===== */
 @media(max-width:768px){
   .sidebar{width:240px;transform:translateX(-100%)}
@@ -1411,7 +1414,8 @@ function renderProjectCards() {
     const endStr = p.end_date || '';
     const dateRange = (startStr && endStr) ? `${startStr} ~ ${endStr}` : (plannedDays > 0 ? `${plannedDays}天` : '');
     return `<div class="project-card-item${isActive?' active':''}" onclick="showDashProjectEdit('${pid}')">
-      <div class="card-active-badge">当前工程</div>
+      <button class="project-card-delete" title="删除工程" onclick="handleDeleteProject('${pid}',event)">×</button>
+      ${isActive ? '<div class="card-active-badge">当前工程</div>' : ''}
       <div class="project-card-header">
         <div class="project-card-name">${p.name || '未命名工程'}</div>
         <div class="project-card-type">${typeName}</div>
@@ -2699,7 +2703,7 @@ async function saveProjectDetail(e) {
       const newId = await createProject({ name: nameVal, type, client, company, address, manager, recorder, start_date, end_date, duration });
       activeProjectId = newId;
 
-      if (type && type !== 'custom' && TASK_TEMPLATES[type]) {
+      if (type && TASK_TEMPLATES[type]) {
         const templateTasks = generateTasksFromTemplate(type, activeProjectId);
         if (templateTasks.length > 0) {
           for (const t of templateTasks) {
@@ -2720,15 +2724,17 @@ async function saveProjectDetail(e) {
   } catch (e) { showToast('保存失败: ' + e.message, 'error'); }
 }
 
-async function deleteProject(id) {
+async function handleDeleteProject(id, e) {
+  if (e) e.stopPropagation();
   if (!confirm('确定删除这个工程吗？所有关联的日志和任务也将被删除！此操作不可撤销。')) return;
   try {
-    await deleteProject(id);
-    if (activeProjectId === id) activeProjectId = null;
-    loadProjects();
+    await apiDelete('/api/projects/' + id);
+    if (String(activeProjectId) === String(id)) activeProjectId = null;
+    await loadProjects();
     renderProjectList();
     renderProjectCards();
     loadTasks();
+    await renderDashboard();
     showToast('工程已删除', 'error');
   } catch (e) { showToast('删除失败: ' + e.message, 'error'); }
 }
@@ -2876,8 +2882,8 @@ async function importTasksFromTemplate() {
   const proj = getActiveProject();
   if (!proj) { showToast('请先选择工程', 'error'); return; }
   const type = proj.type || 'custom';
-  if (type === 'custom' || !TASK_TEMPLATES[type]) {
-    showToast('当前工程类型不支持模板导入，请编辑工程选择具体类型（如：办公楼、酒店等）', 'info');
+  if (!TASK_TEMPLATES[type]) {
+    showToast('当前工程类型不支持模板导入', 'error');
     return;
   }
 
@@ -3053,6 +3059,33 @@ const STATUS_LABELS = { pending: ['未开始', 'info'], in_progress: ['进行中
 // ==================== 施工任务模板 ====================
 // 按工程类型分类，每个模板包含完整的施工阶段和任务
 const TASK_TEMPLATES = {
+  custom: [
+    { category:'准备阶段', name:'现场勘查及测量', location:'全区域', team:'管理班组', duration:2 },
+    { category:'准备阶段', name:'施工方案编制', location:'全区域', team:'管理班组', duration:2 },
+    { category:'准备阶段', name:'材料采购及进场', location:'全区域', team:'管理班组', duration:3 },
+    { category:'拆除工程', name:'旧装饰拆除', location:'施工区域', team:'拆除班组', duration:5 },
+    { category:'拆除工程', name:'垃圾清运', location:'全区域', team:'拆除班组', duration:2 },
+    { category:'水电改造', name:'强弱电管线敷设', location:'全区域', team:'水电班组', duration:8 },
+    { category:'水电改造', name:'给排水管道安装', location:'厨卫区域', team:'水电班组', duration:5 },
+    { category:'水电改造', name:'配电箱安装及接线', location:'配电间', team:'水电班组', duration:3 },
+    { category:'防水工程', name:'防水涂料施工', location:'厨卫阳台', team:'防水班组', duration:3 },
+    { category:'防水工程', name:'闭水试验', location:'厨卫阳台', team:'防水班组', duration:2 },
+    { category:'泥瓦工程', name:'墙面抹灰找平', location:'全区域', team:'泥瓦班组', duration:6 },
+    { category:'泥瓦工程', name:'地面找平', location:'全区域', team:'泥瓦班组', duration:4 },
+    { category:'泥瓦工程', name:'墙地砖铺贴', location:'厨卫区域', team:'泥瓦班组', duration:7 },
+    { category:'木工工程', name:'天花吊顶安装', location:'全区域', team:'木工班组', duration:8 },
+    { category:'木工工程', name:'隔墙及造型', location:'指定区域', team:'木工班组', duration:6 },
+    { category:'木工工程', name:'门窗安装', location:'全区域', team:'木工班组', duration:5 },
+    { category:'油漆工程', name:'墙面批刮腻子', location:'全区域', team:'油漆班组', duration:6 },
+    { category:'油漆工程', name:'墙面打磨', location:'全区域', team:'油漆班组', duration:2 },
+    { category:'油漆工程', name:'底漆及面漆施工', location:'全区域', team:'油漆班组', duration:5 },
+    { category:'安装工程', name:'灯具开关插座安装', location:'全区域', team:'安装班组', duration:4 },
+    { category:'安装工程', name:'卫浴洁具安装', location:'卫生间', team:'安装班组', duration:3 },
+    { category:'安装工程', name:'定制柜体安装', location:'指定区域', team:'安装班组', duration:4 },
+    { category:'竣工验收', name:'工程自检', location:'全区域', team:'管理班组', duration:2 },
+    { category:'竣工验收', name:'竣工清理', location:'全区域', team:'清洁班组', duration:2 },
+    { category:'竣工验收', name:'竣工验收', location:'全区域', team:'管理班组', duration:1 }
+  ],
   office: [
     { category:'拆除工程', name:'现场勘查及放线', location:'全区域', team:'测量班组', duration:2 },
     { category:'拆除工程', name:'旧装饰拆除', location:'全区域', team:'拆除班组', duration:5 },
