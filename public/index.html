@@ -1378,7 +1378,7 @@ function updateProjectSelect() {
 }
 
 function getActiveProject() {
-  return projects.find(p => (p._id || p.id) === activeProjectId) || null;
+  return projects.find(p => String(p._id || p.id) === String(activeProjectId)) || null;
 }
 
 async function onProjectSwitch(pid) {
@@ -1412,7 +1412,7 @@ function renderProjectCards() {
     const reworkCnt = tasks.filter(t => t.is_rework).length;
     const pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
     const pid = p._id || p.id;
-    const isActive = pid === activeProjectId;
+    const isActive = String(pid) === String(activeProjectId);
     const plannedDays = p.duration || 0;
     const typeName = names[p.type] || p.type || '自定义';
     const startStr = p.start_date || '';
@@ -2752,7 +2752,7 @@ function switchToProject(pid) {
 
 // 看板工程编辑弹窗
 function showDashProjectEdit(pid) {
-  const proj = projects.find(p => (p._id || p.id) === pid);
+  const proj = projects.find(p => String(p._id || p.id) === String(pid));
   if (!proj) return;
   document.getElementById('dash-proj-edit-id').value = pid;
   document.getElementById('dash-proj-edit-name').value = proj.name || '';
@@ -2838,7 +2838,7 @@ function renderProjectList() {
       const reworkCnt = tasks.filter(t => t.is_rework).length;
       const pct = tasks.length ? Math.round(done / tasks.length * 100) : 0;
       const pid = p._id || p.id;
-      const isActive = pid === activeProjectId;
+      const isActive = String(pid) === String(activeProjectId);
       const plannedDays = p.duration || 0;
       const typeName = names[p.type] || p.type || '自定义';
       const startStr = p.start_date || '';
@@ -2876,7 +2876,7 @@ function renderProjectList() {
 
 // 工程管理页面卡片点击：选中工程并跳转到编辑
 function onProjectListCardClick(pid) {
-  const proj = projects.find(p => (p._id || p.id) === pid);
+  const proj = projects.find(p => String(p._id || p.id) === String(pid));
   if (proj) showProjectEdit(proj);
 }
 
