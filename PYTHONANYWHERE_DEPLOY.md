@@ -3,12 +3,22 @@
 ## 项目结构
 ```
 装修测试软件/
-├── app.py              # Flask 后端（主入口）
+├── app.py              # Flask 后端（主入口，含日志系统 + 排工系统）
+├── index.html           # 排工考勤系统前端页面（独立子系统）
 ├── requirements.txt    # Python 依赖
-├── data.db             # SQLite 数据库文件（自动创建）
+├── data.db             # 日志系统 SQLite 数据库（自动创建）
+├── paiban.db           # 排工系统 SQLite 数据库（自动创建，与日志数据隔离）
 └── public/
-    └── index.html      # 前端页面
+    └── index.html      # 日志系统前端页面
 ```
+
+## 访问地址
+
+部署成功后可访问两个独立系统：
+- **日志系统**: `https://你的用户名.pythonanywhere.com/`
+- **排工考勤**: `https://你的用户名.pythonanywhere.com/paiban`
+
+两个系统数据完全隔离、互不交叉。
 
 ## 在 PythonAnywhere 上部署步骤
 

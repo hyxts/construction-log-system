@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2f7d6b">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192x192.png">
+<title>工地排班考勤</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+html,body{min-height:100vh;width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;background:#f5f7fa;color:#1f2937;padding-bottom:calc(70px + env(safe-area-inset-bottom));overscroll-behavior:none;-webkit-user-select:none;user-select:none;font-size:15px;line-height:1.5}
+header{background:#ffffff;color:#1f2937;text-align:center;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));font-size:17px;font-weight:600;position:sticky;top:0;z-index:100;letter-spacing:.3px;border-bottom:1px solid #eef0f4}
+.main{padding:12px;width:100%;max-width:100%}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04)}
+.card-sub{background:#f8fafc;border-radius:10px;padding:12px;margin:8px 0;border:1px solid #eef2f7}
+.card-sub-title{font-size:13px;color:#475569;margin-bottom:8px;font-weight:600}
+h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacing:.2px}
+
+  input, select, textarea {
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size:15px;
+    background: #fff;
+    min-height: 44px;
+    width: 100%;
+    color:#1f2937;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #2f7d6b;
+    box-shadow: 0 0 0 3px rgba(47,125,107,.15);
+  }
+  textarea{min-height:100px;resize:none}
+
+  button{
+    border:none;
+    border-radius:10px;
+    padding:10px 12px;
+    cursor:pointer;
+    background:#2f7d6b;
+    color:#fff;
+    font-size:14px;
+    font-weight:600;
+    min-height:40px;
+    width:100%;
+    margin-bottom:6px;
+    -webkit-appearance:none;
+    appearance:none;
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:rgba(47,125,107,.1);
+  }
+  button:active{opacity:0.9;transform:scale(0.98)}
+  button.active{background:#2f7d6b !important;}
+  .btn-green{background:#2f7d6b !important;}
+  .btn-red{background:#dc2626 !important;}
+  .btn-gray{background:#64748b !important;}
+  .btn-sm{padding:6px 10px;min-height:32px;font-size:13px;width:auto;margin:0 3px}
+  .btn-xs{padding:2px 5px;min-height:20px;font-size:10px;width:auto;margin:0 2px}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+  .two-col > div {min-width:0;}
+  @media(max-width:380px){.two-col{grid-template-columns:1fr}}
+
+  .item{display:flex;align-items:center;padding:10px;background:#fff;border-radius:10px;margin-bottom:6px;border:1px solid #e5e7eb;font-size:14px;gap:8px;min-height:44px;touch-action:manipulation}
+  .item.active{background:#2f7d6b;color:#fff;border-color:#2f7d6b}
+  .item-disable{background:#f9fafb;color:#9ca3af;border-color:#e5e7eb;cursor:default}
+
+  .item-content{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0;overflow:hidden;}
+  .task-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4;font-weight:600;font-size:15px;color:#111827}
+  .worker-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4;font-weight:600;font-size:15px;color:#111827}
+  .item-status-row{display:flex;align-items:center;gap:4px;flex-wrap:nowrap;flex-shrink:0}
+  .item-status{line-height:1.3;font-size:13px}
+
+  .edit-btn{flex:0 0 auto;width:80px;}
+
+  .tab-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;border-top:1px solid #e5e7eb;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 8px rgba(15,23,42,.06);z-index:100;height:70px}
+  .tab{text-align:center;padding:10px 0;font-size:14px;color:#6b7280;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:700;touch-action:manipulation}
+  .tab.active{color:#2f7d6b;font-weight:800}
+  .tab-content{display:none}
+  .tab-content.show{display:block}
+  .modal{position:fixed;inset:0;background:rgba(15,23,42,.6);display:none;align-items:flex-end;justify-content:center;z-index:1000}
+  .modal-box{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+  .modal h4{margin-bottom:12px;font-size:17px}
+  .modal label{display:block;font-size:14px;color:#4b5563;margin-bottom:6px;font-weight:500}
+  .query-result{background:#f9fafb;padding:12px;border-radius:12px;margin-top:12px;white-space:pre-wrap;max-height:50vh;overflow:auto;font-size:14px;line-height:1.6;border:1px solid #e5e7eb}
+  .status-group{display:flex;gap:6px;flex-shrink:0;}
+  .status-card{padding:8px 12px;border:1px solid #d1d5db;border-radius:10px;background:#fff;font-size:14px;min-height:40px;cursor:pointer;touch-action:manipulation}
+  .status-card.active{background:#2f7d6b;color:#fff;border-color:#2f7d6b}
+  .attend-inputs{flex:1;display:flex;gap:6px;align-items:center;min-width:0;}
+  .overtime-input{flex:0 0 64px!important;text-align:center;padding:6px;font-size:14px;min-height:40px}
+  .head-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  .head-row h3{margin-bottom:0}
+  .list-item{padding:10px;background:#fff;border-radius:10px;margin-bottom:6px;cursor:pointer;font-size:14px;min-height:44px;display:flex;align-items:center;border:1px solid #e5e7eb;touch-action:manipulation}
+  .list-item.active{background:#2f7d6b;color:#fff;border-color:#2f7d6b}
+  .list-item.selected{background:#2f7d6b!important;color:#fff!important;border-color:#2f7d6b!important}
+  .tag-on{background:#dcfce7;color:#166534;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600}
+  .tag-off{background:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:600}
+  .collapse-bar{padding:12px;background:#f9fafb;border-radius:12px;margin:10px 0;font-size:14px;cursor:pointer;min-height:48px;touch-action:manipulation}
+  .flex-row{display:flex;gap:10px;margin-bottom:12px}
+  .flex-row>div{flex:1}
+  .import-export-row{display:flex;gap:10px;margin-bottom:12px}
+  .import-export-row button{width:auto;flex:1;margin-bottom:0}
+  #importFileInput{display:none}
+  .btn-row{display:flex;gap:8px;margin-top:8px}
+  .btn-row button{width:auto;flex:1;margin-bottom:0}
+  .task-list-box,.worker-list-box,.manage-list{min-height:120px;max-height:35vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .share-text{background:#f9fafb;padding:12px;border-radius:12px;margin:12px 0;white-space:pre-wrap;font-size:14px;line-height:1.6;border:1px solid #e5e7eb}
+  .date-info{font-size:14px;color:#4b5563;margin-bottom:12px;padding:10px 12px;background:#f9fafb;border-radius:10px;text-align:center}
+  .section-title{font-size:13px;color:#6b7280;margin:10px 0 6px}
+  .manage-col{display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;}
+  .card-sub{flex:1;display:flex;flex-direction:column;min-height:0;}
+  .manage-list{flex:1;overflow-y:auto;min-height:100px;}
+  .archive-item{background:#fff;border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid #e5e7eb}
+  .archive-date{font-size:16px;font-weight:700;color:#111827;margin-bottom:6px}
+  .archive-info{font-size:13px;color:#6b7280;margin-bottom:4px}
+  .archive-tasks{font-size:13px;color:#4b5563;line-height:1.4}
+  .status-tag{padding:4px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;}
+  .status-pending{background:#e0e7ff;color:#3730a3}
+  .status-doing{background:#dcfce7;color:#166534}
+  .status-done{background:#dcfce7;color:#166534}
+  .status-active{background:#dcfce7;color:#166534}
+  .status-inactive{background:#fee2e2;color:#991b1b}
+  .status-warning{background:#fef3c7;color:#92400e}
+  .status-info{background:#dbeafe;color:#1e40af}
+  #editModalButtons{display:flex;gap:8px;margin-top:12px;}
+  #shareModalButtons{display:none;gap:8px;margin-top:12px;}
+  .name-text{flex-shrink:0;width:56px;text-align:left;}
+  .doc-item{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#f9fafb;border-radius:12px;margin-bottom:8px;white-space:pre-wrap;font-size:14px;line-height:1.6;border:1px solid #e5e7eb}
+  .doc-item-content{flex:1;min-width:0;}
+
+  /* ==================== 全局统一样式补充 ==================== */
+  .seg-tabs{display:flex;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:10px;gap:4px}
+  .seg-tabs-2{margin-top:-4px;background:#f8fafc}
+  .seg-tab{flex:1;background:transparent;color:#64748b;border:none;padding:10px 6px;font-size:14px;font-weight:600;border-radius:10px;cursor:pointer;min-height:40px;width:auto;margin:0;transition:all .15s;touch-action:manipulation}
+  .seg-tab.active{background:#2f7d6b;color:#fff;box-shadow:0 2px 4px rgba(47,125,107,.2)}
+  .seg-tab-2{font-size:13px;padding:8px 6px;min-height:36px}
+
+  .select-inline{width:auto;margin:0;min-height:36px;padding:8px 32px 8px 12px;font-size:14px;border:1px solid #d1d5db;border-radius:10px;background:#fff;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M1 3l4 4 4-4' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");background-repeat:no-repeat;background-position:right 10px center}
+  .muted{color:#64748b;font-size:13px}
+  .doc-calc{background:#ecfdf5;border:1px dashed #2f7d6b;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:14px;line-height:1.5;min-height:0;display:none;white-space:pre-wrap;color:#166534;font-weight:600}
+  .doc-calc.show{display:block}
+  .query-dim{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .qdim-btn{flex:1;min-width:calc(25% - 4.5px);padding:12px 10px;font-size:14px;font-weight:600;border:1px solid #d1d5db;border-radius:12px;background:#fff;color:#4b5563;cursor:pointer;min-height:48px;touch-action:manipulation}
+  .qdim-btn.active{background:#2f7d6b;color:#fff;border-color:#2f7d6b;box-shadow:0 2px 4px rgba(47,125,107,.2)}
+  .qdim-btn-sm{flex:1;min-width:calc(25% - 4.5px);padding:10px 8px;font-size:13px;font-weight:500;border:1px solid #d1d5db;border-radius:10px;background:#f9fafb;color:#6b7280;cursor:pointer;min-height:40px;touch-action:manipulation}
+  .qdim-btn-sm.active{background:#2f7d6b;color:#fff;border-color:#2f7d6b}
+  .stats-input{margin-bottom:10px}
+  .stats-output{background:#f9fafb;border-radius:12px;padding:12px;min-height:60px;white-space:pre-wrap;font-size:14px;line-height:1.6;overflow:auto;border:1px solid #e5e7eb}
+  .stats-output .so-empty{color:#9ca3af;text-align:center;padding:20px 0;font-size:14px}
+  .so-section{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #e5e7eb}
+  .so-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+  .so-label{font-size:15px;color:#1f2937;font-weight:600;margin-bottom:6px;line-height:1.4}
+  .so-big{font-size:24px;font-weight:700;color:#2f7d6b;margin-bottom:4px;letter-spacing:-.5px}
+  .so-row{display:flex;justify-content:space-between;padding:3px 0;font-size:14px;color:#4b5563;line-height:1.4}
+  .so-row span:last-child{color:#111827}
+  .stats-actions{display:flex;gap:8px;margin-top:10px}
+  .stats-actions button{width:auto;flex:1;margin:0}
+  .arc-item{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#fff;border-radius:12px;margin-bottom:8px;border:1px solid #e5e7eb;font-size:14px}
+  .arc-item-content{flex:1;min-width:0;overflow:hidden}
+  .arc-title{font-weight:600;color:#111827;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .arc-title .badge{background:#dcfce7;color:#166534;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:500}
+  .arc-title .badge.attend{background:#e0e7ff;color:#3730a3}
+  .arc-title .badge.auto{background:#f3e8ff;color:#6b21a8}
+  .arc-body{color:#475569;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+  .arc-meta{color:#94a3b8;font-size:11px;margin-top:4px}
+  .arc-actions{flex:0 0 auto;display:flex;flex-direction:column;gap:4px}
+  .arc-actions button{margin:0;width:auto;padding:5px 8px;font-size:12px;min-height:28px}
+
+  /* 文档历史卡片 */
+  .doc-card{padding:12px 14px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px}
+  .doc-card-title{font-weight:600;color:#111827;margin-bottom:6px;font-size:15px}
+  .doc-card-body{color:#4b5563;line-height:1.6;white-space:pre-wrap;word-break:break-all;font-size:14px;max-height:6em;overflow:hidden}
+  .doc-card-meta{color:#6b7280;font-size:12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center}
+
+  /* 移动端优化 */
+  @media (max-width: 380px){
+    .seg-tab{font-size:13px;padding:9px 4px}
+    .arc-actions{flex-direction:row}
+  }
+  body{padding-bottom:80px}
+</style>
+</head>
+<body>
+<header><span id="pageTitle">排工</span> <span id="syncStatus" style="font-size:11px;color:#9ca3af;font-weight:400">加载中...</span></header>
+<div class="main">
+
+  <!-- 1 排工 -->
+  <div id="page1" class="tab-content show">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <button onclick="changePlanDate(-1)" style="width:50px;margin:0;padding:10px;min-height:40px" class="btn-sm">◀</button>
+        <span id="planDateDisplay" style="flex:1;text-align:center;font-size:16px;font-weight:500"></span>
+        <button onclick="changePlanDate(1)" style="width:50px;margin:0;padding:10px;min-height:40px" class="btn-sm">▶</button>
+      </div>
+      <input type="date" id="planDate" style="display:none">
+      <div class="two-col">
+        <div class="task-list-box" id="planTaskListBox"></div>
+        <div class="worker-list-box" id="planWorkerListBox"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div id="planListBox"></div>
+    </div>
+    <div class="card">
+      <div class="btn-row">
+        <button class="btn-gray" onclick="clearPlan()">清空</button>
+        <button class="btn-green" onclick="archiveCurrent('plan')">归档</button>
+        <button class="btn-red" onclick="sharePlan()">分享</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 考勤 -->
+  <div id="page2" class="tab-content">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <button onclick="changeAttendDate(-1)" style="width:50px;margin:0;padding:10px;min-height:40px" class="btn-sm">◀</button>
+        <span id="attendDateDisplay" style="flex:1;text-align:center;font-size:16px;font-weight:500"></span>
+        <button onclick="changeAttendDate(1)" style="width:50px;margin:0;padding:10px;min-height:40px" class="btn-sm">▶</button>
+      </div>
+      <input type="date" id="attendDate" style="display:none">
+      <div class="head-row">
+        <h3>任务</h3>
+      </div>
+      <div id="attendPlanList"></div>
+    </div>
+    <div class="card">
+      <div class="head-row">
+        <h3>考勤</h3>
+        <div style="display:flex;gap:6px">
+          <button onclick="archiveCurrent('attend')" style="width:auto;margin:0;padding:8px 12px;min-height:0;font-size:13px" class="btn-sm btn-green">归档</button>
+          <button onclick="shareAttendance()" style="width:auto;margin:0;padding:8px 12px;min-height:0;font-size:13px" class="btn-sm">分享</button>
+        </div>
+      </div>
+      <div id="attendList"></div>
+    </div>
+  </div>
+
+  <!-- 3 管理 -->
+  <div id="page3" class="tab-content">
+    <div class="card">
+      <h3>数据备份</h3>
+      <div class="import-export-row">
+        <button onclick="exportAllData()">备份</button>
+        <button class="btn-green" onclick="triggerImport()">恢复</button>
+        <input type="file" id="importFileInput" accept=".json" onchange="importAllData(this.files[0])">
+      </div>
+    </div>
+    <div class="card">
+      <div class="two-col">
+        <div class="manage-col">
+          <h3>任务管理</h3>
+          <input type="text" id="taskName" placeholder="输入任务名称">
+          <button onclick="addTask()">新增任务</button>
+          <div class="card-sub">
+            <div class="card-sub-title">任务列表</div>
+            <div class="manage-list" id="taskActiveList"></div>
+          </div>
+        </div>
+        <div class="manage-col">
+          <h3>人员管理</h3>
+          <input type="text" id="workerName" placeholder="输入姓名">
+          <button onclick="addWorker()">新增人员</button>
+          <div class="card-sub">
+            <div class="card-sub-title">在职人员</div>
+            <div class="manage-list" id="workerActiveList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 文档 -->
+  <div id="page4" class="tab-content">
+    <div class="card">
+      <div class="head-row">
+        <h3>新建文档</h3>
+        <button id="colorBtn" class="btn-xs" onclick="toggleColor()" style="color:#fff;background:#000">黑</button>
+      </div>
+      <input type="text" id="docTitle" placeholder="标题（可选）" style="margin-bottom:8px">
+      <div id="docContent" contenteditable="true" onkeyup="calcDoc(event)" style="min-height:150px;border:1px solid #ddd;border-radius:8px;padding:10px;outline:none;font-family:inherit;font-size:inherit"></div>
+      <div class="btn-row">
+        <button class="btn-gray" onclick="clearDocEdit()">清空</button>
+        <button onclick="saveDoc()">保存</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head-row">
+        <h3>文档列表</h3>
+        <span class="muted" id="docCount"></span>
+      </div>
+      <div class="flex-row" style="margin-bottom:10px">
+        <input type="date" id="docSearchDate" onchange="searchDoc()">
+        <input type="text" id="docSearchKey" placeholder="关键字搜索" oninput="searchDoc()">
+      </div>
+      <div id="docHistoryList" style="max-height:calc(100vh - 320px);overflow-y:auto;-webkit-overflow-scrolling:touch"></div>
+    </div>
+  </div>
+
+  <!-- 5 存档 -->
+  <div id="page5" class="tab-content">
+    <div class="card">
+      <div class="query-dim" style="margin-bottom:10px">
+        <button class="qdim-btn active" data-dim="stats" onclick="switchArchiveTab('stats')">考勤统计</button>
+        <button class="qdim-btn" data-dim="attend" onclick="switchArchiveTab('attend')">考勤存档</button>
+        <button class="qdim-btn" data-dim="task" onclick="switchArchiveTab('task')">任务存档</button>
+        <button class="qdim-btn" data-dim="worker" onclick="switchArchiveTab('worker')">人员存档</button>
+      </div>
+      
+      <div id="archiveStatsPanel" style="display:block">
+        <div class="query-dim" style="margin-bottom:10px">
+          <button class="qdim-btn-sm active" data-dim="person" onclick="switchStatsDim('person')">按人员</button>
+          <button class="qdim-btn-sm" data-dim="task" onclick="switchStatsDim('task')">按任务</button>
+          <button class="qdim-btn-sm" data-dim="month" onclick="switchStatsDim('month')">按月份</button>
+          <button class="qdim-btn-sm" data-dim="range" onclick="switchStatsDim('range')">按范围</button>
+        </div>
+        <div id="statsInput" class="stats-input"></div>
+        <div id="statsOutput" class="stats-output"></div>
+        <div id="statsActions" class="stats-actions"></div>
+      </div>
+      
+      <div id="archiveAttendPanel" style="display:none">
+        <div class="flex-row" style="margin-bottom:10px">
+          <input type="month" id="archiveMonth" value="" onchange="filterArchiveByMonth()" class="select-inline" style="flex:1">
+          <button class="btn-xs btn-gray" onclick="document.getElementById('archiveMonth').value='';filterArchiveByMonth()">全部</button>
+        </div>
+        <div id="archiveList" style="max-height:calc(100vh - 250px);overflow-y:auto;width:100%;-webkit-overflow-scrolling:touch"></div>
+      </div>
+      
+      <div id="archiveTaskPanel" style="display:none">
+        <div id="taskArchiveList" class="manage-list" style="height:calc(100vh - 200px);overflow-y:auto;width:100%"></div>
+      </div>
+      
+      <div id="archiveWorkerPanel" style="display:none">
+        <div id="workerArchiveList" class="manage-list" style="height:calc(100vh - 200px);overflow-y:auto;width:100%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<nav class="tab-bar">
+  <div class="tab active" onclick="switchTab(1)">排工</div>
+  <div class="tab" onclick="switchTab(2)">考勤</div>
+  <div class="tab" onclick="switchTab(3)">管理</div>
+  <div class="tab" onclick="switchTab(4)">文档</div>
+  <div class="tab" onclick="switchTab(5)">存档</div>
+</nav>
+
+<div class="modal" id="shareModal">
+  <div class="modal-box">
+    <h4 id="modalTitle"></h4>
+    <div class="share-text" id="shareContent"></div>
+    <div id="editModalButtons">
+      <button class="btn-gray" onclick="closeModal()">取消</button>
+      <button class="btn-red" onclick="delItem()">删除</button>
+      <button onclick="saveEdit()">保存</button>
+    </div>
+    <div id="shareModalButtons">
+      <button class="btn-gray" onclick="closeModal()">关闭</button>
+      <button class="btn-green" onclick="copyText()">复制</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let workers=[],tasks=[],planData={},attendData={},docs=[],archives={};
+let curSelTaskId='',curSelWorkerIds=[];
+let shareTxt='';
+let editType='',editId='';
+let editingDocId='';
+
+const defaultWorkers=[
+  {id:'1',name:'谭道彦',status:1},{id:'2',name:'谭明义',status:1},
+  {id:'3',name:'谭雪峰',status:1},{id:'4',name:'王建国',status:1},
+  {id:'5',name:'李志远',status:1},{id:'6',name:'张伟',status:1},
+  {id:'7',name:'陈晓峰',status:1},{id:'8',name:'林志杰',status:1},
+  {id:'9',name:'刘洋',status:1},{id:'10',name:'周明',status:1}
+];
+const defaultTasks=[
+  {id:'1',name:'开水器封套',status:1,desc:''},{id:'2',name:'剧场铺设电缆线',status:1,desc:''},
+  {id:'3',name:'门诊楼电路检修',status:2,desc:''},{id:'4',name:'行政楼管道维修',status:1,desc:''},
+  {id:'5',name:'教学楼地板铺设',status:2,desc:''},{id:'6',name:'图书馆墙面刷漆',status:1,desc:''},
+  {id:'7',name:'食堂通风系统',status:1,desc:''},{id:'8',name:'操场照明安装',status:0,desc:''}
+];
+
+// ======================
+// 文档功能
+// ======================
+let currentColorIndex = 0;
+const colors = [
+  { name: '黑', value: '#000', bg: '#000' },
+  { name: '红', value: '#dc2626', bg: '#dc2626' },
+  { name: '蓝', value: '#2563eb', bg: '#2563eb' }
+];
+function toggleColor(){
+  currentColorIndex = (currentColorIndex + 1) % colors.length;
+  const color = colors[currentColorIndex];
+  document.execCommand('foreColor', false, color.value);
+  document.getElementById('colorBtn').style.background = color.bg;
+  document.getElementById('colorBtn').textContent = color.name;
+  // 让编辑区域保持焦点，方便继续输入
+  document.getElementById('docContent').focus();
+}
+function calcDoc(e){
+  if(!e || e.key!=='=')return;
+  let el=document.getElementById('docContent');
+  let v=el.innerText;
+  let expr=v.replace(/=/g,'').trim();
+  if(!expr)return;
+  try{
+    expr=expr.replace(/（/g,'(').replace(/）/g,')');
+    let r=Function('"use strict";const PI=Math.PI;const E=Math.E;return ('+expr+')')();
+    el.innerText=expr+'='+r;
+  }catch(e){
+    console.log('计算错误:',e.message);
+  }
+}
+function clearDocEdit(){
+  document.getElementById('docContent').innerText='';
+  document.getElementById('docTitle').value='';
+  editingDocId='';
+}
+function saveDoc(){
+  let c=document.getElementById('docContent').innerText.trim();
+  let t=document.getElementById('docTitle').value.trim();
+  if(!c){alert('内容不能为空');return;}
+  let d=new Date();
+  let p=n=>String(n).padStart(2,'0');
+  let datestr=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+  if(editingDocId){
+    // 更新现有文档
+    let doc=docs.find(d=>d.id===editingDocId);
+    if(doc){doc.title=t;doc.content=c;doc.date=datestr;}
+    editingDocId='';
+    alert('更新成功');
+  }else{
+    // 新建文档
+    docs.unshift({id:Date.now().toString(),date:datestr,title:t,content:c});
+    alert('保存成功');
+  }
+  saveData();
+  searchDoc();
+  document.getElementById('docContent').innerText='';
+  document.getElementById('docTitle').value='';
+}
+function shareDoc(){
+  let c=document.getElementById('docContent').innerText.trim();
+  let t=document.getElementById('docTitle').value.trim();
+  if(!c){alert('无内容可分享');return;}
+  let txt=(t?'【'+t+'】\n':'')+c;
+  showShareModal(t||'文档分享',txt);
+}
+
+// 渲染历史文档（卡片式）
+function renderDocHistory(){
+  let list=document.getElementById('docHistoryList');
+  let countEl=document.getElementById('docCount');
+  if(countEl)countEl.textContent='共 '+docs.length+' 条';
+  if(docs.length===0){
+    list.innerHTML='<p style="text-align:center;color:#999;padding:20px 0">暂无保存的文档</p>';
+    return;
+  }
+  list.innerHTML=docs.map(d=>{
+    let titleHtml=d.title?`<div class="doc-card-title">${escapeHtml(d.title)}</div>`:'';
+    let bodyHtml=escapeHtml(d.content);
+    return `<div class="doc-card">${titleHtml}<div class="doc-card-body">${bodyHtml}</div><div class="doc-card-meta"><span>${escapeHtml(d.date)}</span><button class="btn-xs btn-gray" onclick="editDoc('${d.id}')">编辑</button><button class="btn-xs btn-green" onclick="shareDocById('${d.id}')">分享</button><button class="btn-xs btn-red" onclick="delDoc('${d.id}')">删除</button></div></div>`;
+  }).join('');
+}
+
+// 编辑文档
+function editDoc(id){
+  let doc=docs.find(d=>d.id===id);
+  if(!doc)return;
+  editingDocId=id;
+  document.getElementById('docTitle').value=doc.title||'';
+  document.getElementById('docContent').innerText=doc.content||'';
+  // 滚动到编辑区域
+  document.getElementById('page4').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// 分享指定文档
+function shareDocById(id){
+  let doc=docs.find(d=>d.id===id);
+  if(!doc){alert('文档不存在');return;}
+  let txt=(doc.title?'【'+doc.title+'】\n':'')+doc.content;
+  showShareModal(doc.title||'文档分享',txt);
+}
+
+// 删除文档
+window.delDoc = function(id){
+  if(!confirm('确定删除该文档？此操作不可恢复')) return;
+  docs = docs.filter(d => d.id !== id);
+  if(editingDocId===id) editingDocId='';
+  saveData();
+  searchDoc();
+}
+
+// 修复日期查找逻辑
+function searchDoc(){
+  let searchDate=document.getElementById('docSearchDate').value;
+  let searchKey=document.getElementById('docSearchKey').value.toLowerCase();
+  let r=docs.filter(x=>{
+    let matchDate=true;
+    if(searchDate){
+      let docDateStr=String(x.date).slice(0,10);
+      matchDate=docDateStr===searchDate;
+    }
+    let matchKey=!searchKey || x.content.toLowerCase().includes(searchKey) || (x.title||'').toLowerCase().includes(searchKey);
+    return matchDate && matchKey;
+  });
+  let list=document.getElementById('docHistoryList');
+  let countEl=document.getElementById('docCount');
+  if(countEl)countEl.textContent='共 '+r.length+' 条';
+  if(r.length===0){
+    list.innerHTML='<p style="text-align:center;color:#999;padding:20px 0">无匹配的文档</p>';
+    return;
+  }
+  list.innerHTML=r.map(d=>{
+    let titleHtml=d.title?`<div class="doc-card-title">${escapeHtml(d.title)}</div>`:'';
+    let bodyHtml=escapeHtml(d.content);
+    return `<div class="doc-card">${titleHtml}<div class="doc-card-body">${bodyHtml}</div><div class="doc-card-meta"><span>${escapeHtml(d.date)}</span><button class="btn-xs btn-gray" onclick="editDoc('${d.id}')">编辑</button><button class="btn-xs btn-green" onclick="shareDocById('${d.id}')">分享</button><button class="btn-xs btn-red" onclick="delDoc('${d.id}')">删除</button></div></div>`;
+  }).join('');
+}
+
+// ======================
+// 核心工具
+// ======================
+function getToday(){return new Date().toISOString().split('T')[0]}
+function getWorkerName(id){return workers.find(w=>w.id===id)?.name||''}
+function getTaskName(id){return tasks.find(t=>t.id===id)?.name||''}
+function getWorkerNames(ids){return ids.map(id=>getWorkerName(id)).filter(Boolean)}
+function fmtAttend(r){
+  if(!r)return '未考勤';
+  let days=r.type==='half'?0.5:1;
+  let ot=Number(r.overtime)>0?',加班'+Number(r.overtime)+'小时':'';
+  let rm=r.remark?'（'+r.remark+'）':'';
+  return days+'天'+ot+rm;
+}
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function refreshAllPage(){switchTab(Number(document.querySelector('.tab.active').dataset.tab)||1)}
+function switchTab(n){
+  document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',i===n-1);t.dataset.tab=i+1});
+  document.querySelectorAll('.tab-content').forEach((p,i)=>p.classList.toggle('show',i===n-1));
+  const titles=['排工','考勤','管理','文档','存档'];
+  document.getElementById('pageTitle').textContent=titles[n-1];
+  if(n===1){let d=document.getElementById('planDate').value||getToday();document.getElementById('planDateDisplay').textContent=d;renderPlanPage()}
+  if(n===2){let d=document.getElementById('attendDate').value||getToday();document.getElementById('attendDateDisplay').textContent=d;renderAttendPlanList();renderAttendList()}
+  if(n===3){renderManage()}
+  if(n===4){renderDocHistory();searchDoc()}
+  if(n===5){renderArchiveList();renderTaskArchiveList();renderWorkerArchiveList();renderStatsInput();renderStats()}
+}
+
+// ======================
+// 排工
+// ======================
+function changePlanDate(delta){saveCurrentPlan();autoArchiveIfNeeded();let d=new Date(document.getElementById('planDate').value||getToday());d.setDate(d.getDate()+delta);let s=d.toISOString().split('T')[0];document.getElementById('planDate').value=s;document.getElementById('planDateDisplay').textContent=s;renderPlanPage()}
+function renderPlanPage(){
+  let d=document.getElementById('planDate').value||getToday();
+  let p=planData[d]||[];
+  
+  // 获取当天已安排的所有工人ID（排除当前选中任务）
+  let assignedWorkerIds=[];
+  p.forEach(s=>{
+    if(s.tid !== curSelTaskId){
+      assignedWorkerIds.push(...s.uids);
+    }
+  });
+  assignedWorkerIds=[...new Set(assignedWorkerIds)];
+  
+  // 只显示正常状态任务，已安排的任务排后面
+  let taskNoWorker=[],taskWithWorker=[];
+  tasks.filter(t=>t.status===0).forEach(t=>{
+    let hasWorker=p.some(s=>s.tid===t.id&&s.uids.length>0);
+    hasWorker?taskWithWorker.push(t):taskNoWorker.push(t);
+  });
+  let allTasks=[...taskNoWorker,...taskWithWorker];
+  document.getElementById('planTaskListBox').innerHTML=allTasks.map(t=>{
+    let hasW=p.some(s=>s.tid===t.id&&s.uids.length>0);
+    let cls=curSelTaskId===t.id?'active':(hasW?'selected':'');
+    return `<div class="list-item ${cls}" onclick="selectPlanTask('${t.id}')">${escapeHtml(t.name)}</div>`;
+  }).join('');
+
+  // 工人列表：当前选中任务工人排最前，其他任务工人标注来源
+  let all=workers.filter(w=>w.status===1);
+  let selected=all.filter(w=>curSelWorkerIds.includes(w.id));
+  let otherTaskWorkers=all.filter(w=>assignedWorkerIds.includes(w.id));
+  let unassigned=all.filter(w=>!assignedWorkerIds.includes(w.id)&&!curSelWorkerIds.includes(w.id));
+
+  // 获取被其他任务占用的工人所在的任务名
+  let workerTaskMap={};
+  p.forEach(s=>{
+    s.uids.forEach(uid=>{workerTaskMap[uid]=s.tname;});
+  });
+
+  document.getElementById('planWorkerListBox').innerHTML=[...selected,...unassigned,...otherTaskWorkers].map(w=>{
+    let isSelected=curSelWorkerIds.includes(w.id);
+    let isOtherTask=assignedWorkerIds.includes(w.id);
+    let cls=isSelected?'selected':(isOtherTask?'item-disable':'');
+    let otherTaskName=isOtherTask?workerTaskMap[w.id]||'':'';
+
+    if(isOtherTask){
+      // 在其他任务中，不可直接点击，显示来源任务名
+      return `<div class="list-item ${cls}" style="text-decoration:none;cursor:default">
+        <div class="item-content">
+          <div class="worker-name" style="color:#9ca3af;font-size:14px">${escapeHtml(w.name)}</div>
+          <div style="font-size:11px;color:#9ca3af">已在「${escapeHtml(otherTaskName)}」</div>
+        </div>
+      </div>`;
+    }
+    return `<div class="list-item ${cls}" onclick="togglePlanWorker('${w.id}')">
+      ${isSelected?`<div class="item-content"><div class="worker-name">${escapeHtml(w.name)}</div></div>`:`<div class="item-content"><div class="worker-name">${escapeHtml(w.name)}</div></div>`}
+    </div>`;
+  }).join('');
+  
+  renderPlanList(d);
+}
+function selectPlanTask(id){saveCurrentPlan();curSelTaskId=id;let d=document.getElementById('planDate').value||getToday();let p=planData[d]||[];let i=p.find(s=>s.tid===id);curSelWorkerIds=i?[...i.uids]:[];renderPlanPage()}
+function togglePlanWorker(uid){
+  if(!curSelTaskId)return;
+  let d=document.getElementById('planDate').value||getToday();
+  let p=planData[d]||[];
+  let i=curSelWorkerIds.indexOf(uid);
+
+  if(i>-1){
+    // 移除：从当前任务取消选中
+    curSelWorkerIds.splice(i,1);
+  } else {
+    // 添加：先检查该工人是否已被其他任务占用，是则自动移除
+    p.forEach(s=>{
+      if(s.tid!==curSelTaskId && s.uids.includes(uid)){
+        s.uids=s.uids.filter(id=>id!==uid);
+      }
+    });
+    // 清理空任务
+    planData[d]=p.filter(s=>s.uids.length>0);
+    // 清理该工人在其他任务留下的考勤
+    cleanupInvalidAttendance(d);
+    curSelWorkerIds.push(uid);
+  }
+  saveCurrentPlan();
+  renderPlanPage();
+}
+function saveCurrentPlan(){let d=document.getElementById('planDate').value||getToday();if(!curSelTaskId)return;let p=planData[d]||[];let t=tasks.find(x=>x.id===curSelTaskId);let e=p.find(s=>s.tid===curSelTaskId);if(e)e.uids=[...curSelWorkerIds];else p.push({tid:curSelTaskId,tname:t?.name||'',uids:[...curSelWorkerIds]});planData[d]=p;saveData()}
+
+// 排工列表：两行显示
+function renderPlanList(date){
+  let p=planData[date]||[];
+  if(p.length===0){
+    document.getElementById('planListBox').innerHTML='<p style="text-align:center;color:#999">暂无安排</p>';
+    return;
+  }
+  document.getElementById('planListBox').innerHTML=p.map(s=>{
+    let safeTask = escapeHtml(s.tname);
+    let safeWorkers = getWorkerNames(s.uids).map(escapeHtml).join('、');
+    return `
+    <div class="item">
+      <div class="item-content">
+        <div class="task-name">${safeTask}</div>
+        <div style="font-size:12px;color:#666;line-height:1.3">${safeWorkers||'未分配'}</div>
+      </div>
+      <button class="btn-sm btn-green" onclick="editPlanTask('${s.tid}')">编辑</button>
+      <button class="btn-sm btn-red" onclick="delPlanItem('${date}','${s.tid}')">删</button>
+    </div>`;
+  }).join('');
+}
+
+function editPlanTask(tid){selectPlanTask(tid)}
+function delPlanItem(date,tid){
+  if(!planData[date])return;
+  planData[date]=planData[date].filter(s=>s.tid!==tid);
+  if(planData[date].length===0)delete planData[date];
+  saveData();
+  cleanupInvalidAttendance(date);
+  refreshAllPage();
+}
+function clearPlan(){
+  let d=document.getElementById('planDate').value||getToday();
+  if(confirm('确定清空当日排班？')){
+    delete planData[d];
+    saveData();
+    cleanupInvalidAttendance(d);
+    refreshAllPage();
+  }
+}
+function sharePlan(){let d=document.getElementById('planDate').value||getToday();let p=planData[d]||[];if(p.length===0){alert('暂无排班计划');return}
+  let txt=d+' 用工计划\n'+p.map((s,i)=>`${i+1}. ${s.tname}：${getWorkerNames(s.uids).join('、')||'未分配'}`).join('\n')+`\n共${p.length}项任务`;
+  showShareModal('排班计划',txt);
+}
+
+// ======================
+// 考勤
+// ======================
+function changeAttendDate(delta){autoArchiveIfNeeded();let d=new Date(document.getElementById('attendDate').value||getToday());d.setDate(d.getDate()+delta);let s=d.toISOString().split('T')[0];document.getElementById('attendDate').value=s;document.getElementById('attendDateDisplay').textContent=s;renderAttendPlanList();renderAttendList()}
+function cleanupInvalidAttendance(date){if(!attendData[date])return;let t=planData[date]||[];let v=[...new Set(t.flatMap(s=>s.uids))];Object.keys(attendData[date]).forEach(u=>{if(!v.includes(u))delete attendData[date][u]});if(Object.keys(attendData[date]).length===0)delete attendData[date];saveData()}
+function renderAttendPlanList(){
+  let d=document.getElementById('attendDate').value||getToday();
+  let t=planData[d]||[];
+  if(t.length===0){
+    document.getElementById('attendPlanList').innerHTML='<p style="text-align:center;color:#999">今日无排班</p>';
+    return;
+  }
+  document.getElementById('attendPlanList').innerHTML=t.map(s=>{
+    let safeTask = escapeHtml(s.tname);
+    let safeWorkers = getWorkerNames(s.uids).map(escapeHtml).join('、');
+    return `<div class="item"><span style="flex:1">${safeTask}</span><span style="color:#666">${safeWorkers||'未分配'}</span></div>`;
+  }).join('');
+}
+function shareAttendance(){
+  let d=document.getElementById('attendDate').value||getToday();
+  let a=attendData[d]||{},p=planData[d]||[];
+  let u=[...new Set(p.flatMap(s=>s.uids))];
+  let w=workers.filter(x=>x.status&&u.includes(x.id));
+  if(w.length===0){alert('暂无考勤数据');return}
+  let m={};
+  p.forEach(t=>{m[t.tname]=[];});
+  w.forEach(x=>{
+    let ts=p.filter(s=>s.uids.includes(x.id)).map(s=>s.tname);
+    let r=a[x.id]||{type:'whole',remark:'',overtime:0};
+    let l=x.name+'：'+fmtAttend(r);
+    ts.forEach(n=>{ if(m[n]) m[n].push(l); });
+  });
+  let txt=d+' 考勤记录\n'+Object.keys(m).filter(k=>m[k].length>0).map(k=>`\n【${k}】\n${m[k].join('\n')}`).join('')+`\n共${w.length}人`;
+  showShareModal('考勤记录',txt);
+}
+function renderAttendList(){
+  let d=document.getElementById('attendDate').value||getToday();
+  let p=planData[d]||[];
+  
+  // 自动为排班人员创建考勤记录（默认视为打卡有效）
+  if(!attendData[d])attendData[d]={};
+  p.forEach(t=>{
+    t.uids.forEach(u=>{
+      if(!attendData[d][u]){
+        attendData[d][u]={type:'whole',remark:'',overtime:0};
+      }
+    });
+  });
+  saveData();
+  
+  let g={};
+  p.forEach(t=>{g[t.tid]={name:t.tname,ws:t.uids.filter(u=>workers.some(x=>x.id===u&&x.status))}});
+  let h='';
+  for(let tid in g){
+    let t=g[tid];
+    if(t.ws.length===0)continue;
+    h+=`<div class="section-title">${escapeHtml(t.name)}</div>`;
+    t.ws.forEach(u=>{
+      let w=workers.find(x=>x.id===u);
+      if(!w)return;
+      let a=attendData[d]?.[u]||{type:'whole',remark:'',overtime:0};
+      let safeName=escapeHtml(w.name);
+      let safeRemark=escapeHtml(a.remark||'');
+      h+=`<div class="item"><span class="name-text">${safeName}</span><div class="status-group"><div class="status-card ${a.type==='half'?'active':''}" onclick="setAttType('${u}','${d}','half')">半天</div><div class="status-card ${a.type==='whole'?'active':''}" onclick="setAttType('${u}','${d}','whole')">整天</div></div><div class="attend-inputs"><input type="number" inputmode="decimal" min="0" max="24" step="0.5" class="overtime-input" value="${a.overtime||''}" placeholder="加班" onblur="setOvertime('${u}','${d}',this.value)"><input value="${safeRemark}" placeholder="备注" maxlength="100" onblur="setRemark('${u}','${d}',this.value)"></div></div>`;
+    });
+  }
+  document.getElementById('attendList').innerHTML=h||'<p style="text-align:center;color:#999">无考勤人员</p>';
+}
+function setAttType(u,d,t){let p=planData[d]||[];if(!p.some(s=>s.uids.includes(u))){alert('该人员未排班');return}if(!attendData[d])attendData[d]={};if(!attendData[d][u])attendData[d][u]={type:'whole',remark:'',overtime:0};attendData[d][u].type=t;saveData();renderAttendList()}
+function setRemark(u,d,v){
+  let p=planData[d]||[];
+  if(!p.some(s=>s.uids.includes(u)))return;
+  if(!attendData[d])attendData[d]={};
+  if(!attendData[d][u])attendData[d][u]={type:'whole',remark:'',overtime:0};
+  attendData[d][u].remark=String(v||'').trim();
+  saveData();
+}
+function setOvertime(u,d,v){
+  let p=planData[d]||[];
+  if(!p.some(s=>s.uids.includes(u)))return;
+  if(!attendData[d])attendData[d]={};
+  if(!attendData[d][u])attendData[d][u]={type:'whole',remark:'',overtime:0};
+  let n=parseFloat(v);
+  if(isNaN(n)||n<0){n=0;}
+  if(n>24){n=24;alert('加班不能超过24小时，已自动修正');}
+  attendData[d][u].overtime=Math.round(n*10)/10;
+  saveData();
+  renderAttendList();
+}
+
+// ======================
+// 管理页面
+// ======================
+function renderManage(){
+  // 任务列表（只显示正常状态）
+  let activeTasks = tasks.filter(t => t.status === 0);
+
+  // 任务列表（两行布局）
+  let taskActiveHtml = activeTasks.map(t => {
+    let text = '正常';
+    let cls = 'status-doing';
+    let safeName = escapeHtml(t.name);
+    return `
+    <div class="item">
+      <div class="item-content">
+        <div class="task-name">${safeName}</div>
+        <div class="item-status-row">
+          <span class="status-tag ${cls}">${text}</span>
+          <button class="btn-xs btn-green" onclick="openEditModal('task','${t.id}')">编辑</button>
+          <button class="btn-xs btn-red" onclick="delTask('${t.id}')">删除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('taskActiveList').innerHTML = taskActiveHtml || '<p style="text-align:center;color:#999">无任务</p>';
+
+  // 人员列表（两行布局）
+  let activeWorkers = workers.filter(w => w.status === 1);
+
+  // 在职人员列表（两行布局）
+  let workerActiveHtml = activeWorkers.map(w => {
+    let safeName = escapeHtml(w.name);
+    return `
+    <div class="item">
+      <div class="item-content">
+        <div class="worker-name">${safeName}</div>
+        <div class="item-status-row">
+          <span class="status-tag status-active">在职</span>
+          <button class="btn-xs btn-green" onclick="openEditModal('worker','${w.id}')">编辑</button>
+          <button class="btn-xs btn-red" onclick="delWorker('${w.id}')">删除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('workerActiveList').innerHTML = workerActiveHtml || '<p style="text-align:center;color:#999">无在职人员</p>';
+}
+
+// 新增任务
+function addTask(){
+  let name = document.getElementById('taskName').value.trim();
+  if(!name) { alert('请输入任务名称'); return; }
+  if(tasks.some(t => t.name === name)) { alert('已存在同名任务：' + name); return; }
+  tasks.push({ id: Date.now().toString(), name: name, status: 0, desc: '' });
+  document.getElementById('taskName').value = '';
+  saveData();
+  renderManage();
+}
+
+// 新增人员
+function addWorker(){
+  let name = document.getElementById('workerName').value.trim();
+  if(!name) { alert('请输入人员姓名'); return; }
+  if(workers.some(w => w.name === name)) { alert('已存在同名人员：' + name); return; }
+  workers.push({ id: Date.now().toString(), name: name, status: 1 });
+  document.getElementById('workerName').value = '';
+  saveData();
+  renderManage();
+}
+
+// 打开编辑弹窗
+function openEditModal(type, id){
+  editType = type;
+  editId = id;
+  if(type === 'task'){
+    let task = tasks.find(t => t.id === id);
+    if(!task) return;
+    let safeName = escapeHtml(task.name);
+    openModal('编辑任务', `
+      <label>任务名称</label><input type="text" id="editTaskName" value="${safeName}" maxlength="50">
+      <label>状态</label>
+      <select id="editTaskStatus">
+        <option value="0" ${task.status===0?'selected':''}>正常</option>
+        <option value="1" ${task.status===1?'selected':''}>完成</option>
+      </select>
+    `, 'edit');
+  } else {
+    let worker = workers.find(w => w.id === id);
+    if(!worker) return;
+    let safeName = escapeHtml(worker.name);
+    openModal('编辑人员', `
+      <label>姓名</label><input type="text" id="editWorkerName" value="${safeName}" maxlength="20">
+      <label>状态</label>
+      <select id="editWorkerStatus">
+        <option value="1" ${worker.status===1?'selected':''}>在职启用</option>
+        <option value="0" ${worker.status===0?'selected':''}>离职禁用</option>
+      </select>
+    `, 'edit');
+  }
+}
+
+// 保存编辑（状态变更联动修复）
+function saveEdit(){
+  if(editType === 'task'){
+    let task = tasks.find(t => t.id === editId);
+    if(!task) return;
+    let oldStatus = task.status;
+    task.name = document.getElementById('editTaskName').value.trim() || task.name;
+    task.status = Number(document.getElementById('editTaskStatus').value);
+
+    // 任务改为完成：自动清理所有日期的该任务排班
+    if(oldStatus !== 1 && task.status === 1){
+      for(let date in planData){
+        if(!planData[date])continue;
+        planData[date] = planData[date].filter(s => s.tid !== editId);
+        if(planData[date].length === 0){delete planData[date];}
+        cleanupInvalidAttendance(date);
+      }
+    }
+  } else {
+    let worker = workers.find(w => w.id === editId);
+    if(!worker) return;
+    let oldStatus = worker.status;
+    let newName = document.getElementById('editWorkerName').value.trim();
+    if(newName && workers.some(w => w.id !== editId && w.name === newName)){
+      alert('已存在同名人员：' + newName);
+      return;
+    }
+    worker.name = newName || worker.name;
+    worker.status = Number(document.getElementById('editWorkerStatus').value);
+
+    // 人员改为离职：自动清理所有日期的该人员排班
+    if(oldStatus === 1 && worker.status === 0){
+      for(let date in planData){
+        if(!planData[date])continue;
+        planData[date].forEach(s => s.uids = s.uids.filter(uid => uid !== editId));
+        planData[date] = planData[date].filter(s => s.uids.length > 0);
+        if(planData[date].length === 0) delete planData[date];
+        cleanupInvalidAttendance(date);
+      }
+    }
+  }
+  saveData();
+  renderManage();
+  refreshAllPage();
+  closeModal();
+}
+
+// 删除任务
+function delTask(id){
+  if(!confirm('确定删除该任务？所有日期的排班记录都会永久清除')) return;
+  tasks = tasks.filter(t => t.id !== id);
+  for(let date in planData){
+    if(!planData[date])continue;
+    planData[date] = planData[date].filter(s => s.tid !== id);
+    if(planData[date].length === 0) delete planData[date];
+    cleanupInvalidAttendance(date);
+  }
+  saveData();
+  renderManage();
+  refreshAllPage();
+}
+
+// 删除人员
+function delWorker(id){
+  if(!confirm('确定删除该人员？所有考勤和排班记录都会永久清除')) return;
+  workers = workers.filter(w => w.id !== id);
+  for(let date in planData){
+    if(!planData[date]){delete planData[date];continue;}
+    planData[date].forEach(s => s.uids = s.uids.filter(uid => uid !== id));
+    planData[date] = planData[date].filter(s => s.uids.length > 0);
+    if(planData[date].length === 0) delete planData[date];
+  }
+  for(let date in attendData){
+    if(attendData[date] && attendData[date][id]) delete attendData[date][id];
+    if(attendData[date] && Object.keys(attendData[date]).length === 0) delete attendData[date];
+  }
+  saveData();
+  renderManage();
+  refreshAllPage();
+}
+
+// ======================
+// 弹窗 & 复制
+// ======================
+function openModal(title, content, mode = 'share'){
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('shareContent').innerHTML = content;
+  document.getElementById('shareModal').style.display = 'flex';
+  // shareTxt 由 showShareModal 在调用前准备好；edit 模式下置空
+  if(mode !== 'share'){ shareTxt = ''; }
+  document.getElementById('editModalButtons').style.display = mode === 'edit' ? 'flex' : 'none';
+  document.getElementById('shareModalButtons').style.display = mode === 'share' ? 'flex' : 'none';
+}
+function closeModal(){ document.getElementById('shareModal').style.display = 'none'; }
+function copyText(){ navigator.clipboard.writeText(shareTxt).then(()=>{alert('已复制');closeModal()}).catch(()=>alert('复制失败')); }
+function showShareModal(title,text){
+  shareTxt = String(text==null?'':text);
+  let safe = shareTxt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  openModal(title, safe, 'share');
+}
+function delItem(){
+  if(editType === 'task'){
+    delTask(editId);
+  } else if(editType === 'worker'){
+    delWorker(editId);
+  }
+  closeModal();
+}
+
+// ======================
+// 备份 & 恢复
+// ======================
+function exportAllData(){
+  let j = JSON.stringify({workers,tasks,planData,attendData,docs,archives});
+  let b = new Blob([j],{type:'application/json'});
+  let u = URL.createObjectURL(b);
+  let a = document.createElement('a');a.href=u;a.download='考勤排班备份.json';a.click();URL.revokeObjectURL(u);
+}
+function triggerImport(){ document.getElementById('importFileInput').click(); }
+function importAllData(file){
+  if(!file) return;
+  let r = new FileReader();
+  r.onload = e=>{
+    try{
+      let d = JSON.parse(e.target.result);
+      if(!d || typeof d !== 'object'){ alert('恢复失败：文件格式错误'); return; }
+      workers = Array.isArray(d.workers) ? d.workers : [];
+      tasks = Array.isArray(d.tasks) ? d.tasks : [];
+      planData = (d.planData && typeof d.planData === 'object') ? d.planData : {};
+      attendData = (d.attendData && typeof d.attendData === 'object') ? d.attendData : {};
+      docs = Array.isArray(d.docs) ? d.docs : [];
+      // archives 字段校验：每个键需含 plan/attend
+      let rawArc = (d.archives && typeof d.archives === 'object') ? d.archives : {};
+      archives = {};
+      Object.keys(rawArc).forEach(k => {
+        if(rawArc[k] && Array.isArray(rawArc[k].plan) && rawArc[k].attend && typeof rawArc[k].attend === 'object'){
+          archives[k] = rawArc[k];
+        }
+      });
+      saveData();
+      refreshAllPage();
+      alert('恢复成功');
+    }catch(e){ alert('恢复失败：文件格式错误'); }
+  };
+  r.readAsText(file);
+}
+
+
+// ======================
+// 存储 - 本地缓存 + 服务器同步
+// ======================
+let _paibanSaveTimer = null;
+let _paibanSyncedAt = null;
+
+function updateSyncStatus(text){
+  const el = document.getElementById('syncStatus');
+  if(el) el.textContent = text;
+}
+
+// 保存：立即写 localStorage，延迟 1 秒批量同步到服务器
+function saveData(){
+  const payload = JSON.stringify({workers,tasks,planData,attendData,docs,archives});
+  localStorage.setItem('workData3', payload);
+  // 防抖 API 保存
+  clearTimeout(_paibanSaveTimer);
+  _paibanSaveTimer = setTimeout(() => {
+    fetch('/api/paiban/data', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: payload
+    }).then(r => r.json()).then(j => {
+      if(j.success) { _paibanSyncedAt = j.updated_at; updateSyncStatus('已同步'); }
+    }).catch(() => { updateSyncStatus('离线'); });
+  }, 1000);
+}
+
+// 解析数据到全局变量
+function _applyDataObject(o){
+  workers = Array.isArray(o.workers) ? o.workers : [];
+  tasks = Array.isArray(o.tasks) ? o.tasks : [];
+  planData = (o.planData && typeof o.planData === 'object') ? o.planData : {};
+  attendData = (o.attendData && typeof o.attendData === 'object') ? o.attendData : {};
+  docs = Array.isArray(o.docs) ? o.docs : [];
+  let rawArc = (o.archives && typeof o.archives === 'object') ? o.archives : {};
+  archives = {};
+  Object.keys(rawArc).forEach(k => {
+    if(rawArc[k] && Array.isArray(rawArc[k].plan) && rawArc[k].attend && typeof rawArc[k].attend === 'object'){
+      archives[k] = rawArc[k];
+    }
+  });
+}
+
+// 加载：优先服务器，回退 localStorage
+async function loadData(){
+  updateSyncStatus('加载中...');
+  let serverLoaded = false;
+  try {
+    const resp = await fetch('/api/paiban/data');
+    const json = await resp.json();
+    if(json.success && json.data){
+      _applyDataObject(json.data);
+      _paibanSyncedAt = json.data.updated_at;
+      serverLoaded = true;
+      // 更新本地缓存
+      localStorage.setItem('workData3', JSON.stringify(json.data));
+      updateSyncStatus('已同步');
+    }
+  } catch(e) {}
+
+  if(!serverLoaded){
+    // 服务器不可用，回退 localStorage
+    updateSyncStatus('离线');
+    let d = localStorage.getItem('workData3');
+    if(d){
+      try {
+        _applyDataObject(JSON.parse(d));
+      } catch(e){
+        workers = [...defaultWorkers]; tasks = [...defaultTasks]; docs = []; archives = {};
+      }
+    } else {
+      workers = [...defaultWorkers]; tasks = [...defaultTasks]; docs = []; archives = {};
+    }
+  }
+  refreshAllPage();
+}
+
+// ======================
+// 统计（按人员/任务/月份/范围 × 归档数据）+ 归档列表
+// ======================
+let currentStatsDim='person';
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+window.switchArchiveTab=function(tab){
+  document.querySelectorAll('.qdim-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.qdim-btn[data-dim="'+tab+'"]').classList.add('active');
+  
+  document.getElementById('archiveStatsPanel').style.display='none';
+  document.getElementById('archiveAttendPanel').style.display='none';
+  document.getElementById('archiveTaskPanel').style.display='none';
+  document.getElementById('archiveWorkerPanel').style.display='none';
+  
+  if(tab==='stats'){
+    document.getElementById('archiveStatsPanel').style.display='block';
+    renderStatsInput();
+    renderStats();
+  }else if(tab==='attend'){
+    document.getElementById('archiveAttendPanel').style.display='block';
+    filterArchiveByMonth();
+  }else if(tab==='task'){
+    document.getElementById('archiveTaskPanel').style.display='block';
+    renderTaskArchiveList();
+  }else if(tab==='worker'){
+    document.getElementById('archiveWorkerPanel').style.display='block';
+    renderWorkerArchiveList();
+  }
+};
+
+window.switchStatsDim=function(d){
+  currentStatsDim=d;
+  document.querySelectorAll('.qdim-btn-sm').forEach(b=>b.classList.toggle('active',b.dataset.dim===d));
+  renderStatsInput();
+  renderStats();
+};
+
+function filterArchiveByMonth(){
+  let month=document.getElementById('archiveMonth')?.value;
+  let box=document.getElementById('archiveList');
+  let dates=Object.keys(archives).sort((a,b)=>b.localeCompare(a));
+  
+  if(month){
+    dates=dates.filter(d=>d.startsWith(month));
+  }
+  
+  if(dates.length===0){
+    box.innerHTML='<p style="text-align:center;color:#999">暂无归档数据</p>';
+    return;
+  }
+  
+  let html=dates.map(date=>{
+    let arc=archives[date];
+    let planCount=arc.plan?arc.plan.length:0;
+    let attendCount=arc.attend?Object.keys(arc.attend).length:0;
+    let taskNames=(arc.plan||[]).map(p=>p.tname).slice(0,3);
+    let taskText=taskNames.length>0?taskNames.join('、'):'无任务';
+    if((arc.plan||[]).length>3)taskText+='...';
+    return `<div class="archive-item"><div class="archive-date">${date}</div><div class="archive-info">排班${planCount}条 · 考勤${attendCount}人</div><div class="archive-tasks" title="${(arc.plan||[]).map(p=>p.tname).join('、')}">${taskText}</div></div>`;
+  }).join('');
+  box.innerHTML=html;
+}
+
+function renderTaskArchiveList(){
+  let archiveTasks = tasks.filter(t => t.status === 1);
+  let taskArchiveHtml = archiveTasks.map(t => {
+    let safeName = escapeHtml(t.name);
+    return `
+    <div class="item item-disable">
+      <div class="item-content">
+        <div class="task-name">${safeName}</div>
+        <div class="item-status-row">
+          <span class="status-tag status-done">完成</span>
+          <button class="btn-xs btn-green" onclick="openEditModal('task','${t.id}')">编辑</button>
+          <button class="btn-xs btn-red" onclick="delTask('${t.id}')">删除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  let taskBox=document.getElementById('taskArchiveList');
+  if(taskBox) taskBox.innerHTML = taskArchiveHtml || '<p style="text-align:center;color:#999">无已归档任务</p>';
+}
+
+function renderWorkerArchiveList(){
+  let archiveWorkers = workers.filter(w => w.status === 0);
+  let workerArchiveHtml = archiveWorkers.map(w => {
+    let safeName = escapeHtml(w.name);
+    return `
+    <div class="item item-disable">
+      <div class="item-content">
+        <div class="worker-name">${safeName}</div>
+        <div class="item-status-row">
+          <span class="status-tag status-inactive">离职</span>
+          <button class="btn-xs btn-green" onclick="openEditModal('worker','${w.id}')">编辑</button>
+          <button class="btn-xs btn-red" onclick="delWorker('${w.id}')">删除</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  let workerBox=document.getElementById('workerArchiveList');
+  if(workerBox) workerBox.innerHTML = workerArchiveHtml || '<p style="text-align:center;color:#999">无离职人员</p>';
+}
+
+function renderArchiveList(){
+  let box=document.getElementById('archiveList');
+  let dates=Object.keys(archives).sort((a,b)=>b.localeCompare(a));
+  
+  if(dates.length===0){
+    box.innerHTML='<p style="text-align:center;color:#999">暂无归档数据</p>';
+    return;
+  }
+  
+
+  let esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  
+  let html=dates.map(date=>{
+    let arc=archives[date];
+    let planCount=(arc.plan||[]).length;
+    let attendCount=Object.keys(arc.attend||{}).length;
+    let planPersonCount=new Set((arc.plan||[]).flatMap(p=>p.uids)).size;
+    let taskNames=(arc.plan||[]).map(p=>p.tname).join('、');
+    
+    return `
+    <div class="item" style="min-height:auto;padding:10px">
+      <div class="item-content">
+        <div style="font-weight:600;color:#0f172a">${date}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:4px">
+          排班 ${planCount}条(${planPersonCount}人) · 考勤 ${attendCount}人
+        </div>
+        ${taskNames?`<div style="font-size:12px;color:#64748b;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(taskNames)}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  box.innerHTML=html;
+}
+
+
+function renderStatsInput(){
+  let box=document.getElementById('statsInput');
+  let today=getToday();
+  let ym=today.slice(0,7);
+  if(currentStatsDim==='person'){
+    // 只显示在职人员
+    let opts=workers.filter(w=>w.status).map(w=>`<option value="${w.id}">${esc(w.name)}</option>`).join('');
+    box.innerHTML=`<div class="flex-row"><select id="qsPerson" onchange="renderStats()" class="select-inline" style="flex:2"><option value="">所有人</option>${opts}</select><input type="month" id="qsMonth" value="${ym}" onchange="renderStats()" class="select-inline" style="flex:1"></div>`;
+  }else if(currentStatsDim==='task'){
+    let opts=tasks.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+    box.innerHTML=`<div class="flex-row"><select id="qsTask" onchange="renderStats()" class="select-inline" style="flex:2"><option value="">选择任务</option>${opts}</select><input type="month" id="qsMonth" value="${ym}" onchange="renderStats()" class="select-inline" style="flex:1"></div>`;
+  }else if(currentStatsDim==='month'){
+    box.innerHTML=`<input type="month" id="qsMonth" value="${ym}" onchange="renderStats()" class="select-inline" style="width:100%">`;
+  }else{
+    box.innerHTML=`<div class="flex-row"><input type="date" id="qsRangeStart" value="${getMonthFirstDay(today)}" onchange="renderStats()" class="select-inline" style="flex:1"><span style="color:#999;flex:0 0 auto;padding:0 4px">~</span><input type="date" id="qsRangeEnd" value="${today}" onchange="renderStats()" class="select-inline" style="flex:1"></div>`;
+  }
+}
+
+function getMonthFirstDay(d){
+  return d.slice(0,7)+'-01';
+}
+
+function getDatesInMonth(ym){
+  return Object.keys(archives).filter(d=>d.startsWith(ym)).sort();
+}
+
+function getDatesInRange(start,end){
+  if(!start||!end||start>end)return[];
+  return Object.keys(archives).filter(d=>d>=start&&d<=end).sort();
+}
+
+function getAttendForPersonInDates(personId,dates){
+  let totalDays=0,totalOT=0;
+  let taskSet=new Set();
+  dates.forEach(date=>{
+    let arc=archives[date];
+    if((arc.attend||{})[personId]){
+      let r=arc.attend[personId];
+      totalDays+=r.type==='half'?0.5:1;
+      totalOT+=Number(r.overtime)||0;
+    }
+    (arc.plan||[]).forEach(p=>{if(p.uids.includes(personId))taskSet.add(p.tname);});
+  });
+  return{totalDays,totalOT,taskNames:[...taskSet]};
+}
+
+function getAttendForTaskInMonth(taskId,dates){
+  let totalPeople=new Set();
+  let totalDays=0,totalOT=0;
+  let dateCount=0;
+  dates.forEach(date=>{
+    let arc=archives[date];
+    let dayPlans=(arc.plan||[]).filter(p=>p.tid===taskId);
+    if(dayPlans.length>0){
+      dateCount++;
+      dayPlans.forEach(p=>p.uids.forEach(uid=>totalPeople.add(uid)));
+      Object.entries(arc.attend||{}).forEach(([uid,r])=>{
+        if(dayPlans.some(p=>p.uids.includes(uid))){
+          totalDays+=r.type==='half'?0.5:1;
+          totalOT+=Number(r.overtime)||0;
+        }
+      });
+    }
+  });
+  return{totalPeople:totalPeople.size,totalDays,totalOT,dateCount};
+}
+
+window.renderStats=function(){
+  let out=document.getElementById('statsOutput');
+  let actions=document.getElementById('statsActions');
+  let today=getToday(),ym=today.slice(0,7);
+  let txt='';
+  out.dataset.raw='';
+
+  if(currentStatsDim==='person'){
+    let pid=document.getElementById('qsPerson')?.value;
+    let month=document.getElementById('qsMonth')?.value||ym;
+    let personName=pid?getWorkerName(pid):'所有人';
+    let dates=Object.keys(archives).filter(d=>d.startsWith(month)).sort();
+    if(dates.length===0){out.innerHTML='<div class="so-empty">'+esc(month)+' 暂无归档数据</div>';actions.innerHTML='';return;}
+
+    let totalDays=0, totalOT=0;
+    const taskSet=new Set();
+    const dailyHtml=[];
+    
+    if(pid){
+      dates.forEach(date=>{
+        const arc=archives[date];
+        if(!arc)return;
+        const taskNames=(arc.plan||[]).filter(p=>p.uids.includes(pid)).map(p=>p.tname);
+        taskNames.forEach(t=>taskSet.add(t));
+        const rec=(arc.attend||{})[pid];
+        const typeLabel=rec?(rec.type==='whole'?'全天':'半天'):'无考勤';
+        const otLabel=rec?(rec.overtime>0?` · 加班${rec.overtime}h`:'' ):'';
+        const rmLabel=rec?(rec.remark?` · ${esc(rec.remark)}`:'' ):'';
+        if(rec || taskNames.length>0){
+          dailyHtml.push(`<div class="so-row"><span>${date}</span><span>${typeLabel}${otLabel}${rmLabel}</span></div>`);
+          if(taskNames.length>0) dailyHtml.push(`<div style="padding-left:12px;font-size:12px;color:#64748b;padding-bottom:4px;">任务：${taskNames.map(esc).join('、')}</div>`);
+        }
+        if(rec){
+          totalDays+=rec.type==='half'?0.5:1;
+          totalOT+=Number(rec.overtime)||0;
+        }
+      });
+    }else{
+      const personStats={};
+      dates.forEach(date=>{
+        const arc=archives[date];
+        if(!arc)return;
+        (arc.plan||[]).forEach(p=>{
+          p.uids.forEach(uid=>{
+            if(!personStats[uid]) personStats[uid]={days:0,ot:0,tasks:new Set()};
+            personStats[uid].tasks.add(p.tname);
+          });
+        });
+        const attend=arc.attend||{};
+        Object.keys(attend).forEach(uid=>{
+          if(!personStats[uid]) personStats[uid]={days:0,ot:0,tasks:new Set()};
+          personStats[uid].days+=attend[uid].type==='half'?0.5:1;
+          personStats[uid].ot+=Number(attend[uid].overtime)||0;
+        });
+      });
+      Object.keys(personStats).forEach(uid=>{
+        const name=getWorkerName(uid);
+        totalDays+=personStats[uid].days;
+        totalOT+=personStats[uid].ot;
+        personStats[uid].tasks.forEach(t=>taskSet.add(t));
+        dailyHtml.push(`<div class="so-row"><span>${name}</span><span>出勤 ${personStats[uid].days}天，加班 ${personStats[uid].ot}h</span></div>`);
+      });
+    }
+
+    txt=`【${personName}】${month} 工时统计\n出勤 ${totalDays} 天，加班 ${totalOT} 小时\n`;
+    if([...taskSet].length>0) txt+=`参与任务（${[...taskSet].length}项）：${[...taskSet].join('、')}`;
+    out.innerHTML=`<div class="so-section"><div class="so-label">出勤天数 ${totalDays}天</div></div><div class="so-section"><div class="so-label">加班小时 ${totalOT}小时</div></div>${[...taskSet].length>0?`<div class="so-section"><div class="so-label">参与任务（${[...taskSet].length}项）</div>${[...taskSet].map(t=>`<div class="so-row"><span>${esc(t)}</span></div>`).join('')}</div>`:''}${dailyHtml.length>0?`<div class="so-section"><div class="so-label">每日明细</div>${dailyHtml.join('')}</div>`:''}`;
+    actions.innerHTML=`<button class="btn-green" onclick="shareStats('person','${pid||''}','${month}')">分享</button>`;
+    out.dataset.raw=txt;
+
+  }else if(currentStatsDim==='task'){
+    let tid=document.getElementById('qsTask')?.value;
+    let month=document.getElementById('qsMonth')?.value||ym;
+    let taskName=tid?getTaskName(tid):'';
+    if(!tid){out.innerHTML='<div class="so-empty">请选择任务</div>';actions.innerHTML='';return;}
+    let dates=Object.keys(archives).filter(d=>d.startsWith(month)).sort();
+    if(dates.length===0){out.innerHTML='<div class="so-empty">'+esc(month)+' 暂无归档数据</div>';actions.innerHTML='';return;}
+
+    let totalPeople=new Set(), totalDays=0, totalOT=0, dateCount=0;
+    const dailyHtml=[];
+    dates.forEach(date=>{
+      const arc=archives[date];
+      const dayPlans=(arc.plan||[]).filter(p=>p.tid===tid);
+      if(dayPlans.length===0)return;
+      dateCount++;
+      const personIds=new Set();
+      dayPlans.forEach(p=>p.uids.forEach(uid=>{ personIds.add(uid); totalPeople.add(uid); }));
+      let dayTotalDays=0, dayTotalOT=0;
+      Object.entries(arc.attend||{}).forEach(([uid,r])=>{
+        if(personIds.has(uid)){
+          dayTotalDays+=r.type==='half'?0.5:1; dayTotalOT+=Number(r.overtime)||0;
+          totalDays+=r.type==='half'?0.5:1; totalOT+=Number(r.overtime)||0;
+        }
+      });
+      dailyHtml.push(`<div class="so-row"><span>${date}</span><span>${personIds.size}人 · ${dayTotalDays}天 · ${dayTotalOT}h</span></div>`);
+    });
+
+    txt=`【${taskName}】${month} 任务统计\n排工 ${dateCount} 天，参与 ${totalPeople.size} 人，出勤 ${totalDays} 天，加班 ${totalOT} 小时`;
+    out.innerHTML=`<div class="so-section"><div class="so-label">排工天数 ${dateCount}天</div></div><div class="so-section"><div class="so-label">参与人数 ${totalPeople.size}人</div></div><div class="so-section"><div class="so-label">出勤天数 ${totalDays}天</div></div><div class="so-section"><div class="so-label">加班小时 ${totalOT}小时</div></div>${dailyHtml.length>0?`<div class="so-section"><div class="so-label">每日明细</div>${dailyHtml.join('')}</div>`:''}`;
+    actions.innerHTML=`<button class="btn-green" onclick="shareStats('task','${tid}','${month}')">分享</button>`;
+    out.dataset.raw=txt;
+
+  }else if(currentStatsDim==='month'){
+    let month=document.getElementById('qsMonth')?.value||ym;
+    let dates=Object.keys(archives).filter(d=>d.startsWith(month)).sort();
+    if(dates.length===0){out.innerHTML='<div class="so-empty">'+esc(month)+' 暂无归档数据</div>';actions.innerHTML='';return;}
+
+    const taskSet=new Set(), planPersonSet=new Set(), attendPersonSet=new Set();
+    let planCount=0, attendCount=0, totalDays=0, totalOT=0;
+    dates.forEach(date=>{
+      const arc=archives[date];
+      if(!arc)return;
+      (arc.plan||[]).forEach(p=>{ 
+        taskSet.add(p.tid); 
+        planCount++; 
+        p.uids.forEach(u=>planPersonSet.add(u)); 
+      });
+      const attend=arc.attend||{};
+      Object.keys(attend).forEach(uid=>{ 
+        attendPersonSet.add(uid); 
+        attendCount++; 
+      });
+      Object.values(attend).forEach(r=>{ totalDays+=r.type==='half'?0.5:1; totalOT+=Number(r.overtime)||0; });
+    });
+
+    txt=`【${month}】月度汇总\n归档天数 ${dates.length}\n`;
+    txt+=`排班：${planCount} 条，涉及 ${planPersonSet.size} 人\n`;
+    txt+=`考勤：${attendCount} 条（${attendPersonSet.size} 人）\n`;
+    txt+=`任务种类 ${taskSet.size}\n`;
+    txt+=`出勤总天数 ${totalDays}，加班总小时 ${totalOT}`;
+    out.innerHTML=`<div class="so-section"><div class="so-label">归档天数 ${dates.length}天</div></div><div class="so-section"><div class="so-row"><span>排班条数</span><span>${planCount}</span></div><div class="so-row"><span>排班人员</span><span>${planPersonSet.size}人</span></div></div><div class="so-section"><div class="so-row"><span>考勤条数</span><span>${attendCount}</span></div><div class="so-row"><span>考勤人员</span><span>${attendPersonSet.size}人</span></div></div><div class="so-section"><div class="so-label">任务种类 ${taskSet.size}项</div></div><div class="so-section"><div class="so-label">出勤天数 ${totalDays}天 · 加班小时 ${totalOT}小时</div></div>`;
+    actions.innerHTML=`<button class="btn-green" onclick="shareStats('month','${month}')">分享</button>`;
+    out.dataset.raw=txt;
+
+  }else if(currentStatsDim==='range'){
+    let start=document.getElementById('qsRangeStart')?.value;
+    let end=document.getElementById('qsRangeEnd')?.value;
+    if(!start||!end){out.innerHTML='<div class="so-empty">请选择日期范围</div>';actions.innerHTML='';return;}
+    let dates=Object.keys(archives).filter(d=>d>=start&&d<=end).sort();
+    if(dates.length===0){out.innerHTML='<div class="so-empty">'+esc(start)+' 至 '+esc(end)+' 暂无归档数据</div>';actions.innerHTML='';return;}
+
+    const taskSet=new Set(), planPersonSet=new Set(), attendPersonSet=new Set();
+    let planCount=0, attendCount=0, totalDays=0, totalOT=0;
+    dates.forEach(date=>{
+      const arc=archives[date];
+      if(!arc)return;
+      (arc.plan||[]).forEach(p=>{ 
+        taskSet.add(p.tid); 
+        planCount++; 
+        p.uids.forEach(u=>planPersonSet.add(u)); 
+      });
+      const attend=arc.attend||{};
+      Object.keys(attend).forEach(uid=>{ 
+        attendPersonSet.add(uid); 
+        attendCount++; 
+      });
+      Object.values(attend).forEach(r=>{ totalDays+=r.type==='half'?0.5:1; totalOT+=Number(r.overtime)||0; });
+    });
+
+    txt=`【${start} 至 ${end}】范围统计\n归档天数 ${dates.length}\n`;
+    txt+=`排班：${planCount} 条，涉及 ${planPersonSet.size} 人\n`;
+    txt+=`考勤：${attendCount} 条（${attendPersonSet.size} 人）\n`;
+    txt+=`任务种类 ${taskSet.size}\n`;
+    txt+=`出勤总天数 ${totalDays}，加班总小时 ${totalOT}`;
+    out.innerHTML=`<div class="so-section"><div class="so-label">归档天数 ${dates.length}天</div></div><div class="so-section"><div class="so-row"><span>排班条数</span><span>${planCount}</span></div><div class="so-row"><span>排班人员</span><span>${planPersonSet.size}人</span></div></div><div class="so-section"><div class="so-row"><span>考勤条数</span><span>${attendCount}</span></div><div class="so-row"><span>考勤人员</span><span>${attendPersonSet.size}人</span></div></div><div class="so-section"><div class="so-label">任务种类 ${taskSet.size}项</div></div><div class="so-section"><div class="so-label">出勤天数 ${totalDays}天 · 加班小时 ${totalOT}小时</div></div>`;
+    actions.innerHTML=`<button class="btn-green" onclick="shareStats('range','${start}','${end}')">分享</button>`;
+    out.dataset.raw=txt;
+  }
+};
+
+window.shareStats=function(type,a,b){
+  let txt=document.getElementById('statsOutput')?.dataset?.raw;
+  if(!txt){alert('无内容可分享');return;}
+  let title={'person':'人员工时','task':'任务工时','month':'月度汇总','range':'范围统计'}[type]||'统计';
+  if(type==='person') showShareModal(title+' '+getWorkerName(a)+' '+b,txt);
+  else if(type==='task') showShareModal(title+' '+getTaskName(a)+' '+b,txt);
+  else showShareModal(title+' '+((a&&b)?(a+' '+b):(a||b||'')),txt);
+};
+
+// ======================
+// 新归档系统（自动确认 + 手动确认）
+// ======================
+
+/**
+ * 归档状态说明：
+ * - pending: 待归档（未确认）
+ * - manual: 人工确认归档
+ * - auto: 自动确认归档（自然日更替后自动完成）
+ */
+
+// 归档指定日期（完整数据）
+function archiveDay(date, confirmType='manual'){
+  let today=getToday();
+  if(date>today){
+    alert('不能归档未来日期');
+    return false;
+  }
+  
+  let plan=planData[date]||[];
+  let attend=attendData[date]||{};
+  
+  let planPersonCount=new Set(plan.flatMap(p=>p.uids)).size;
+  let attendPersonCount=Object.keys(attend).length;
+  
+  // 验证数据
+  let isValid=true;
+  let validationMsg='';
+  if(planPersonCount>0 && attendPersonCount!==planPersonCount){
+    isValid=false;
+    validationMsg=`⚠️ 考勤人数(${attendPersonCount})与排班人数(${planPersonCount})不一致`;
+  }
+  
+  // 创建归档记录
+  if(!archives[date])archives[date]={};
+  archives[date].plan=JSON.parse(JSON.stringify(plan));
+  archives[date].attend=JSON.parse(JSON.stringify(attend));
+  archives[date].savedAt=new Date().toLocaleString();
+  archives[date].confirmType=confirmType; // 'manual' | 'auto'
+  archives[date].isValid=isValid;
+  archives[date].validationMsg=validationMsg;
+  
+  saveData();
+  return true;
+}
+
+// 手动归档当前页面日期
+function archiveCurrent(type){
+  let date='';
+  if(type==='plan'){
+    date=document.getElementById('planDate').value||getToday();
+  }else{
+    date=document.getElementById('attendDate').value||getToday();
+  }
+  
+  let today=getToday();
+  if(date>today){
+    alert('不能归档未来日期');
+    return;
+  }
+  
+  let plan=planData[date]||[];
+  let attend=attendData[date]||{};
+  
+  let planPersonCount=new Set(plan.flatMap(p=>p.uids)).size;
+  let attendPersonCount=Object.keys(attend).length;
+  
+  let msg=`确认归档 ${date}？\n`;
+  msg+=`排工：${plan.length}条(${planPersonCount}人)\n`;
+  msg+=`考勤：${attendPersonCount}人\n`;
+  
+  if(planPersonCount>0 && attendPersonCount!==planPersonCount){
+    msg+=`\n⚠️ 警告：考勤人数与排班人数不一致`;
+    if(!confirm(msg))return;
+  }else{
+    if(!confirm(msg))return;
+  }
+  
+  archiveDay(date, 'manual');
+  alert(`${date} 归档成功！\n排工：${plan.length}条\n考勤：${attendPersonCount}人`);
+  
+  renderStats();
+  renderArchiveList();renderTaskArchiveList();renderWorkerArchiveList();
+}
+
+// 自动归档（页面加载时调用）
+function autoArchivePastDays(){
+  let today=getToday();
+  let yesterday=addDays(today, -1);
+  
+  let autoArchived=[];
+  let hasWarning=[];
+  
+  // 检查过去7天是否需要自动归档
+  for(let i=1; i<=7; i++){
+    let checkDate=addDays(today, -i);
+    if(archives[checkDate])continue; // 已归档跳过
+    
+    let plan=planData[checkDate]||[];
+    let attend=attendData[checkDate]||{};
+    
+    // 只有有数据才归档
+    if(plan.length>0 || Object.keys(attend).length>0){
+      archiveDay(checkDate, 'auto');
+      autoArchived.push(checkDate);
+      
+      let planPersonCount=new Set(plan.flatMap(p=>p.uids)).size;
+      let attendPersonCount=Object.keys(attend).length;
+      if(planPersonCount>0 && attendPersonCount!==planPersonCount){
+        hasWarning.push(checkDate);
+      }
+    }
+  }
+  
+  // 如果有自动归档的数据，更新显示
+  if(autoArchived.length>0){
+    renderStats();
+    renderArchiveList();renderTaskArchiveList();renderWorkerArchiveList();
+    
+    let msg=`自动归档完成：${autoArchived.join('、')}`;
+    if(hasWarning.length>0){
+      msg+=`\n⚠️ 以下日期考勤人数与排班不一致：${hasWarning.join('、')}`;
+    }
+    console.log(msg);
+  }
+}
+
+// 日期计算辅助函数
+function addDays(dateStr, days){
+  let d=new Date(dateStr);
+  d.setDate(d.getDate()+days);
+  return d.toISOString().split('T')[0];
+}
+
+// 归档修复：检查并修复损坏的归档数据
+function repairArchives(){
+  let repaired=0;
+  Object.keys(archives).forEach(date=>{
+    let arc=archives[date];
+    if(!arc.plan || !Array.isArray(arc.plan)){
+      arc.plan=[];
+      repaired++;
+    }
+    if(!arc.attend || typeof arc.attend!=='object'){
+      arc.attend={};
+      repaired++;
+    }
+    if(!arc.savedAt)arc.savedAt='';
+    if(arc.auto===undefined)arc.auto=false;
+  });
+  if(repaired>0){
+    saveData();
+    alert(`已修复 ${repaired} 处归档数据问题`);
+  }else{
+    alert('归档数据检查完成，未发现问题');
+  }
+  renderArchiveList();renderTaskArchiveList();renderWorkerArchiveList();
+}
+
+// 批量归档：从指定日期到今天之前的所有数据
+function batchArchive(fromDate){
+  let today=getToday();
+  if(fromDate>=today){
+    alert('起始日期必须早于今天');
+    return;
+  }
+  
+  let count=0;
+  let currentDate=fromDate;
+  while(currentDate<today){
+    let plan=planData[currentDate]||[];
+    let attend=attendData[currentDate]||{};
+    
+    if(plan.length>0 || Object.keys(attend).length>0){
+      if(!archives[currentDate])archives[currentDate]={plan:[],attend:{},savedAt:'',auto:true};
+      let arc=archives[currentDate];
+      if(arc.plan.length===0 && plan.length>0){
+        arc.plan=JSON.parse(JSON.stringify(plan));
+        count++;
+      }
+      if(Object.keys(arc.attend).length===0 && Object.keys(attend).length>0){
+        arc.attend=JSON.parse(JSON.stringify(attend));
+        count++;
+      }
+      arc.savedAt=new Date().toLocaleString();
+    }
+    currentDate=addDays(currentDate,1);
+  }
+  
+  saveData();
+  alert(`批量归档完成，共归档 ${count} 条数据`);
+  renderArchiveList();renderTaskArchiveList();renderWorkerArchiveList();
+  renderStats();
+}
+
+// 自动归档：检测自然日切换
+let lastActiveDate='';
+function autoArchiveIfNeeded(){
+  let today=getToday();
+  if(!lastActiveDate){lastActiveDate=today;return;}
+  if(lastActiveDate===today)return;
+  
+  let p=planData[lastActiveDate]||[];
+  let a=attendData[lastActiveDate]||{};
+  
+  if(p.length>0 || Object.keys(a).length>0){
+    if(!archives[lastActiveDate]){
+      archives[lastActiveDate]={plan:[],attend:{},savedAt:'',auto:false};
+    }
+    let arc=archives[lastActiveDate];
+    if(arc.plan.length===0)arc.plan=JSON.parse(JSON.stringify(p));
+    if(Object.keys(arc.attend).length===0)arc.attend=JSON.parse(JSON.stringify(a));
+    arc.savedAt=new Date().toLocaleString();
+    arc.auto=true;
+    saveData();
+  }
+  lastActiveDate=today;
+}
+
+// ======================
+// 启动
+// ======================
+window.onload=function(){
+  loadData();
+  document.getElementById('planDate').value=getToday();
+  document.getElementById('attendDate').value=getToday();
+  document.getElementById('planDateDisplay').textContent=getToday();
+  document.getElementById('attendDateDisplay').textContent=getToday();
+  lastActiveDate=getToday();
+  renderStatsInput();
+  renderStats();
+  switchTab(1);
+  
+  // 多端同步：窗口获得焦点时拉取最新数据（有未保存修改则跳过）
+  window.addEventListener('focus', async () => {
+    if(_paibanSaveTimer) return; // 有未同步的本地修改，跳过
+    try {
+      const resp = await fetch('/api/paiban/data');
+      const json = await resp.json();
+      if(json.success && json.data){
+        _applyDataObject(json.data);
+        _paibanSyncedAt = json.data.updated_at;
+        localStorage.setItem('workData3', JSON.stringify(json.data));
+        updateSyncStatus('已同步');
+        refreshAllPage();
+      }
+    } catch(e) {}
+  });
+};
+
+// 监听日期选择手动修改
+document.addEventListener('DOMContentLoaded',()=>{
+  let p=document.getElementById('planDate');
+  let a=document.getElementById('attendDate');
+  if(p)p.addEventListener('change',()=>{saveCurrentPlan();autoArchiveIfNeeded();renderPlanPage();});
+  if(a)a.addEventListener('change',()=>{renderAttendPlanList();renderAttendList();});
+  
+  // 自动归档过去的数据（页面加载时）
+  setTimeout(()=>{
+    autoArchivePastDays();
+  }, 1000);
+});
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then((registration) => {
+        console.log('Service Worker registered with scope:', registration.scope);
+      })
+      .catch((error) => {
+        console.log('Service Worker registration failed:', error);
+      });
+  });
+}
+</script>
+</body>
+</html>
