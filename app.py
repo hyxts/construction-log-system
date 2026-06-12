@@ -2274,8 +2274,33 @@ def paiban_download_apk():
 
 GPA_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gpa', 'gpa.db')
 
+DEFAULT_SEMESTERS = [
+    {'id': 'sem-1', 'name': '大一上学期', 'startDate': '', 'endDate': '', 'note': ''},
+    {'id': 'sem-2', 'name': '大一下学期', 'startDate': '', 'endDate': '', 'note': ''},
+    {'id': 'sem-3', 'name': '大二上学期', 'startDate': '', 'endDate': '', 'note': ''},
+    {'id': 'sem-4', 'name': '大二下学期', 'startDate': '', 'endDate': '', 'note': ''},
+    {'id': 'sem-5', 'name': '大三上学期', 'startDate': '', 'endDate': '', 'note': ''},
+    {'id': 'sem-6', 'name': '大三下学期', 'startDate': '', 'endDate': '', 'note': ''},
+    {'id': 'sem-7', 'name': '大四上学期', 'startDate': '', 'endDate': '', 'note': ''},
+    {'id': 'sem-8', 'name': '大四下学期', 'startDate': '', 'endDate': '', 'note': ''}
+]
+
+DEFAULT_COURSES_SEM1 = [
+    {'id': 'c-1', 'semesterId': 'sem-1', 'name': '大学生心理健康', 'credit': 2, 'score': 91, 'category': '公共必修'},
+    {'id': 'c-2', 'semesterId': 'sem-1', 'name': '党史', 'credit': 1, 'score': 89, 'category': '公共必修'},
+    {'id': 'c-3', 'semesterId': 'sem-1', 'name': '高等数学C1', 'credit': 4, 'score': 85, 'category': '专业必修'},
+    {'id': 'c-4', 'semesterId': 'sem-1', 'name': '高级交际英语1', 'credit': 3, 'score': 75, 'category': '公共必修'},
+    {'id': 'c-5', 'semesterId': 'sem-1', 'name': '国家安全教育', 'credit': 1, 'score': 80, 'category': '公共必修'},
+    {'id': 'c-6', 'semesterId': 'sem-1', 'name': '逻辑学导论', 'credit': 3, 'score': 60, 'category': '专业必修'},
+    {'id': 'c-7', 'semesterId': 'sem-1', 'name': '思想道德与法治', 'credit': 2.5, 'score': 90, 'category': '公共必修'},
+    {'id': 'c-8', 'semesterId': 'sem-1', 'name': '素质体育1', 'credit': 1, 'score': 90, 'category': '公共必修'},
+    {'id': 'c-9', 'semesterId': 'sem-1', 'name': '微观经济学', 'credit': 3, 'score': 80, 'category': '专业必修'},
+    {'id': 'c-10', 'semesterId': 'sem-1', 'name': '形势与政策1', 'credit': 0.5, 'score': 96, 'category': '公共必修'},
+    {'id': 'c-11', 'semesterId': 'sem-1', 'name': '政治学原理', 'credit': 3, 'score': 84, 'category': '专业必修'}
+]
+
 def init_gpa_db():
-    """初始化GPA独立数据库"""
+    """初始化GPA独立数据库，自动迁移预置数据"""
     os.makedirs(os.path.dirname(GPA_DB_PATH), exist_ok=True)
     conn = sqlite3.connect(GPA_DB_PATH)
     conn.execute('''CREATE TABLE IF NOT EXISTS gpa_data (
@@ -2284,10 +2309,33 @@ def init_gpa_db():
         courses TEXT DEFAULT '[]',
         updated_at TEXT DEFAULT (datetime('now','localtime'))
     )''')
-    existing = conn.execute('SELECT id FROM gpa_data LIMIT 1').fetchone()
+    existing = conn.execute('SELECT id, semesters, courses FROM gpa_data LIMIT 1').fetchone()
     if not existing:
         conn.execute('INSERT INTO gpa_data (semesters, courses) VALUES (?, ?)',
-                     ('[]', '[]'))
+                     (json.dumps(DEFAULT_SEMESTERS, ensure_ascii=False),
+                      json.dumps(DEFAULT_COURSES_SEM1, ensure_ascii=False)))
+    else:
+        # 合并预置学期（仅添加缺失的）
+        cur_semesters = json.loads(existing[1] or '[]')
+        sem_ids = {s['id'] for s in cur_semesters}
+        changed = False
+        for sem in DEFAULT_SEMESTERS:
+            if sem['id'] not in sem_ids:
+                cur_semesters.append(sem)
+                sem_ids.add(sem['id'])
+                changed = True
+        # 合并大一上预置课程（仅在完全没有sem-1课程时添加）
+        cur_courses = json.loads(existing[2] or '[]')
+        has_sem1 = any(c.get('semesterId') == 'sem-1' for c in cur_courses)
+        if not has_sem1:
+            cur_courses.extend(DEFAULT_COURSES_SEM1)
+            changed = True
+        if changed:
+            conn.execute('''UPDATE gpa_data SET
+                semesters = ?, courses = ?,
+                updated_at = datetime('now','localtime')
+            ''', (json.dumps(cur_semesters, ensure_ascii=False),
+                  json.dumps(cur_courses, ensure_ascii=False)))
     conn.commit()
     conn.close()
 
