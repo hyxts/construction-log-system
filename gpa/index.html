@@ -310,7 +310,7 @@ function calcSemesterGpa(semesterId) {
   const list = courses.filter(c => c.semesterId === semesterId);
   let totalCredits = 0, totalPoints = 0;
   list.forEach(c => {
-    const credits = Number(c.credits) || 0;
+    const credits = Number(c.credit) || 0;
     totalCredits += credits;
     totalPoints += credits * scoreToGpa(c.score);
   });
@@ -320,13 +320,13 @@ function calcSemesterGpa(semesterId) {
 // 计算某学期学分
 function calcSemesterCredits(semesterId) {
   return courses.filter(c => c.semesterId === semesterId)
-    .reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
+    .reduce((sum, c) => sum + (Number(c.credit) || 0), 0);
 }
 
 function calcCumulativeGpa() {
   let totalCredits = 0, totalPoints = 0;
   courses.forEach(c => {
-    const credits = Number(c.credits) || 0;
+    const credits = Number(c.credit) || 0;
     totalCredits += credits;
     totalPoints += credits * scoreToGpa(c.score);
   });
@@ -438,7 +438,7 @@ let _gradeChart = null;
 
 function renderOverview() {
   // 统计数字
-  document.getElementById('totalCredits').textContent = courses.reduce((s, c) => s + (Number(c.credits) || 0), 0).toFixed(1);
+  document.getElementById('totalCredits').textContent = courses.reduce((s, c) => s + (Number(c.credit) || 0), 0).toFixed(1);
   document.getElementById('totalCourses').textContent = courses.length;
   document.getElementById('totalSemesters').textContent = semesters.length;
 
@@ -470,7 +470,7 @@ function renderGpaChart() {
     const sc = courses.filter(c => c.semesterId === s.id);
     if (sc.length > 0) {
       let credits = 0, points = 0;
-      sc.forEach(c => { credits += Number(c.credits) || 0; points += (Number(c.credits) || 0) * scoreToGpa(c.score); });
+      sc.forEach(c => { credits += Number(c.credit) || 0; points += (Number(c.credit) || 0) * scoreToGpa(c.score); });
       items.push({ name: s.name, gpa: credits > 0 ? points / credits : 0 });
     }
   });
@@ -698,7 +698,7 @@ function renderCourses() {
           <div class="item-title" style="font-size:14px">${escapeHtml(c.name)}
             <span class="course-badge ${catClass[c.category] || 'badge-other'}">${catMap[c.category] || '其他'}</span>
           </div>
-          <div class="item-sub">${c.credits} 学分 · 成绩 ${c.score} · GPA ${scoreToGpa(c.score).toFixed(2)}${c.note ? ' · ' + escapeHtml(c.note) : ''}</div>
+          <div class="item-sub">${c.credit} 学分 · 成绩 ${c.score} · GPA ${scoreToGpa(c.score).toFixed(2)}${c.note ? ' · ' + escapeHtml(c.note) : ''}</div>
         </div>
         <div class="item-actions" style="display:flex;align-items:center;gap:3px">
           <button class="course-order-btn" title="上移" onclick="event.stopPropagation();moveCourseUp('${c.id}')" ${isFirst ? 'disabled' : ''}>&#9650;</button>
@@ -720,9 +720,9 @@ function sortCourses(list, sortBy) {
     case 'score-asc':
       return arr.sort((a, b) => (Number(a.score) || 0) - (Number(b.score) || 0));
     case 'credit-desc':
-      return arr.sort((a, b) => (Number(b.credits) || 0) - (Number(a.credits) || 0));
+      return arr.sort((a, b) => (Number(b.credit) || 0) - (Number(a.credit) || 0));
     case 'credit-asc':
-      return arr.sort((a, b) => (Number(a.credits) || 0) - (Number(b.credits) || 0));
+      return arr.sort((a, b) => (Number(a.credit) || 0) - (Number(b.credit) || 0));
     case 'name-asc':
       return arr.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'zh'));
     default:
@@ -825,7 +825,7 @@ function showCourseModal(editId) {
       document.getElementById('courseEditId').value = c.id;
       document.getElementById('courseSemester').value = c.semesterId;
       document.getElementById('courseName').value = c.name;
-      document.getElementById('courseCredits').value = c.credits;
+      document.getElementById('courseCredits').value = c.credit;
       document.getElementById('courseScore').value = c.score;
       document.getElementById('courseCategory').value = c.category || 'public_required';
       document.getElementById('courseNote').value = c.note || '';
@@ -863,7 +863,7 @@ function saveCourse() {
     if (c) {
       c.semesterId = semesterId;
       c.name = name;
-      c.credits = credits;
+      c.credit = credits;
       c.score = score;
       c.category = document.getElementById('courseCategory').value;
       c.note = document.getElementById('courseNote').value.trim();
