@@ -189,7 +189,9 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
   .doc-card-meta{color:#6b7280;font-size:12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center}
 
   #planListBox{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  #planListBox .item{margin-bottom:0}
+  #planListBox .item{margin-bottom:0;min-height:44px}
+  #planListBox .item-content{overflow:hidden}
+  #planListBox .task-name{font-size:13px}
 
   /* 移动端优化 */
   @media (max-width: 380px){
@@ -684,7 +686,7 @@ function saveCurrentPlan(){let d=document.getElementById('planDate').value||getT
 function renderPlanList(date){
   let p=planData[date]||[];
   if(p.length===0){
-    document.getElementById('planListBox').innerHTML='<p style="text-align:center;color:#999">暂无安排</p>';
+    document.getElementById('planListBox').innerHTML='<p style="text-align:center;color:#999;grid-column:1/-1;padding:20px 0">暂无安排</p>';
     return;
   }
   document.getElementById('planListBox').innerHTML=p.map(s=>{
