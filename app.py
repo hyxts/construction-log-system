@@ -9,6 +9,7 @@ import json
 import sqlite3
 import subprocess
 import traceback
+import uuid
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, send_file
 import openpyxl
@@ -25,7 +26,7 @@ DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data.db')
 def handle_exception(e):
     """全局异常处理，返回 JSON 格式错误"""
     app.logger.error(f"Unhandled exception: {str(e)}\n{traceback.format_exc()}")
-    return jsonify({'success': False, 'error': f'服务器错误: {str(e)}'}), 500
+    return jsonify({'success': False, 'error': '服务器内部错误，请稍后重试'}), 500
 
 @app.errorhandler(400)
 def handle_400(e):
@@ -276,8 +277,8 @@ def init_db():
     ]:
         try:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_def}")
-        except:
-            pass
+        except Exception as mig_err:
+            app.logger.warning(f"Migration add column skipped: {table}.{col} - {mig_err}")
 
     # ---- Migration: 移除 teams/materials/equipments 的 project_id，实现多项目通用 ----
     for tbl in ['teams', 'materials', 'equipments']:
@@ -297,8 +298,9 @@ def init_db():
                 # 替换
                 conn.execute(f"DROP TABLE {tbl}")
                 conn.execute(f"ALTER TABLE {tbl}_new RENAME TO {tbl}")
-        except:
-            pass
+                app.logger.info(f"Migration: removed project_id from {tbl}")
+        except Exception as mig_err:
+            app.logger.warning(f"Migration {tbl} project_id removal skipped: {mig_err}")
 
     conn.commit()
     conn.close()
@@ -317,11 +319,13 @@ def dicts_from_rows(rows):
 def get_projects():
     conn = get_db()
     projects = dicts_from_rows(conn.execute('SELECT * FROM projects ORDER BY created_at DESC').fetchall())
+    # 批量查询所有任务，避免 N+1 问题
+    all_tasks = dicts_from_rows(conn.execute('SELECT * FROM tasks ORDER BY start, id').fetchall())
+    task_map = {}
+    for t in all_tasks:
+        task_map.setdefault(t['project_id'], []).append(t)
     for p in projects:
-        tasks = dicts_from_rows(
-            conn.execute('SELECT * FROM tasks WHERE project_id = ? ORDER BY start, id', (p['id'],)).fetchall()
-        )
-        p['tasks'] = tasks
+        p['tasks'] = task_map.get(p['id'], [])
     conn.close()
     return jsonify({'success': True, 'data': projects})
 
@@ -616,7 +620,6 @@ def create_daily_task_log():
         lid = existing['id']
     else:
         # 创建
-        import uuid
         lid = str(uuid.uuid4())
         conn.execute(
             '''INSERT INTO daily_task_logs (id, project_id, task_id, log_date, content, weather, team, worker_count, materials, equipments)
@@ -854,8 +857,8 @@ def create_photo():
         return jsonify({'success': False, 'error': '图片数据不能为空'}), 400
 
     pid = data.get('id') or str(int(datetime.now().timestamp() * 1000))
-    # 生成缩略图：取 base64 字符串前 1/20 作为缩略图指示（前端会实际缩放）
-    thumbnail = data.get('thumbnail', '') or (img_data[:len(img_data)//20] if len(img_data) > 5000 else img_data)
+    # 缩略图：前端预览时通过 CSS 缩放，这里不截断 base64 数据以保证图片完整
+    thumbnail = data.get('thumbnail', '') or img_data
 
     conn = get_db()
     conn.execute(
@@ -1198,10 +1201,36 @@ def report_combined():
     rw = dict_from_row(conn.execute(
         "SELECT COUNT(*) as total, COALESCE(SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END),0) as completed, COALESCE(SUM(CASE WHEN status!='completed' THEN 1 ELSE 0 END),0) as pending FROM reworks"
     ).fetchone())
-    # 按项目汇总
+    # 按项目汇总 - 使用批量查询替代相关子查询，大幅提升性能
     by_project = dicts_from_rows(conn.execute(
-        "SELECT p.id, p.name, '' as status, (SELECT COUNT(*) FROM tasks t WHERE t.project_id=p.id) as task_count, (SELECT COUNT(*) FROM tasks t WHERE t.project_id=p.id AND t.status='completed') as task_done, (SELECT COALESCE(SUM(amount),0) FROM misc_finance mf WHERE mf.project_ref=p.id AND mf.flow_type='expense' AND mf.status='active') as expense, (SELECT COALESCE(SUM(amount),0) FROM misc_finance mf2 WHERE mf2.project_ref=p.id AND mf2.flow_type='income' AND mf2.status='active') as income, (SELECT COUNT(*) FROM acceptances a WHERE a.project_id=p.id) as acceptance_count, (SELECT COALESCE(SUM(a.total_price),0) FROM acceptances a WHERE a.project_id=p.id) as acceptance_total FROM projects p ORDER BY p.created_at DESC"
+        "SELECT id, name, '' as status FROM projects ORDER BY created_at DESC"
     ).fetchall())
+    # 任务统计
+    task_rows = conn.execute(
+        "SELECT project_id, COUNT(*) as cnt, SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) as done FROM tasks GROUP BY project_id"
+    ).fetchall()
+    task_stats = {r['project_id']: (r['cnt'], r['done'] or 0) for r in task_rows}
+    # 财务统计
+    fin_rows = conn.execute(
+        "SELECT project_ref, SUM(CASE WHEN flow_type='expense' AND status='active' THEN amount ELSE 0 END) as expense, SUM(CASE WHEN flow_type='income' AND status='active' THEN amount ELSE 0 END) as income FROM misc_finance GROUP BY project_ref"
+    ).fetchall()
+    fin_stats = {r['project_ref']: (r['expense'] or 0, r['income'] or 0) for r in fin_rows}
+    # 验收统计
+    acc_rows = conn.execute(
+        "SELECT project_id, COUNT(*) as cnt, COALESCE(SUM(total_price),0) as total FROM acceptances GROUP BY project_id"
+    ).fetchall()
+    acc_stats = {r['project_id']: (r['cnt'], r['total'] or 0) for r in acc_rows}
+    for p in by_project:
+        pid = p['id']
+        tc, td = task_stats.get(pid, (0, 0))
+        ex, inc = fin_stats.get(pid, (0, 0))
+        ac, at = acc_stats.get(pid, (0, 0))
+        p['task_count'] = tc
+        p['task_done'] = td
+        p['expense'] = ex
+        p['income'] = inc
+        p['acceptance_count'] = ac
+        p['acceptance_total'] = at
     # 工程总数
     proj_count = conn.execute("SELECT COUNT(*) as cnt FROM projects").fetchone()['cnt']
     conn.close()
@@ -2073,9 +2102,9 @@ def import_data():
         )
     for m in data.get('materials', []):
         conn.execute(
-            '''INSERT INTO materials (id, project_id, name, spec, unit, quantity, min_quantity, supplier, status, remark, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-            (m.get('id'), m.get('project_id', ''), m.get('name', ''),
+            '''INSERT INTO materials (id, name, spec, unit, quantity, min_quantity, supplier, status, remark, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (m.get('id'), m.get('name', ''),
              m.get('spec', ''), m.get('unit', ''), m.get('quantity', 0),
              m.get('min_quantity', 0), m.get('supplier', ''),
              m.get('status', 'in_stock'), m.get('remark', ''),
@@ -2083,17 +2112,17 @@ def import_data():
         )
     for eq in data.get('equipments', []):
         conn.execute(
-            '''INSERT INTO equipments (id, project_id, name, model, count, status, remark, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-            (eq.get('id'), eq.get('project_id', ''), eq.get('name', ''),
+            '''INSERT INTO equipments (id, name, model, count, status, remark, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+            (eq.get('id'), eq.get('name', ''),
              eq.get('model', ''), eq.get('count', 1), eq.get('status', 'normal'),
              eq.get('remark', ''), eq.get('created_at', ''), eq.get('updated_at', ''))
         )
     for tm in data.get('teams', []):
         conn.execute(
-            '''INSERT INTO teams (id, project_id, name, leader, phone, specialty, worker_count, remark, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-            (tm.get('id'), tm.get('project_id', ''), tm.get('name', ''),
+            '''INSERT INTO teams (id, name, leader, phone, specialty, worker_count, remark, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (tm.get('id'), tm.get('name', ''),
              tm.get('leader', ''), tm.get('phone', ''), tm.get('specialty', ''),
              tm.get('worker_count', 0), tm.get('remark', ''),
              tm.get('created_at', ''), tm.get('updated_at', ''))

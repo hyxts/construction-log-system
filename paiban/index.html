@@ -478,15 +478,7 @@ function saveDoc(){
   document.getElementById('docContent').innerText='';
   document.getElementById('docTitle').value='';
 }
-function shareDoc(){
-  let c=document.getElementById('docContent').innerText.trim();
-  let t=document.getElementById('docTitle').value.trim();
-  if(!c){alert('无内容可分享');return;}
-  let txt=(t?'【'+t+'】\n':'')+c;
-  showShareModal(t||'文档分享',txt);
-}
 
-// 渲染历史文档（卡片式）
 function renderDocHistory(){
   let list=document.getElementById('docHistoryList');
   let countEl=document.getElementById('docCount');
@@ -564,6 +556,12 @@ function searchDoc(){
 // 核心工具
 // ======================
 function getToday(){return new Date().toISOString().split('T')[0]}
+let _todayCache='',_todayCacheDate='';
+function getTodayCached(){
+  let d=new Date().toDateString();
+  if(_todayCacheDate!==d){_todayCache=getToday();_todayCacheDate=d;}
+  return _todayCache;
+}
 function getWorkerName(id){return workers.find(w=>w.id===id)?.name||''}
 function getTaskName(id){return tasks.find(t=>t.id===id)?.name||''}
 function getWorkerNames(ids){return ids.map(id=>getWorkerName(id)).filter(Boolean)}
@@ -1189,8 +1187,7 @@ async function loadData(){
 // 统计（按人员/任务/月份/范围 × 归档数据）+ 归档列表
 // ======================
 let currentStatsDim='person';
-
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+const esc=escapeHtml; // 简短别名，多处使用
 
 window.switchArchiveTab=function(tab){
   document.querySelectorAll('.qdim-btn').forEach(b=>b.classList.remove('active'));
@@ -1300,8 +1297,6 @@ function renderArchiveList(){
   }
   
 
-  let esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  
   let html=dates.map(date=>{
     let arc=archives[date];
     let planCount=(arc.plan||[]).length;
@@ -1316,7 +1311,7 @@ function renderArchiveList(){
         <div style="font-size:12px;color:#64748b;margin-top:4px">
           排班 ${planCount}条(${planPersonCount}人) · 考勤 ${attendCount}人
         </div>
-        ${taskNames?`<div style="font-size:12px;color:#64748b;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(taskNames)}</div>`:''}
+        ${taskNames?`<div style="font-size:12px;color:#64748b;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(taskNames)}</div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -1344,51 +1339,6 @@ function renderStatsInput(){
 
 function getMonthFirstDay(d){
   return d.slice(0,7)+'-01';
-}
-
-function getDatesInMonth(ym){
-  return Object.keys(archives).filter(d=>d.startsWith(ym)).sort();
-}
-
-function getDatesInRange(start,end){
-  if(!start||!end||start>end)return[];
-  return Object.keys(archives).filter(d=>d>=start&&d<=end).sort();
-}
-
-function getAttendForPersonInDates(personId,dates){
-  let totalDays=0,totalOT=0;
-  let taskSet=new Set();
-  dates.forEach(date=>{
-    let arc=archives[date];
-    if((arc.attend||{})[personId]){
-      let r=arc.attend[personId];
-      totalDays+=r.type==='half'?0.5:1;
-      totalOT+=Number(r.overtime)||0;
-    }
-    (arc.plan||[]).forEach(p=>{if(p.uids.includes(personId))taskSet.add(p.tname);});
-  });
-  return{totalDays,totalOT,taskNames:[...taskSet]};
-}
-
-function getAttendForTaskInMonth(taskId,dates){
-  let totalPeople=new Set();
-  let totalDays=0,totalOT=0;
-  let dateCount=0;
-  dates.forEach(date=>{
-    let arc=archives[date];
-    let dayPlans=(arc.plan||[]).filter(p=>p.tid===taskId);
-    if(dayPlans.length>0){
-      dateCount++;
-      dayPlans.forEach(p=>p.uids.forEach(uid=>totalPeople.add(uid)));
-      Object.entries(arc.attend||{}).forEach(([uid,r])=>{
-        if(dayPlans.some(p=>p.uids.includes(uid))){
-          totalDays+=r.type==='half'?0.5:1;
-          totalOT+=Number(r.overtime)||0;
-        }
-      });
-    }
-  });
-  return{totalPeople:totalPeople.size,totalDays,totalOT,dateCount};
 }
 
 window.renderStats=function(){
@@ -1702,67 +1652,6 @@ function addDays(dateStr, days){
   let d=new Date(dateStr);
   d.setDate(d.getDate()+days);
   return d.toISOString().split('T')[0];
-}
-
-// 归档修复：检查并修复损坏的归档数据
-function repairArchives(){
-  let repaired=0;
-  Object.keys(archives).forEach(date=>{
-    let arc=archives[date];
-    if(!arc.plan || !Array.isArray(arc.plan)){
-      arc.plan=[];
-      repaired++;
-    }
-    if(!arc.attend || typeof arc.attend!=='object'){
-      arc.attend={};
-      repaired++;
-    }
-    if(!arc.savedAt)arc.savedAt='';
-    if(arc.auto===undefined)arc.auto=false;
-  });
-  if(repaired>0){
-    saveData();
-    alert(`已修复 ${repaired} 处归档数据问题`);
-  }else{
-    alert('归档数据检查完成，未发现问题');
-  }
-  renderArchiveList();renderTaskArchiveList();renderWorkerArchiveList();
-}
-
-// 批量归档：从指定日期到今天之前的所有数据
-function batchArchive(fromDate){
-  let today=getToday();
-  if(fromDate>=today){
-    alert('起始日期必须早于今天');
-    return;
-  }
-  
-  let count=0;
-  let currentDate=fromDate;
-  while(currentDate<today){
-    let plan=planData[currentDate]||[];
-    let attend=attendData[currentDate]||{};
-    
-    if(plan.length>0 || Object.keys(attend).length>0){
-      if(!archives[currentDate])archives[currentDate]={plan:[],attend:{},savedAt:'',auto:true};
-      let arc=archives[currentDate];
-      if(arc.plan.length===0 && plan.length>0){
-        arc.plan=JSON.parse(JSON.stringify(plan));
-        count++;
-      }
-      if(Object.keys(arc.attend).length===0 && Object.keys(attend).length>0){
-        arc.attend=JSON.parse(JSON.stringify(attend));
-        count++;
-      }
-      arc.savedAt=new Date().toLocaleString();
-    }
-    currentDate=addDays(currentDate,1);
-  }
-  
-  saveData();
-  alert(`批量归档完成，共归档 ${count} 条数据`);
-  renderArchiveList();renderTaskArchiveList();renderWorkerArchiveList();
-  renderStats();
 }
 
 // 自动归档：检测自然日切换
