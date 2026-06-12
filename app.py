@@ -2220,6 +2220,27 @@ def git_pull():
     except Exception as e:
         return jsonify({'success': False, 'error': f'执行失败: {str(e)}'}), 500
 
+# ==================== 排工系统更新接口 ====================
+
+PAIBAN_VERSION = {
+    "versionCode": 1,
+    "versionName": "1.0",
+    "downloadUrl": "/paiban/app-debug.apk"
+}
+
+@app.route('/paiban/api/version')
+def paiban_version():
+    """排工APK版本检测接口"""
+    return jsonify(PAIBAN_VERSION)
+
+@app.route('/paiban/app-debug.apk')
+def paiban_download_apk():
+    """排工APK下载"""
+    apk_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'paiban', 'app-debug.apk')
+    if not os.path.exists(apk_path):
+        return jsonify({'error': 'APK文件不存在'}), 404
+    return send_from_directory('paiban', 'app-debug.apk', as_attachment=True, download_name='枫叶管理.apk')
+
 # ==================== 前端路由 ====================
 
 @app.route('/paiban')
