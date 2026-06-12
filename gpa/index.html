@@ -177,11 +177,24 @@ button:active{opacity:0.9;transform:scale(0.98)}
 
   <!-- 课程页 -->
   <div class="tab-content" id="tab-courses">
-    <div style="margin-bottom:10px">
-      <label style="font-size:13px;color:#4b5563;margin-bottom:4px">选择学期</label>
-      <select id="courseFilterSemester" onchange="renderCourses()">
-        <option value="">全部学期</option>
-      </select>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div>
+        <label style="font-size:13px;color:#4b5563;margin-bottom:4px">选择学期</label>
+        <select id="courseFilterSemester" onchange="renderCourses()">
+          <option value="">全部学期</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:13px;color:#4b5563;margin-bottom:4px">排序方式</label>
+        <select id="courseSortBy" onchange="renderCourses()">
+          <option value="default">默认顺序</option>
+          <option value="score-desc">成绩(高到低)</option>
+          <option value="score-asc">成绩(低到高)</option>
+          <option value="credit-desc">学分(高到低)</option>
+          <option value="credit-asc">学分(低到高)</option>
+          <option value="name-asc">名称(A-Z)</option>
+        </select>
+      </div>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <button onclick="showCourseModal()">添加课程</button>
@@ -628,14 +641,22 @@ function closeConfirm() {
 
 // ==================== 课程管理 ====================
 function renderCourses() {
-  const filterId = document.getElementById('courseFilterSemester').value;
-  const sel = document.getElementById('courseFilterSemester');
-  sel.innerHTML = '<option value="">全部学期</option>' +
+  const filterEl = document.getElementById('courseFilterSemester');
+  const filterId = filterEl ? filterEl.value : '';
+  const sortEl = document.getElementById('courseSortBy');
+  const sortBy = sortEl ? sortEl.value : 'default';
+
+  // 保留筛选学期下拉选中值
+  filterEl.innerHTML = '<option value="">全部学期</option>' +
     semesters.map(s => `<option value="${s.id}" ${s.id === filterId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
 
-  let list = courses;
+  let list = courses.slice();
   if (filterId) list = list.filter(c => c.semesterId === filterId);
-  // 按学期分组
+
+  // 排序
+  list = sortCourses(list, sortBy);
+
+  // 按学期分组（保持学期顺序）
   const grouped = {};
   list.forEach(c => {
     if (!grouped[c.semesterId]) grouped[c.semesterId] = [];
@@ -651,17 +672,17 @@ function renderCourses() {
   const catMap = { public_required: '公共必修', major_required: '专业必修', elective: '选修', other: '其他' };
   const catClass = { public_required: 'badge-required', major_required: 'badge-major', elective: 'badge-elective', other: 'badge-other' };
 
-  container.innerHTML = Object.entries(grouped).map(([semId, items]) => {
-    const sem = semesters.find(s => s.id === semId);
-    const semGpa = calcSemesterGpa(semId);
+  container.innerHTML = semesters.filter(s => grouped[s.id]).map(s => {
+    const items = grouped[s.id];
+    const semGpa = calcSemesterGpa(s.id);
     return `
     <div class="card" style="padding:10px">
       <div class="semester-header">
-        <span class="sem-name">${escapeHtml(sem ? sem.name : '未分类')} (${items.length}门)</span>
+        <span class="sem-name">${escapeHtml(s.name)} (${items.length}门)</span>
         <span class="sem-gpa">${semGpa > 0 ? 'GPA ' + semGpa.toFixed(2) : ''}</span>
       </div>
       ${items.map(c => `
-      <div class="course-item" draggable="true" data-course-id="${c.id}" data-sem-id="${semId}"
+      <div class="course-item" draggable="true" data-course-id="${c.id}" data-sem-id="${s.id}"
            ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)"
            ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
         <span class="course-drag-handle" title="拖动排序">::</span>
@@ -678,6 +699,24 @@ function renderCourses() {
       </div>`).join('')}
     </div>`;
   }).join('');
+}
+
+function sortCourses(list, sortBy) {
+  const arr = list.slice();
+  switch (sortBy) {
+    case 'score-desc':
+      return arr.sort((a, b) => (Number(b.score) || 0) - (Number(a.score) || 0));
+    case 'score-asc':
+      return arr.sort((a, b) => (Number(a.score) || 0) - (Number(b.score) || 0));
+    case 'credit-desc':
+      return arr.sort((a, b) => (Number(b.credits) || 0) - (Number(a.credits) || 0));
+    case 'credit-asc':
+      return arr.sort((a, b) => (Number(a.credits) || 0) - (Number(b.credits) || 0));
+    case 'name-asc':
+      return arr.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'zh'));
+    default:
+      return arr;
+  }
 }
 
 // ==================== 课程拖拽排序 ====================
