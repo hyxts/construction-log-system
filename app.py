@@ -2223,8 +2223,8 @@ def git_pull():
 # ==================== 排工系统更新接口 ====================
 
 PAIBAN_VERSION = {
-    "versionCode": 2,
-    "versionName": "1.1",
+    "versionCode": 1,
+    "versionName": "1.0",
     "downloadUrl": "/paiban/app-debug.apk"
 }
 
