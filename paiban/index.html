@@ -189,6 +189,9 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
   .doc-card-body{color:#4b5563;line-height:1.6;white-space:pre-wrap;word-break:break-all;font-size:14px;max-height:6em;overflow:hidden}
   .doc-card-meta{color:#6b7280;font-size:12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center}
 
+  #planListBox{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  #planListBox .item{margin-bottom:0}
+
   /* 移动端优化 */
   @media (max-width: 380px){
     .seg-tab{font-size:13px;padding:9px 4px}
@@ -738,7 +741,7 @@ function renderAttendPlanList(){
   document.getElementById('attendPlanList').innerHTML=t.map(s=>{
     let safeTask = escapeHtml(s.tname);
     let safeWorkers = getWorkerNames(s.uids).map(escapeHtml).join('、');
-    return `<div class="item"><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${safeTask}</span><span style="color:#666;flex-shrink:0;font-size:12px">${safeWorkers||'未分配'}</span></div>`;
+    return `<div class="item"><span style="flex-shrink:0;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600">${safeTask}</span><span style="color:#666;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;font-size:12px">${safeWorkers||'未分配'}</span></div>`;
   }).join('');
 }
 function shareAttendance(){
