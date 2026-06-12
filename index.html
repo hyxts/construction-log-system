@@ -87,6 +87,16 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
   .tab-content.show{display:block}
   .modal{position:fixed;inset:0;background:rgba(15,23,42,.6);display:none;align-items:flex-end;justify-content:center;z-index:1000}
   .modal-box{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+  .confirm-modal{position:fixed;inset:0;background:rgba(15,23,42,.6);display:none;align-items:center;justify-content:center;z-index:2000}
+  .confirm-box{background:#fff;border-radius:16px;width:90%;max-width:360px;padding:28px 24px 20px;text-align:center;box-shadow:0 8px 30px rgba(15,23,42,.15)}
+  .confirm-icon{width:52px;height:52px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+  .confirm-icon-text{font-size:28px;font-weight:700;color:#dc2626}
+  .confirm-title{font-size:17px;font-weight:700;color:#0f172a;margin-bottom:8px}
+  .confirm-msg{font-size:13px;color:#64748b;margin-bottom:24px;line-height:1.5}
+  .confirm-btns{display:flex;gap:10px}
+  .confirm-btns button{flex:1;padding:10px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;min-height:44px}
+  .confirm-cancel{background:#f1f5f9;color:#475569}
+  .confirm-danger{background:#dc2626;color:#fff}
   .modal h4{margin-bottom:12px;font-size:17px}
   .modal label{display:block;font-size:14px;color:#4b5563;margin-bottom:6px;font-weight:500}
   .query-result{background:#f9fafb;padding:12px;border-radius:12px;margin-top:12px;white-space:pre-wrap;max-height:50vh;overflow:auto;font-size:14px;line-height:1.6;border:1px solid #e5e7eb}
@@ -354,13 +364,26 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
   <div class="tab" onclick="switchTab(5)">存档</div>
 </nav>
 
+<!-- 确认弹窗 -->
+<div class="confirm-modal" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-icon"><div class="confirm-icon-text">!</div></div>
+    <div class="confirm-title" id="confirmTitle">确认删除</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">取消</button>
+      <button class="confirm-danger" id="confirmOkBtn">确认删除</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal" id="shareModal">
   <div class="modal-box">
     <h4 id="modalTitle"></h4>
     <div class="share-text" id="shareContent"></div>
     <div id="editModalButtons">
       <button class="btn-gray" onclick="closeModal()">取消</button>
-      <button class="btn-red" onclick="delItem()">删除</button>
+      <button class="btn-red" onclick="confirmDelItem()">删除</button>
       <button onclick="saveEdit()">保存</button>
     </div>
     <div id="shareModalButtons">
@@ -496,11 +519,14 @@ function shareDocById(id){
 
 // 删除文档
 window.delDoc = function(id){
-  if(!confirm('确定删除该文档？此操作不可恢复')) return;
-  docs = docs.filter(d => d.id !== id);
-  if(editingDocId===id) editingDocId='';
-  saveData();
-  searchDoc();
+  let doc = docs.find(d => d.id === id);
+  let title = doc && doc.title ? doc.title : '此文档';
+  showConfirm('确认删除', '确定删除文档"' + title + '"？此操作不可恢复。', function(){
+    docs = docs.filter(d => d.id !== id);
+    if(editingDocId===id) editingDocId='';
+    saveData();
+    searchDoc();
+  });
 }
 
 // 修复日期查找逻辑
@@ -936,36 +962,42 @@ function saveEdit(){
 
 // 删除任务
 function delTask(id){
-  if(!confirm('确定删除该任务？所有日期的排班记录都会永久清除')) return;
-  tasks = tasks.filter(t => t.id !== id);
-  for(let date in planData){
-    if(!planData[date])continue;
-    planData[date] = planData[date].filter(s => s.tid !== id);
-    if(planData[date].length === 0) delete planData[date];
-    cleanupInvalidAttendance(date);
-  }
-  saveData();
-  renderManage();
-  refreshAllPage();
+  let task = tasks.find(t => t.id === id);
+  let name = task ? task.name : '此任务';
+  showConfirm('确认删除', '确定删除任务"' + name + '"？所有日期的排班记录都会永久清除。', function(){
+    tasks = tasks.filter(t => t.id !== id);
+    for(let date in planData){
+      if(!planData[date])continue;
+      planData[date] = planData[date].filter(s => s.tid !== id);
+      if(planData[date].length === 0) delete planData[date];
+      cleanupInvalidAttendance(date);
+    }
+    saveData();
+    renderManage();
+    refreshAllPage();
+  });
 }
 
 // 删除人员
 function delWorker(id){
-  if(!confirm('确定删除该人员？所有考勤和排班记录都会永久清除')) return;
-  workers = workers.filter(w => w.id !== id);
-  for(let date in planData){
-    if(!planData[date]){delete planData[date];continue;}
-    planData[date].forEach(s => s.uids = s.uids.filter(uid => uid !== id));
-    planData[date] = planData[date].filter(s => s.uids.length > 0);
-    if(planData[date].length === 0) delete planData[date];
-  }
-  for(let date in attendData){
-    if(attendData[date] && attendData[date][id]) delete attendData[date][id];
-    if(attendData[date] && Object.keys(attendData[date]).length === 0) delete attendData[date];
-  }
-  saveData();
-  renderManage();
-  refreshAllPage();
+  let worker = workers.find(w => w.id === id);
+  let name = worker ? worker.name : '此人员';
+  showConfirm('确认删除', '确定删除人员"' + name + '"？所有考勤和排班记录都会永久清除。', function(){
+    workers = workers.filter(w => w.id !== id);
+    for(let date in planData){
+      if(!planData[date]){delete planData[date];continue;}
+      planData[date].forEach(s => s.uids = s.uids.filter(uid => uid !== id));
+      planData[date] = planData[date].filter(s => s.uids.length > 0);
+      if(planData[date].length === 0) delete planData[date];
+    }
+    for(let date in attendData){
+      if(attendData[date] && attendData[date][id]) delete attendData[date][id];
+      if(attendData[date] && Object.keys(attendData[date]).length === 0) delete attendData[date];
+    }
+    saveData();
+    renderManage();
+    refreshAllPage();
+  });
 }
 
 // ======================
@@ -982,6 +1014,40 @@ function openModal(title, content, mode = 'share'){
 }
 function closeModal(){ document.getElementById('shareModal').style.display = 'none'; }
 function copyText(){ navigator.clipboard.writeText(shareTxt).then(()=>{alert('已复制');closeModal()}).catch(()=>alert('复制失败')); }
+// ======================
+// 确认弹窗
+// ======================
+let _confirmCallback = null;
+function showConfirm(title, msg, callback){
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  _confirmCallback = callback;
+  document.getElementById('confirmModal').style.display = 'flex';
+}
+function closeConfirm(){
+  document.getElementById('confirmModal').style.display = 'none';
+  _confirmCallback = null;
+}
+document.getElementById('confirmOkBtn').addEventListener('click', function(){
+  if(_confirmCallback){ _confirmCallback(); }
+  closeConfirm();
+});
+
+// 编辑弹窗里的删除按钮（先确认再删）
+function confirmDelItem(){
+  let name = '';
+  if(editType === 'task'){
+    let task = tasks.find(t => t.id === editId);
+    name = task ? task.name : '此任务';
+  } else if(editType === 'worker'){
+    let worker = workers.find(w => w.id === editId);
+    name = worker ? worker.name : '此人员';
+  }
+  showConfirm('确认删除', '确定删除"' + name + '"？此操作不可恢复。', function(){
+    delItem();
+  });
+}
+
 function showShareModal(title,text){
   shareTxt = String(text==null?'':text);
   let safe = shareTxt.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');

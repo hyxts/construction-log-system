@@ -83,5 +83,25 @@ python app.py
 
 ## 注意事项
 - **免费账号限制**：只能访问白名单内的外部 API（天气 API `wttr.in` 需要申请加入白名单）
-- **数据库**：使用 SQLite，数据存储在 `data.db` 文件中
+- **数据库**：使用 SQLite，数据存储在 `data.db` 文件中，排工系统数据在 `paiban.db`
 - **静态文件**：放在 `public/` 目录下，Flask 会自动托管
+
+## 代码更新
+每次本地改完代码推送 GitHub 后，在 PythonAnywhere Bash Console 执行：
+```bash
+cd ~/construction-log-system
+git pull
+```
+然后回到 Web 标签页点击 **Reload**。
+
+## 自动拉取（可选）
+如需自动同步代码，可设置定时任务：
+
+1. 进入 PythonAnywhere **Tasks** 标签页
+2. 添加 **Scheduled task**，命令填入：
+   ```
+   curl -X POST https://你的用户名.pythonanywhere.com/api/git-pull
+   ```
+3. 设置执行频率（如每小时 `Hourly`）
+
+定时任务会自动拉取最新代码，但仍需手动 Reload 才会生效（免费版限制）。

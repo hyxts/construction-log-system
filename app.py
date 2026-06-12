@@ -7,6 +7,7 @@ import os
 import io
 import json
 import sqlite3
+import subprocess
 import traceback
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, send_file
@@ -2182,6 +2183,33 @@ def paiban_save_data():
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')})
+
+# ==================== Git自动拉取 ====================
+
+@app.route('/api/git-pull', methods=['POST'])
+def git_pull():
+    """自动拉取最新代码（供定时任务调用）"""
+    try:
+        project_dir = os.path.dirname(os.path.abspath(__file__))
+        result = subprocess.run(
+            ['git', 'pull'],
+            cwd=project_dir,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        return jsonify({
+            'success': result.returncode == 0,
+            'stdout': result.stdout.strip(),
+            'stderr': result.stderr.strip(),
+            'returncode': result.returncode
+        })
+    except subprocess.TimeoutExpired:
+        return jsonify({'success': False, 'error': 'Git pull 超时（30秒）'}), 408
+    except FileNotFoundError:
+        return jsonify({'success': False, 'error': '未找到 git 命令，请确认 git 已安装'}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'执行失败: {str(e)}'}), 500
 
 # ==================== 前端路由 ====================
 
