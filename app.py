@@ -2123,10 +2123,11 @@ def reset_data():
     return jsonify({'success': True})
 
 # ==================== 排工考勤系统（独立数据） ====================
-PAIBAN_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'paiban.db')
+PAIBAN_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'paiban', 'paiban.db')
 
 def init_paiban_db():
     """初始化排工独立数据库"""
+    os.makedirs(os.path.dirname(PAIBAN_DB_PATH), exist_ok=True)
     conn = sqlite3.connect(PAIBAN_DB_PATH)
     conn.execute('''CREATE TABLE IF NOT EXISTS paiban_data (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2224,7 +2225,7 @@ def git_pull():
 @app.route('/paiban')
 def paiban_index():
     """排工考勤系统（独立子系统，数据不交叉）"""
-    return send_from_directory('.', 'index.html')
+    return send_from_directory('paiban', 'index.html')
 
 @app.route('/')
 def index():
