@@ -654,7 +654,7 @@ function renderPlanPage(){
   
   renderPlanList(d);
 }
-function selectPlanTask(id){saveCurrentPlan();curSelTaskId=id;let d=document.getElementById('planDate').value||getToday();let p=planData[d]||[];let i=p.find(s=>s.tid===id);curSelWorkerIds=i?[...i.uids]:[];renderPlanPage()}
+function selectPlanTask(id){if(curSelTaskId&&curSelWorkerIds.length>0)saveCurrentPlan();curSelTaskId=id;let d=document.getElementById('planDate').value||getToday();let p=planData[d]||[];let i=p.find(s=>s.tid===id);curSelWorkerIds=i?[...i.uids]:[];renderPlanPage()}
 function togglePlanWorker(uid){
   if(!curSelTaskId)return;
   let d=document.getElementById('planDate').value||getToday();
