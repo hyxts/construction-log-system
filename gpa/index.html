@@ -116,7 +116,12 @@ button:active{opacity:0.9;transform:scale(0.98)}
 .semester-header .sem-name{font-weight:600;font-size:15px;color:#0f172a}
 .semester-header .sem-gpa{font-weight:800;font-size:16px;color:#2f7d6b}
 
-
+.course-item{display:flex;align-items:center;gap:6px;padding:6px 8px;min-height:36px;border-radius:8px;cursor:default;transition:background .15s}
+.course-item:hover{background:#f8fafc}
+.course-item.dragging{opacity:0.4;background:#e2e8f0}
+.course-item.drag-over{border-top:2px solid #2f7d6b}
+.course-drag-handle{cursor:grab;color:#cbd5e1;font-size:16px;line-height:1;padding:2px 4px;user-select:none;flex-shrink:0}
+.course-drag-handle:active{cursor:grabbing}
 </style>
 </head>
 <body>
@@ -643,20 +648,74 @@ function renderCourses() {
         <span class="sem-gpa">${semGpa > 0 ? 'GPA ' + semGpa.toFixed(2) : ''}</span>
       </div>
       ${items.map(c => `
-      <div class="item" style="padding:6px 8px;min-height:32px">
-        <div class="item-content">
+      <div class="course-item" draggable="true" data-course-id="${c.id}" data-sem-id="${semId}"
+           ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)"
+           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+        <span class="course-drag-handle" title="拖动排序">::</span>
+        <div class="item-content" style="flex:1">
           <div class="item-title" style="font-size:14px">${escapeHtml(c.name)}
             <span class="course-badge ${catClass[c.category] || 'badge-other'}">${catMap[c.category] || '其他'}</span>
           </div>
           <div class="item-sub">${c.credits} 学分 · 成绩 ${c.score} · GPA ${scoreToGpa(c.score).toFixed(2)}${c.note ? ' · ' + escapeHtml(c.note) : ''}</div>
         </div>
         <div class="item-actions">
-          <button class="btn-xs btn-gray" onclick="editCourse('${c.id}')">编辑</button>
-          <button class="btn-xs btn-red" onclick="confirmDelCourse('${c.id}')">删除</button>
+          <button class="btn-xs btn-gray" onclick="event.stopPropagation();editCourse('${c.id}')">编辑</button>
+          <button class="btn-xs btn-red" onclick="event.stopPropagation();confirmDelCourse('${c.id}')">删除</button>
         </div>
       </div>`).join('')}
     </div>`;
   }).join('');
+}
+
+// ==================== 课程拖拽排序 ====================
+let _dragSrcId = null;
+let _dragSrcSemId = null;
+
+function handleDragStart(e) {
+  _dragSrcId = this.dataset.courseId;
+  _dragSrcSemId = this.dataset.semId;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', _dragSrcId);
+}
+
+function handleDragEnd(e) {
+  this.classList.remove('dragging');
+  document.querySelectorAll('.course-item.drag-over').forEach(el => el.classList.remove('drag-over'));
+  _dragSrcId = null;
+  _dragSrcSemId = null;
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  if (this.dataset.courseId !== _dragSrcId) {
+    this.classList.add('drag-over');
+  }
+}
+
+function handleDragLeave() {
+  this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  this.classList.remove('drag-over');
+  const targetId = this.dataset.courseId;
+  const targetSemId = this.dataset.semId;
+  if (!_dragSrcId || _dragSrcId === targetId) return;
+
+  const srcIdx = courses.findIndex(c => c.id === _dragSrcId);
+  const tgtIdx = courses.findIndex(c => c.id === targetId);
+  if (srcIdx === -1 || tgtIdx === -1) return;
+
+  // 同组内排序或跨组移动
+  const [moved] = courses.splice(srcIdx, 1);
+  moved.semesterId = targetSemId;
+  const newTgtIdx = courses.findIndex(c => c.id === targetId);
+  courses.splice(newTgtIdx, 0, moved);
+  saveData();
+  refreshAll();
 }
 
 function showCourseModal(editId) {
