@@ -366,7 +366,7 @@ async function loadData() {
       }
     }
   }
-  // 首次使用预置8个学期
+  // 首次使用预置8个学期 + 大一上课程
   if (semesters.length === 0) {
     semesters = [
       { id: 'sem-1', name: '大一上学期', startDate: '', endDate: '', note: '' },
@@ -377,6 +377,19 @@ async function loadData() {
       { id: 'sem-6', name: '大三下学期', startDate: '', endDate: '', note: '' },
       { id: 'sem-7', name: '大四上学期', startDate: '', endDate: '', note: '' },
       { id: 'sem-8', name: '大四下学期', startDate: '', endDate: '', note: '' }
+    ];
+    courses = [
+      { id: 'c-1', semesterId: 'sem-1', name: '大学生心理健康', credit: 2, score: 91, category: '公共必修' },
+      { id: 'c-2', semesterId: 'sem-1', name: '党史', credit: 1, score: 89, category: '公共必修' },
+      { id: 'c-3', semesterId: 'sem-1', name: '高等数学C1', credit: 4, score: 85, category: '专业必修' },
+      { id: 'c-4', semesterId: 'sem-1', name: '高级交际英语1', credit: 3, score: 75, category: '公共必修' },
+      { id: 'c-5', semesterId: 'sem-1', name: '国家安全教育', credit: 1, score: 80, category: '公共必修' },
+      { id: 'c-6', semesterId: 'sem-1', name: '逻辑学导论', credit: 3, score: 60, category: '专业必修' },
+      { id: 'c-7', semesterId: 'sem-1', name: '思想道德与法治', credit: 2.5, score: 90, category: '公共必修' },
+      { id: 'c-8', semesterId: 'sem-1', name: '素质体育1', credit: 1, score: 90, category: '公共必修' },
+      { id: 'c-9', semesterId: 'sem-1', name: '微观经济学', credit: 3, score: 80, category: '专业必修' },
+      { id: 'c-10', semesterId: 'sem-1', name: '形势与政策1', credit: 0.5, score: 96, category: '公共必修' },
+      { id: 'c-11', semesterId: 'sem-1', name: '政治学原理', credit: 3, score: 84, category: '专业必修' }
     ];
     saveData();
   }
