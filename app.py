@@ -2270,7 +2270,63 @@ def paiban_download_apk():
         return jsonify({'error': 'APK文件不存在'}), 404
     return send_from_directory('paiban', 'app-debug.apk', as_attachment=True, download_name='枫叶管理.apk')
 
+# ==================== GPA系统（独立子系统，使用独立数据库） ====================
+
+GPA_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'gpa', 'gpa.db')
+
+def init_gpa_db():
+    """初始化GPA独立数据库"""
+    os.makedirs(os.path.dirname(GPA_DB_PATH), exist_ok=True)
+    conn = sqlite3.connect(GPA_DB_PATH)
+    conn.execute('''CREATE TABLE IF NOT EXISTS gpa_data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        semesters TEXT DEFAULT '[]',
+        courses TEXT DEFAULT '[]',
+        updated_at TEXT DEFAULT (datetime('now','localtime'))
+    )''')
+    existing = conn.execute('SELECT id FROM gpa_data LIMIT 1').fetchone()
+    if not existing:
+        conn.execute('INSERT INTO gpa_data (semesters, courses) VALUES (?, ?)',
+                     ('[]', '[]'))
+    conn.commit()
+    conn.close()
+
+@app.route('/api/gpa/data', methods=['GET'])
+def gpa_get_data():
+    """获取GPA全部数据"""
+    conn = sqlite3.connect(GPA_DB_PATH)
+    row = conn.execute('SELECT semesters, courses, updated_at FROM gpa_data LIMIT 1').fetchone()
+    conn.close()
+    if not row:
+        return jsonify({'success': False, 'error': '无数据'}), 404
+    return jsonify({'success': True, 'data': {
+        'semesters': json.loads(row[0] or '[]'),
+        'courses': json.loads(row[1] or '[]'),
+        'updated_at': row[2]
+    }})
+
+@app.route('/api/gpa/data', methods=['POST'])
+def gpa_save_data():
+    """保存GPA全部数据"""
+    data = request.get_json(silent=True) or {}
+    conn = sqlite3.connect(GPA_DB_PATH)
+    conn.execute('''UPDATE gpa_data SET
+        semesters = ?, courses = ?,
+        updated_at = datetime('now','localtime')
+    ''', (
+        json.dumps(data.get('semesters', []), ensure_ascii=False),
+        json.dumps(data.get('courses', []), ensure_ascii=False),
+    ))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
 # ==================== 前端路由 ====================
+
+@app.route('/gpa')
+def gpa_index():
+    """大学GPA记录系统（独立子系统）"""
+    return send_from_directory('gpa', 'index.html')
 
 @app.route('/paiban')
 def paiban_index():
@@ -2290,6 +2346,7 @@ def static_files(path):
 # 应用导入时自动初始化数据库
 init_db()
 init_paiban_db()
+init_gpa_db()
 
 if __name__ == '__main__':
     print('施工日志系统: http://localhost:5000')

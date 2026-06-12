@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2f7d6b">
+<title>大学GPA记录</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+html,body{min-height:100vh;width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;background:#f5f7fa;color:#1f2937;padding-bottom:calc(70px + env(safe-area-inset-bottom));overscroll-behavior:none;-webkit-user-select:none;user-select:none;font-size:15px;line-height:1.5}
+header{background:#ffffff;color:#1f2937;text-align:center;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));font-size:17px;font-weight:600;position:sticky;top:0;z-index:100;letter-spacing:.3px;border-bottom:1px solid #eef0f4}
+.main{padding:12px;width:100%;max-width:100%}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04)}
+.card-sub{background:#f8fafc;border-radius:10px;padding:12px;margin:8px 0;border:1px solid #eef2f7}
+.card-sub-title{font-size:13px;color:#475569;margin-bottom:8px;font-weight:600}
+h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacing:.2px}
+
+input, select, textarea {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size:15px;
+  background: #fff;
+  min-height: 44px;
+  width: 100%;
+  color:#1f2937;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #2f7d6b;
+  box-shadow: 0 0 0 3px rgba(47,125,107,.15);
+}
+textarea{min-height:60px;resize:none}
+
+button{
+  border:none;
+  border-radius:10px;
+  padding:10px 12px;
+  cursor:pointer;
+  background:#2f7d6b;
+  color:#fff;
+  font-size:14px;
+  font-weight:600;
+  min-height:40px;
+  width:100%;
+  margin-bottom:6px;
+  -webkit-appearance:none;
+  appearance:none;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:rgba(47,125,107,.1);
+}
+button:active{opacity:0.9;transform:scale(0.98)}
+.btn-red{background:#dc2626 !important;}
+.btn-gray{background:#64748b !important;}
+.btn-sm{padding:6px 10px;min-height:32px;font-size:13px;width:auto;margin:0 3px}
+.btn-xs{padding:2px 6px;min-height:22px;font-size:11px;width:auto;margin:0 2px;border-radius:6px}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}
+.two-col > div {min-width:0;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;width:100%}
+.three-col > div {min-width:0;}
+
+.item{display:flex;align-items:center;padding:8px 10px;background:#fff;border-radius:10px;margin-bottom:4px;border:1px solid #e5e7eb;font-size:14px;gap:8px;min-height:40px;touch-action:manipulation}
+.item-content{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0;overflow:hidden}
+.item-title{font-weight:600;font-size:15px;color:#111827}
+.item-sub{font-size:12px;color:#64748b}
+.item-right{flex-shrink:0;text-align:right;font-weight:700;font-size:15px}
+.item-actions{flex-shrink:0;display:flex;gap:4px}
+
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e5e7eb;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 8px rgba(15,23,42,.06);z-index:100;height:70px}
+.tab{text-align:center;padding:10px 0;font-size:14px;color:#6b7280;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:700;touch-action:manipulation}
+.tab.active{color:#2f7d6b;font-weight:800}
+.tab-content{display:none}
+.tab-content.show{display:block}
+
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.6);display:none;align-items:flex-end;justify-content:center;z-index:1000}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.modal-box h4{margin-bottom:16px;font-size:17px;color:#0f172a}
+.modal-box label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:500}
+.modal-box input,.modal-box select,.modal-box textarea{margin-bottom:10px}
+
+.confirm-modal{position:fixed;inset:0;background:rgba(15,23,42,.6);display:none;align-items:center;justify-content:center;z-index:2000}
+.confirm-modal.show{display:flex}
+.confirm-box{background:#fff;border-radius:16px;width:90%;max-width:360px;padding:28px 24px 20px;text-align:center;box-shadow:0 8px 30px rgba(15,23,42,.15)}
+.confirm-title{font-size:17px;font-weight:700;color:#0f172a;margin-bottom:8px}
+.confirm-msg{font-size:13px;color:#64748b;margin-bottom:24px;line-height:1.5}
+.confirm-btns{display:flex;gap:10px}
+.confirm-btns button{flex:1;padding:10px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;min-height:44px}
+.confirm-cancel{background:#f1f5f9;color:#475569}
+.confirm-danger{background:#dc2626;color:#fff}
+
+.gpa-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.gpa-card{background:linear-gradient(135deg, #2f7d6b, #3d9e85);color:#fff;border-radius:12px;padding:16px;text-align:center}
+.gpa-card .gpa-value{font-size:36px;font-weight:800;line-height:1.1}
+.gpa-card .gpa-label{font-size:12px;opacity:.85;margin-top:4px}
+.gpa-card.total{background:linear-gradient(135deg, #1e40af, #3b82f6)}
+
+.course-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.badge-required{background:#eff6ff;color:#2563eb}
+.badge-elective{background:#f0fdf4;color:#16a34a}
+.badge-other{background:#f1f5f9;color:#64748b}
+
+.grade-a{color:#16a34a}
+.grade-b{color:#2563eb}
+.grade-c{color:#d97706}
+.grade-d{color:#dc2626}
+.grade-f{color:#dc2626;font-weight:700}
+
+.empty-state{text-align:center;color:#9ca3af;padding:30px 0;font-size:14px}
+.semester-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.semester-header .sem-name{font-weight:600;font-size:15px;color:#0f172a}
+.semester-header .sem-gpa{font-weight:800;font-size:16px;color:#2f7d6b}
+
+.sync-status{font-size:11px;color:#9ca3af;text-align:center;padding:4px}
+</style>
+</head>
+<body>
+
+<header>
+  大学GPA记录
+  <div class="sync-status" id="syncStatus">就绪</div>
+</header>
+
+<div class="main">
+  <!-- 概览页 -->
+  <div class="tab-content show" id="tab-overview">
+    <div class="card">
+      <div class="gpa-summary">
+        <div class="gpa-card">
+          <div class="gpa-value" id="latestGpa">-</div>
+          <div class="gpa-label">最近学期 GPA</div>
+        </div>
+        <div class="gpa-card total">
+          <div class="gpa-value" id="cumulativeGpa">-</div>
+          <div class="gpa-label">累计 GPA</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+        <div style="font-size:13px;color:#64748b">总学分<div style="font-size:20px;font-weight:700;color:#0f172a" id="totalCredits">0</div></div>
+        <div style="font-size:13px;color:#64748b">总课程<div style="font-size:20px;font-weight:700;color:#0f172a" id="totalCourses">0</div></div>
+        <div style="font-size:13px;color:#64748b">学期数<div style="font-size:20px;font-weight:700;color:#0f172a" id="totalSemesters">0</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>按学期 GPA 趋势</h3>
+      <div id="gpaChart" style="width:100%;height:220px"></div>
+    </div>
+
+    <div class="card">
+      <h3>成绩分布</h3>
+      <div id="gradeDist" style="width:100%;height:180px"></div>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button onclick="switchTab('semesters')">管理学期</button>
+      <button onclick="switchTab('courses')">管理课程</button>
+    </div>
+  </div>
+
+  <!-- 学期页 -->
+  <div class="tab-content" id="tab-semesters">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button onclick="showSemesterModal()">添加学期</button>
+      <button class="btn-gray btn-sm" onclick="switchTab('overview')">返回概览</button>
+    </div>
+    <div id="semesterList"></div>
+  </div>
+
+  <!-- 课程页 -->
+  <div class="tab-content" id="tab-courses">
+    <div style="margin-bottom:10px">
+      <label style="font-size:13px;color:#4b5563;margin-bottom:4px">选择学期</label>
+      <select id="courseFilterSemester" onchange="renderCourses()">
+        <option value="">全部学期</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button onclick="showCourseModal()">添加课程</button>
+      <button class="btn-gray btn-sm" onclick="switchTab('overview')">返回概览</button>
+    </div>
+    <div id="courseList"></div>
+  </div>
+</div>
+
+<!-- 底部导航 -->
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab('overview')">概览</div>
+  <div class="tab" onclick="switchTab('semesters')">学期</div>
+</div>
+
+<!-- 学期编辑弹窗 -->
+<div class="modal" id="semesterModal">
+  <div class="modal-box">
+    <h4 id="semesterModalTitle">添加学期</h4>
+    <input type="hidden" id="semEditId">
+    <label>学期名称</label>
+    <input type="text" id="semName" placeholder="如：大一上学期">
+    <label>开始日期</label>
+    <input type="date" id="semStart">
+    <label>结束日期</label>
+    <input type="date" id="semEnd">
+    <label>备注(可选)</label>
+    <textarea id="semNote" placeholder="可选备注..."></textarea>
+    <div style="display:flex;gap:8px">
+      <button class="btn-gray" onclick="closeSemesterModal()">取消</button>
+      <button onclick="saveSemester()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 课程编辑弹窗 -->
+<div class="modal" id="courseModal">
+  <div class="modal-box">
+    <h4 id="courseModalTitle">添加课程</h4>
+    <input type="hidden" id="courseEditId">
+    <label>学期</label>
+    <select id="courseSemester"></select>
+    <label>课程名称</label>
+    <input type="text" id="courseName" placeholder="如：高等数学">
+    <div class="two-col">
+      <div><label>学分</label><input type="number" id="courseCredits" placeholder="如：4" step="0.5" min="0"></div>
+      <div><label>成绩(百分制)</label><input type="number" id="courseScore" placeholder="如：85" min="0" max="100" step="0.5"></div>
+    </div>
+    <label>课程类别</label>
+    <select id="courseCategory">
+      <option value="required">必修</option>
+      <option value="elective">选修</option>
+      <option value="other">其他</option>
+    </select>
+    <label>备注(可选)</label>
+    <input type="text" id="courseNote" placeholder="可选备注...">
+    <div style="display:flex;gap:8px">
+      <button class="btn-gray" onclick="closeCourseModal()">取消</button>
+      <button onclick="saveCourse()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 确认删除弹窗 -->
+<div class="confirm-modal" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirmTitle">确认删除</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">取消</button>
+      <button class="confirm-danger" id="confirmBtn" onclick="">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+// ==================== 数据层 ====================
+let semesters = [];
+let courses = [];
+let _gpaTimer = null;
+
+// GPA 百分制转4.0分制
+function scoreToGpa(score) {
+  const s = Number(score) || 0;
+  if (s >= 90) return 4.0;
+  if (s >= 85) return 3.7;
+  if (s >= 82) return 3.3;
+  if (s >= 78) return 3.0;
+  if (s >= 75) return 2.7;
+  if (s >= 72) return 2.3;
+  if (s >= 68) return 2.0;
+  if (s >= 64) return 1.5;
+  if (s >= 60) return 1.0;
+  return 0.0;
+}
+
+function getGpaLevel(gpa) {
+  if (gpa >= 3.7) return 'grade-a';
+  if (gpa >= 3.0) return 'grade-b';
+  if (gpa >= 2.0) return 'grade-c';
+  if (gpa >= 1.0) return 'grade-d';
+  return 'grade-f';
+}
+
+// 计算某学期GPA
+function calcSemesterGpa(semesterId) {
+  const list = courses.filter(c => c.semesterId === semesterId);
+  let totalCredits = 0, totalPoints = 0;
+  list.forEach(c => {
+    const credits = Number(c.credits) || 0;
+    totalCredits += credits;
+    totalPoints += credits * scoreToGpa(c.score);
+  });
+  return totalCredits > 0 ? (totalPoints / totalCredits) : 0;
+}
+
+// 计算某学期学分
+function calcSemesterCredits(semesterId) {
+  return courses.filter(c => c.semesterId === semesterId)
+    .reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
+}
+
+function calcCumulativeGpa() {
+  let totalCredits = 0, totalPoints = 0;
+  courses.forEach(c => {
+    const credits = Number(c.credits) || 0;
+    totalCredits += credits;
+    totalPoints += credits * scoreToGpa(c.score);
+  });
+  return totalCredits > 0 ? (totalPoints / totalCredits) : 0;
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ==================== 持久化 ====================
+function updateSyncStatus(text) {
+  const el = document.getElementById('syncStatus');
+  if (el) el.textContent = text;
+}
+
+function saveData() {
+  const payload = JSON.stringify({ semesters, courses });
+  localStorage.setItem('gpaData', payload);
+  clearTimeout(_gpaTimer);
+  _gpaTimer = setTimeout(() => {
+    fetch('/api/gpa/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload
+    }).then(r => r.json()).then(j => {
+      if (j && j.success) updateSyncStatus('已同步');
+    }).catch(() => updateSyncStatus('离线'));
+  }, 1000);
+}
+
+async function loadData() {
+  updateSyncStatus('加载中...');
+  let serverLoaded = false;
+  try {
+    const resp = await fetch('/api/gpa/data');
+    const json = await resp.json();
+    if (json.success && json.data) {
+      semesters = json.data.semesters || [];
+      courses = json.data.courses || [];
+      localStorage.setItem('gpaData', JSON.stringify({ semesters, courses }));
+      serverLoaded = true;
+      updateSyncStatus('已同步');
+    }
+  } catch (e) { /* 服务器不可用 */ }
+
+  if (!serverLoaded) {
+    updateSyncStatus('离线');
+    const d = localStorage.getItem('gpaData');
+    if (d) {
+      try {
+        const obj = JSON.parse(d);
+        semesters = obj.semesters || [];
+        courses = obj.courses || [];
+      } catch (e) {
+        semesters = [];
+        courses = [];
+      }
+    }
+  }
+  refreshAll();
+}
+
+// ==================== 页面刷新 ====================
+function refreshAll() {
+  renderOverview();
+  renderSemesters();
+  renderCourses();
+}
+
+// ==================== 概览页 ====================
+let _gpaChart = null;
+let _gradeChart = null;
+
+function renderOverview() {
+  // 统计数字
+  document.getElementById('totalCredits').textContent = courses.reduce((s, c) => s + (Number(c.credits) || 0), 0).toFixed(1);
+  document.getElementById('totalCourses').textContent = courses.length;
+  document.getElementById('totalSemesters').textContent = semesters.length;
+
+  const cumulative = calcCumulativeGpa();
+  document.getElementById('cumulativeGpa').textContent = courses.length > 0 ? cumulative.toFixed(2) : '-';
+
+  // 最近学期GPA
+  if (semesters.length > 0) {
+    const lastSem = semesters[semesters.length - 1];
+    const gpa = calcSemesterGpa(lastSem.id);
+    document.getElementById('latestGpa').textContent = gpa > 0 ? gpa.toFixed(2) : '-';
+  } else {
+    document.getElementById('latestGpa').textContent = '-';
+  }
+
+  renderGpaChart();
+  renderGradeDist();
+}
+
+function renderGpaChart() {
+  const canvas = document.getElementById('gpaChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  if (_gpaChart) _gpaChart.destroy();
+
+  const labels = semesters.map(s => s.name);
+  const data = semesters.map(s => calcSemesterGpa(s.id));
+
+  _gpaChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '学期GPA',
+        data,
+        borderColor: '#2f7d6b',
+        backgroundColor: 'rgba(47,125,107,0.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 5,
+        pointBackgroundColor: '#2f7d6b'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 4, ticks: { stepSize: 0.5 } }
+      }
+    }
+  });
+}
+
+function renderGradeDist() {
+  const canvas = document.getElementById('gradeDist');
+  if (!canvas || courses.length === 0) return;
+  const ctx = canvas.getContext('2d');
+  if (_gradeChart) _gradeChart.destroy();
+
+  const bins = { 'A (90-100)': 0, 'B (80-89)': 0, 'C (70-79)': 0, 'D (60-69)': 0, 'F (<60)': 0 };
+  courses.forEach(c => {
+    const s = Number(c.score) || 0;
+    if (s >= 90) bins['A (90-100)']++;
+    else if (s >= 80) bins['B (80-89)']++;
+    else if (s >= 70) bins['C (70-79)']++;
+    else if (s >= 60) bins['D (60-69)']++;
+    else bins['F (<60)']++;
+  });
+
+  _gradeChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Object.keys(bins),
+      datasets: [{
+        data: Object.values(bins),
+        backgroundColor: ['#16a34a', '#2563eb', '#d97706', '#dc2626', '#991b1b']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { ticks: { stepSize: 1 } } }
+    }
+  });
+}
+
+// ==================== 学期管理 ====================
+function renderSemesters() {
+  const list = document.getElementById('semesterList');
+  if (semesters.length === 0) {
+    list.innerHTML = '<div class="empty-state">暂无学期，点击上方按钮添加</div>';
+    return;
+  }
+  list.innerHTML = semesters.map(s => {
+    const gpa = calcSemesterGpa(s.id);
+    const credits = calcSemesterCredits(s.id);
+    const courseCount = courses.filter(c => c.semesterId === s.id).length;
+    const gpaClass = gpa > 0 ? getGpaLevel(gpa) : '';
+    return `
+    <div class="item">
+      <div class="item-content">
+        <div class="item-title">${escapeHtml(s.name)}</div>
+        <div class="item-sub">${courseCount} 门课程 · ${credits.toFixed(1)} 学分${s.note ? ' · ' + escapeHtml(s.note) : ''}</div>
+      </div>
+      <div class="item-right ${gpaClass}">${gpa > 0 ? gpa.toFixed(2) : '-'}</div>
+      <div class="item-actions">
+        <button class="btn-sm btn-gray" onclick="editSemester('${s.id}')">编辑</button>
+        <button class="btn-sm btn-red" onclick="confirmDelSemester('${s.id}')">删除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showSemesterModal(editId) {
+  document.getElementById('semesterModal').classList.add('show');
+  if (editId) {
+    document.getElementById('semesterModalTitle').textContent = '编辑学期';
+    const s = semesters.find(x => x.id === editId);
+    if (s) {
+      document.getElementById('semEditId').value = s.id;
+      document.getElementById('semName').value = s.name;
+      document.getElementById('semStart').value = s.startDate || '';
+      document.getElementById('semEnd').value = s.endDate || '';
+      document.getElementById('semNote').value = s.note || '';
+    }
+  } else {
+    document.getElementById('semesterModalTitle').textContent = '添加学期';
+    document.getElementById('semEditId').value = '';
+    document.getElementById('semName').value = '';
+    document.getElementById('semStart').value = '';
+    document.getElementById('semEnd').value = '';
+    document.getElementById('semNote').value = '';
+  }
+}
+
+function closeSemesterModal() {
+  document.getElementById('semesterModal').classList.remove('show');
+}
+
+function editSemester(id) { showSemesterModal(id); }
+
+function saveSemester() {
+  const name = document.getElementById('semName').value.trim();
+  if (!name) { alert('请输入学期名称'); return; }
+  const editId = document.getElementById('semEditId').value;
+  if (editId) {
+    const s = semesters.find(x => x.id === editId);
+    if (s) {
+      s.name = name;
+      s.startDate = document.getElementById('semStart').value;
+      s.endDate = document.getElementById('semEnd').value;
+      s.note = document.getElementById('semNote').value.trim();
+    }
+  } else {
+    semesters.push({
+      id: Date.now().toString(),
+      name,
+      startDate: document.getElementById('semStart').value,
+      endDate: document.getElementById('semEnd').value,
+      note: document.getElementById('semNote').value.trim()
+    });
+  }
+  saveData();
+  closeSemesterModal();
+  refreshAll();
+}
+
+function confirmDelSemester(id) {
+  const s = semesters.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('confirmTitle').textContent = '确认删除学期';
+  document.getElementById('confirmMsg').textContent = '将同时删除「' + s.name + '」下的所有课程，此操作不可撤销。';
+  document.getElementById('confirmBtn').onclick = function() {
+    courses = courses.filter(c => c.semesterId !== id);
+    semesters = semesters.filter(x => x.id !== id);
+    saveData();
+    closeConfirm();
+    refreshAll();
+  };
+  document.getElementById('confirmModal').classList.add('show');
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').classList.remove('show');
+}
+
+// ==================== 课程管理 ====================
+function renderCourses() {
+  const filterId = document.getElementById('courseFilterSemester').value;
+  const sel = document.getElementById('courseFilterSemester');
+  sel.innerHTML = '<option value="">全部学期</option>' +
+    semesters.map(s => `<option value="${s.id}" ${s.id === filterId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('');
+
+  let list = courses;
+  if (filterId) list = list.filter(c => c.semesterId === filterId);
+  // 按学期分组
+  const grouped = {};
+  list.forEach(c => {
+    if (!grouped[c.semesterId]) grouped[c.semesterId] = [];
+    grouped[c.semesterId].push(c);
+  });
+
+  const container = document.getElementById('courseList');
+  if (Object.keys(grouped).length === 0) {
+    container.innerHTML = '<div class="empty-state">暂无课程，点击上方按钮添加</div>';
+    return;
+  }
+
+  const catMap = { required: '必修', elective: '选修', other: '其他' };
+  const catClass = { required: 'badge-required', elective: 'badge-elective', other: 'badge-other' };
+
+  container.innerHTML = Object.entries(grouped).map(([semId, items]) => {
+    const sem = semesters.find(s => s.id === semId);
+    const semGpa = calcSemesterGpa(semId);
+    return `
+    <div class="card" style="padding:10px">
+      <div class="semester-header">
+        <span class="sem-name">${escapeHtml(sem ? sem.name : '未分类')} (${items.length}门)</span>
+        <span class="sem-gpa">${semGpa > 0 ? 'GPA ' + semGpa.toFixed(2) : ''}</span>
+      </div>
+      ${items.map(c => `
+      <div class="item" style="padding:6px 8px;min-height:32px">
+        <div class="item-content">
+          <div class="item-title" style="font-size:14px">${escapeHtml(c.name)}
+            <span class="course-badge ${catClass[c.category] || 'badge-other'}">${catMap[c.category] || '其他'}</span>
+          </div>
+          <div class="item-sub">${c.credits} 学分 · 成绩 ${c.score} · GPA ${scoreToGpa(c.score).toFixed(2)}${c.note ? ' · ' + escapeHtml(c.note) : ''}</div>
+        </div>
+        <div class="item-actions">
+          <button class="btn-xs btn-gray" onclick="editCourse('${c.id}')">编辑</button>
+          <button class="btn-xs btn-red" onclick="confirmDelCourse('${c.id}')">删除</button>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+function showCourseModal(editId) {
+  document.getElementById('courseModal').classList.add('show');
+  // 填充学期选项
+  const sel = document.getElementById('courseSemester');
+  sel.innerHTML = semesters.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  if (semesters.length === 0) {
+    sel.innerHTML = '<option value="">请先添加学期</option>';
+  }
+
+  if (editId) {
+    document.getElementById('courseModalTitle').textContent = '编辑课程';
+    const c = courses.find(x => x.id === editId);
+    if (c) {
+      document.getElementById('courseEditId').value = c.id;
+      document.getElementById('courseSemester').value = c.semesterId;
+      document.getElementById('courseName').value = c.name;
+      document.getElementById('courseCredits').value = c.credits;
+      document.getElementById('courseScore').value = c.score;
+      document.getElementById('courseCategory').value = c.category || 'required';
+      document.getElementById('courseNote').value = c.note || '';
+    }
+  } else {
+    document.getElementById('courseModalTitle').textContent = '添加课程';
+    document.getElementById('courseEditId').value = '';
+    document.getElementById('courseName').value = '';
+    document.getElementById('courseCredits').value = '';
+    document.getElementById('courseScore').value = '';
+    document.getElementById('courseCategory').value = 'required';
+    document.getElementById('courseNote').value = '';
+  }
+}
+
+function closeCourseModal() {
+  document.getElementById('courseModal').classList.remove('show');
+}
+
+function editCourse(id) { showCourseModal(id); }
+
+function saveCourse() {
+  const name = document.getElementById('courseName').value.trim();
+  const semesterId = document.getElementById('courseSemester').value;
+  const credits = Number(document.getElementById('courseCredits').value) || 0;
+  const score = Number(document.getElementById('courseScore').value) || 0;
+  if (!name) { alert('请输入课程名称'); return; }
+  if (!semesterId) { alert('请先添加学期'); return; }
+  if (credits <= 0) { alert('请输入有效学分'); return; }
+  if (score < 0 || score > 100) { alert('成绩应在0-100之间'); return; }
+
+  const editId = document.getElementById('courseEditId').value;
+  if (editId) {
+    const c = courses.find(x => x.id === editId);
+    if (c) {
+      c.semesterId = semesterId;
+      c.name = name;
+      c.credits = credits;
+      c.score = score;
+      c.category = document.getElementById('courseCategory').value;
+      c.note = document.getElementById('courseNote').value.trim();
+    }
+  } else {
+    courses.push({
+      id: Date.now().toString(),
+      semesterId,
+      name,
+      credits,
+      score,
+      category: document.getElementById('courseCategory').value,
+      note: document.getElementById('courseNote').value.trim()
+    });
+  }
+  saveData();
+  closeCourseModal();
+  refreshAll();
+}
+
+function confirmDelCourse(id) {
+  const c = courses.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('confirmTitle').textContent = '确认删除课程';
+  document.getElementById('confirmMsg').textContent = '将删除课程「' + c.name + '」，此操作不可撤销。';
+  document.getElementById('confirmBtn').onclick = function() {
+    courses = courses.filter(x => x.id !== id);
+    saveData();
+    closeConfirm();
+    refreshAll();
+  };
+  document.getElementById('confirmModal').classList.add('show');
+}
+
+// ==================== 页面切换 ====================
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('show'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById('tab-' + name);
+  if (target) target.classList.add('show');
+  const tabBtns = document.querySelectorAll('.tab');
+  if (name === 'overview') tabBtns[0].classList.add('active');
+  else if (name === 'semesters') tabBtns[1].classList.add('active');
+  if (name === 'courses') {
+    // 课程页也在学期tab下高亮
+    tabBtns[1].classList.add('active');
+  }
+  if (name === 'overview') renderGpaChart();
+}
+
+// ==================== 启动 ====================
+loadData();
+</script>
+</body>
+</html>
