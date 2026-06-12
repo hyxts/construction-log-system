@@ -366,6 +366,20 @@ async function loadData() {
       }
     }
   }
+  // 首次使用预置8个学期
+  if (semesters.length === 0) {
+    semesters = [
+      { id: 'sem-1', name: '大一上学期', startDate: '', endDate: '', note: '' },
+      { id: 'sem-2', name: '大一下学期', startDate: '', endDate: '', note: '' },
+      { id: 'sem-3', name: '大二上学期', startDate: '', endDate: '', note: '' },
+      { id: 'sem-4', name: '大二下学期', startDate: '', endDate: '', note: '' },
+      { id: 'sem-5', name: '大三上学期', startDate: '', endDate: '', note: '' },
+      { id: 'sem-6', name: '大三下学期', startDate: '', endDate: '', note: '' },
+      { id: 'sem-7', name: '大四上学期', startDate: '', endDate: '', note: '' },
+      { id: 'sem-8', name: '大四下学期', startDate: '', endDate: '', note: '' }
+    ];
+    saveData();
+  }
   refreshAll();
 }
 
