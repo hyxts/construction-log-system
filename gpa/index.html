@@ -435,16 +435,32 @@ function renderGpaChart() {
   const ctx = canvas.getContext('2d');
   if (_gpaChart) _gpaChart.destroy();
 
-  const labels = semesters.map(s => s.name);
-  const data = semesters.map(s => calcSemesterGpa(s.id));
+  // 只显示有课程数据的学期（GPA > 0）
+  const items = [];
+  semesters.forEach(s => {
+    const sc = courses.filter(c => c.semesterId === s.id);
+    if (sc.length > 0) {
+      let credits = 0, points = 0;
+      sc.forEach(c => { credits += Number(c.credits) || 0; points += (Number(c.credits) || 0) * scoreToGpa(c.score); });
+      items.push({ name: s.name, gpa: credits > 0 ? points / credits : 0 });
+    }
+  });
+
+  if (items.length === 0) {
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('暂无课程数据', canvas.width / 2, canvas.height / 2);
+    return;
+  }
 
   _gpaChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels,
+      labels: items.map(i => i.name),
       datasets: [{
         label: '学期GPA',
-        data,
+        data: items.map(i => i.gpa),
         borderColor: '#2f7d6b',
         backgroundColor: 'rgba(47,125,107,0.1)',
         fill: true,

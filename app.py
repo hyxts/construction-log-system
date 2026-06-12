@@ -2341,16 +2341,27 @@ def init_gpa_db():
 
 @app.route('/api/gpa/data', methods=['GET'])
 def gpa_get_data():
-    """获取GPA全部数据"""
+    """获取GPA全部数据（懒迁移：无sem-1课程时自动补）"""
     conn = sqlite3.connect(GPA_DB_PATH)
-    row = conn.execute('SELECT semesters, courses, updated_at FROM gpa_data LIMIT 1').fetchone()
-    conn.close()
+    row = conn.execute('SELECT id, semesters, courses, updated_at FROM gpa_data LIMIT 1').fetchone()
     if not row:
+        conn.close()
         return jsonify({'success': False, 'error': '无数据'}), 404
+    cur_courses = json.loads(row[2] or '[]')
+    cur_semesters = json.loads(row[1] or '[]')
+    # 懒迁移：缺乏sem-1课程时自动补充
+    has_sem1 = any(c.get('semesterId') == 'sem-1' for c in cur_courses)
+    any_sem = any(c.get('semesterId') for c in cur_courses)
+    if not has_sem1 and not any_sem and any(s.get('id') == 'sem-1' for s in cur_semesters):
+        cur_courses.extend(DEFAULT_COURSES_SEM1)
+        conn.execute('''UPDATE gpa_data SET courses = ?, updated_at = datetime('now','localtime')''',
+                     (json.dumps(cur_courses, ensure_ascii=False),))
+        conn.commit()
+    conn.close()
     return jsonify({'success': True, 'data': {
-        'semesters': json.loads(row[0] or '[]'),
-        'courses': json.loads(row[1] or '[]'),
-        'updated_at': row[2]
+        'semesters': cur_semesters,
+        'courses': cur_courses,
+        'updated_at': row[3]
     }})
 
 @app.route('/api/gpa/data', methods=['POST'])
