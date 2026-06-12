@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#2f7d6b">
-<title>大学GPA记录</title>
+<title>GPA</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 html,body{min-height:100vh;width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
@@ -127,7 +127,7 @@ button:active{opacity:0.9;transform:scale(0.98)}
 </head>
 <body>
 
-<header>大学GPA记录</header>
+<header>GPA</header>
 
 <div class="main">
   <!-- 概览页 -->
@@ -486,7 +486,7 @@ function renderGpaChart() {
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        y: { min: 0, max: 4, ticks: { stepSize: 0.5 } }
+        y: { min: 3.0, max: 4.0, ticks: { stepSize: 0.1 } }
       }
     }
   });

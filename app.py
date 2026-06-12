@@ -2411,7 +2411,7 @@ def gpa_save_data():
 
 @app.route('/gpa')
 def gpa_index():
-    """大学GPA记录系统（独立子系统）"""
+    """GPA系统（独立子系统）"""
     return send_from_directory('gpa', 'index.html')
 
 @app.route('/paiban')
