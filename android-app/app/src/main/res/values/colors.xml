@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#1A4A3F</color>
+    <color name="primary_dark">#13382F</color>
+    <color name="progress_color">#E8870A</color>
+    <color name="background">#FFFFFF</color>
+</resources>
