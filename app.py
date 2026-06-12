@@ -2189,6 +2189,7 @@ def paiban_save_data():
 @app.route('/api/git-pull', methods=['POST'])
 def git_pull():
     """自动拉取最新代码（供定时任务调用）"""
+    reload_msg = ''
     try:
         project_dir = os.path.dirname(os.path.abspath(__file__))
         result = subprocess.run(
@@ -2198,11 +2199,18 @@ def git_pull():
             text=True,
             timeout=30
         )
+        # 代码有更新时，自动触发 Reload（修改 WSGI 文件时间戳）
+        if result.returncode == 0 and 'Already up to date' not in result.stdout:
+            wsgi_path = '/var/www/slhfwq_pythonanywhere_com_wsgi.py'
+            if os.path.exists(wsgi_path):
+                os.utime(wsgi_path, None)
+                reload_msg = '，已自动触发Reload'
         return jsonify({
             'success': result.returncode == 0,
             'stdout': result.stdout.strip(),
             'stderr': result.stderr.strip(),
-            'returncode': result.returncode
+            'returncode': result.returncode,
+            'reload': 'Reload已触发' if reload_msg else '无需Reload'
         })
     except subprocess.TimeoutExpired:
         return jsonify({'success': False, 'error': 'Git pull 超时（30秒）'}), 408

@@ -11,6 +11,9 @@ __pycache__/
 .venv/
 venv/
 
+# API Token（勿提交）
+.pa_token
+
 # 系统文件
 .DS_Store
 Thumbs.db
