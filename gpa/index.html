@@ -816,7 +816,7 @@ function switchTab(name) {
   const tabBtns = document.querySelectorAll('.tab');
   if (name === 'overview') tabBtns[0].classList.add('active');
   else if (name === 'semesters' || name === 'courses') tabBtns[1].classList.add('active');
-  if (name === 'overview') renderGpaChart();
+  if (name === 'overview') renderOverview();
   else if (name === 'courses') renderCourses();
 }
 
