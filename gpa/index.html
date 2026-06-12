@@ -121,8 +121,12 @@ button:active{opacity:0.9;transform:scale(0.98)}
 .course-item:hover{background:#f8fafc}
 .course-item.dragging{opacity:0.4;background:#e2e8f0}
 .course-item.drag-over{border-top:2px solid #2f7d6b}
-.course-drag-handle{cursor:grab;color:#cbd5e1;font-size:16px;line-height:1;padding:2px 4px;user-select:none;flex-shrink:0}
+.course-drag-handle{cursor:grab;color:#cbd5e1;font-size:14px;line-height:1;padding:2px 4px;user-select:none;flex-shrink:0;letter-spacing:-1px}
 .course-drag-handle:active{cursor:grabbing}
+.course-num{flex-shrink:0;width:22px;text-align:right;font-size:12px;color:#94a3b8;font-weight:600;margin-right:2px}
+.course-order-btn{flex-shrink:0;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:1px solid #e2e8f0;border-radius:4px;background:#fff;color:#94a3b8;font-size:11px;cursor:pointer;line-height:1;padding:0}
+.course-order-btn:hover{background:#f1f5f9;color:#475569;border-color:#cbd5e1}
+.course-order-btn:disabled{opacity:0.3;cursor:default}
 </style>
 </head>
 <body>
@@ -681,22 +685,29 @@ function renderCourses() {
         <span class="sem-name">${escapeHtml(s.name)} (${items.length}门)</span>
         <span class="sem-gpa">${semGpa > 0 ? 'GPA ' + semGpa.toFixed(2) : ''}</span>
       </div>
-      ${items.map(c => `
-      <div class="course-item" draggable="true" data-course-id="${c.id}" data-sem-id="${s.id}"
+      ${items.map((c, idx) => {
+        const isFirst = idx === 0;
+        const isLast = idx === items.length - 1;
+        return `
+      <div class="course-item" draggable="true" data-course-id="${c.id}" data-sem-id="${s.id}" data-idx="${idx}"
            ondragstart="handleDragStart(event)" ondragend="handleDragEnd(event)"
            ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-        <span class="course-drag-handle" title="拖动排序">::</span>
+        <span class="course-drag-handle" title="按住拖动排序">::</span>
+        <span class="course-num">${idx + 1}</span>
         <div class="item-content" style="flex:1">
           <div class="item-title" style="font-size:14px">${escapeHtml(c.name)}
             <span class="course-badge ${catClass[c.category] || 'badge-other'}">${catMap[c.category] || '其他'}</span>
           </div>
           <div class="item-sub">${c.credits} 学分 · 成绩 ${c.score} · GPA ${scoreToGpa(c.score).toFixed(2)}${c.note ? ' · ' + escapeHtml(c.note) : ''}</div>
         </div>
-        <div class="item-actions">
+        <div class="item-actions" style="display:flex;align-items:center;gap:3px">
+          <button class="course-order-btn" title="上移" onclick="event.stopPropagation();moveCourseUp('${c.id}')" ${isFirst ? 'disabled' : ''}>&#9650;</button>
+          <button class="course-order-btn" title="下移" onclick="event.stopPropagation();moveCourseDown('${c.id}')" ${isLast ? 'disabled' : ''}>&#9660;</button>
           <button class="btn-xs btn-gray" onclick="event.stopPropagation();editCourse('${c.id}')">编辑</button>
           <button class="btn-xs btn-red" onclick="event.stopPropagation();confirmDelCourse('${c.id}')">删除</button>
         </div>
-      </div>`).join('')}
+      </div>`;
+      }).join('')}
     </div>`;
   }).join('');
 }
@@ -766,6 +777,34 @@ function handleDrop(e) {
   moved.semesterId = targetSemId;
   const newTgtIdx = courses.findIndex(c => c.id === targetId);
   courses.splice(newTgtIdx, 0, moved);
+  saveData();
+  refreshAll();
+}
+
+// 同组内上移
+function moveCourseUp(courseId) {
+  const c = courses.find(x => x.id === courseId);
+  if (!c) return;
+  const group = courses.filter(x => x.semesterId === c.semesterId);
+  const idx = group.findIndex(x => x.id === courseId);
+  if (idx <= 0) return;
+  const globalA = courses.findIndex(x => x.id === group[idx - 1].id);
+  const globalB = courses.findIndex(x => x.id === courseId);
+  [courses[globalA], courses[globalB]] = [courses[globalB], courses[globalA]];
+  saveData();
+  refreshAll();
+}
+
+// 同组内下移
+function moveCourseDown(courseId) {
+  const c = courses.find(x => x.id === courseId);
+  if (!c) return;
+  const group = courses.filter(x => x.semesterId === c.semesterId);
+  const idx = group.findIndex(x => x.id === courseId);
+  if (idx >= group.length - 1) return;
+  const globalA = courses.findIndex(x => x.id === courseId);
+  const globalB = courses.findIndex(x => x.id === group[idx + 1].id);
+  [courses[globalA], courses[globalB]] = [courses[globalB], courses[globalA]];
   saveData();
   refreshAll();
 }
