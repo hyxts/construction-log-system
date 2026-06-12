@@ -2286,83 +2286,110 @@ DEFAULT_SEMESTERS = [
 ]
 
 DEFAULT_COURSES_SEM1 = [
-    {'id': 'c-1', 'semesterId': 'sem-1', 'name': '大学生心理健康', 'credit': 2, 'score': 91, 'category': '公共必修'},
-    {'id': 'c-2', 'semesterId': 'sem-1', 'name': '党史', 'credit': 1, 'score': 89, 'category': '公共必修'},
-    {'id': 'c-3', 'semesterId': 'sem-1', 'name': '高等数学C1', 'credit': 4, 'score': 85, 'category': '专业必修'},
-    {'id': 'c-4', 'semesterId': 'sem-1', 'name': '高级交际英语1', 'credit': 3, 'score': 75, 'category': '公共必修'},
-    {'id': 'c-5', 'semesterId': 'sem-1', 'name': '国家安全教育', 'credit': 1, 'score': 80, 'category': '公共必修'},
-    {'id': 'c-6', 'semesterId': 'sem-1', 'name': '逻辑学导论', 'credit': 3, 'score': 60, 'category': '专业必修'},
-    {'id': 'c-7', 'semesterId': 'sem-1', 'name': '思想道德与法治', 'credit': 2.5, 'score': 90, 'category': '公共必修'},
-    {'id': 'c-8', 'semesterId': 'sem-1', 'name': '素质体育1', 'credit': 1, 'score': 90, 'category': '公共必修'},
-    {'id': 'c-9', 'semesterId': 'sem-1', 'name': '微观经济学', 'credit': 3, 'score': 80, 'category': '专业必修'},
-    {'id': 'c-10', 'semesterId': 'sem-1', 'name': '形势与政策1', 'credit': 0.5, 'score': 96, 'category': '公共必修'},
-    {'id': 'c-11', 'semesterId': 'sem-1', 'name': '政治学原理', 'credit': 3, 'score': 84, 'category': '专业必修'}
+    {'id': 'c-1', 'semesterId': 'sem-1', 'name': '大学生心理健康', 'credit': 2, 'score': 91, 'category': 'public_required'},
+    {'id': 'c-2', 'semesterId': 'sem-1', 'name': '党史', 'credit': 1, 'score': 89, 'category': 'public_required'},
+    {'id': 'c-3', 'semesterId': 'sem-1', 'name': '高等数学C1', 'credit': 4, 'score': 85, 'category': 'major_required'},
+    {'id': 'c-4', 'semesterId': 'sem-1', 'name': '高级交际英语1', 'credit': 3, 'score': 75, 'category': 'public_required'},
+    {'id': 'c-5', 'semesterId': 'sem-1', 'name': '国家安全教育', 'credit': 1, 'score': 80, 'category': 'public_required'},
+    {'id': 'c-6', 'semesterId': 'sem-1', 'name': '逻辑学导论', 'credit': 3, 'score': 60, 'category': 'major_required'},
+    {'id': 'c-7', 'semesterId': 'sem-1', 'name': '思想道德与法治', 'credit': 2.5, 'score': 90, 'category': 'public_required'},
+    {'id': 'c-8', 'semesterId': 'sem-1', 'name': '素质体育1', 'credit': 1, 'score': 90, 'category': 'public_required'},
+    {'id': 'c-9', 'semesterId': 'sem-1', 'name': '微观经济学', 'credit': 3, 'score': 80, 'category': 'major_required'},
+    {'id': 'c-10', 'semesterId': 'sem-1', 'name': '形势与政策1', 'credit': 0.5, 'score': 96, 'category': 'public_required'},
+    {'id': 'c-11', 'semesterId': 'sem-1', 'name': '政治学原理', 'credit': 3, 'score': 84, 'category': 'major_required'}
 ]
 
 def init_gpa_db():
     """初始化GPA独立数据库，自动迁移预置数据"""
-    os.makedirs(os.path.dirname(GPA_DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(GPA_DB_PATH)
-    conn.execute('''CREATE TABLE IF NOT EXISTS gpa_data (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        semesters TEXT DEFAULT '[]',
-        courses TEXT DEFAULT '[]',
-        updated_at TEXT DEFAULT (datetime('now','localtime'))
-    )''')
-    existing = conn.execute('SELECT id, semesters, courses FROM gpa_data LIMIT 1').fetchone()
-    if not existing:
-        conn.execute('INSERT INTO gpa_data (semesters, courses) VALUES (?, ?)',
-                     (json.dumps(DEFAULT_SEMESTERS, ensure_ascii=False),
-                      json.dumps(DEFAULT_COURSES_SEM1, ensure_ascii=False)))
-    else:
-        # 合并预置学期（仅添加缺失的）
-        cur_semesters = json.loads(existing[1] or '[]')
-        sem_ids = {s['id'] for s in cur_semesters}
-        changed = False
-        for sem in DEFAULT_SEMESTERS:
-            if sem['id'] not in sem_ids:
-                cur_semesters.append(sem)
-                sem_ids.add(sem['id'])
+    try:
+        os.makedirs(os.path.dirname(GPA_DB_PATH), exist_ok=True)
+        conn = sqlite3.connect(GPA_DB_PATH)
+        conn.execute('''CREATE TABLE IF NOT EXISTS gpa_data (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            semesters TEXT DEFAULT '[]',
+            courses TEXT DEFAULT '[]',
+            updated_at TEXT DEFAULT (datetime('now','localtime'))
+        )''')
+        existing = conn.execute('SELECT id, semesters, courses FROM gpa_data LIMIT 1').fetchone()
+        if not existing:
+            conn.execute('INSERT INTO gpa_data (semesters, courses) VALUES (?, ?)',
+                         (json.dumps(DEFAULT_SEMESTERS, ensure_ascii=False),
+                          json.dumps(DEFAULT_COURSES_SEM1, ensure_ascii=False)))
+        else:
+            # 安全解析现有学期数据
+            try:
+                cur_semesters = json.loads(existing[1] or '[]')
+            except (json.JSONDecodeError, TypeError):
+                cur_semesters = []
+            # 合并预置学期（仅添加缺失的），兼容旧格式
+            if cur_semesters and isinstance(cur_semesters[0], dict):
+                sem_ids = {s['id'] for s in cur_semesters if 'id' in s}
+            else:
+                sem_ids = set()
+            changed = False
+            for sem in DEFAULT_SEMESTERS:
+                if sem['id'] not in sem_ids:
+                    cur_semesters.append(dict(sem))
+                    sem_ids.add(sem['id'])
+                    changed = True
+            # 安全解析现有课程数据
+            try:
+                cur_courses = json.loads(existing[2] or '[]')
+            except (json.JSONDecodeError, TypeError):
+                cur_courses = []
+            # 合并大一上预置课程（仅在完全没有sem-1课程时添加）
+            has_sem1 = any(c.get('semesterId') == 'sem-1' for c in cur_courses if isinstance(c, dict))
+            if not has_sem1:
+                cur_courses.extend(DEFAULT_COURSES_SEM1)
                 changed = True
-        # 合并大一上预置课程（仅在完全没有sem-1课程时添加）
-        cur_courses = json.loads(existing[2] or '[]')
-        has_sem1 = any(c.get('semesterId') == 'sem-1' for c in cur_courses)
-        if not has_sem1:
-            cur_courses.extend(DEFAULT_COURSES_SEM1)
-            changed = True
-        if changed:
-            conn.execute('''UPDATE gpa_data SET
-                semesters = ?, courses = ?,
-                updated_at = datetime('now','localtime')
-            ''', (json.dumps(cur_semesters, ensure_ascii=False),
-                  json.dumps(cur_courses, ensure_ascii=False)))
-    conn.commit()
-    conn.close()
+            if changed:
+                conn.execute('''UPDATE gpa_data SET
+                    semesters = ?, courses = ?,
+                    updated_at = datetime('now','localtime')
+                ''', (json.dumps(cur_semesters, ensure_ascii=False),
+                      json.dumps(cur_courses, ensure_ascii=False)))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        import traceback
+        print(f'[init_gpa_db ERROR] {e}\n{traceback.format_exc()}', flush=True)
 
 @app.route('/api/gpa/data', methods=['GET'])
 def gpa_get_data():
     """获取GPA全部数据（懒迁移：无sem-1课程时自动补）"""
-    conn = sqlite3.connect(GPA_DB_PATH)
-    row = conn.execute('SELECT id, semesters, courses, updated_at FROM gpa_data LIMIT 1').fetchone()
-    if not row:
+    try:
+        conn = sqlite3.connect(GPA_DB_PATH)
+        row = conn.execute('SELECT id, semesters, courses, updated_at FROM gpa_data LIMIT 1').fetchone()
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'error': '无数据'}), 404
+        try:
+            cur_courses = json.loads(row[2] or '[]')
+        except (json.JSONDecodeError, TypeError):
+            cur_courses = []
+        try:
+            cur_semesters = json.loads(row[1] or '[]')
+        except (json.JSONDecodeError, TypeError):
+            cur_semesters = []
+        # 懒迁移：缺乏sem-1课程时自动补充
+        has_sem1 = any(c.get('semesterId') == 'sem-1' for c in cur_courses if isinstance(c, dict))
+        any_sem = any(c.get('semesterId') for c in cur_courses if isinstance(c, dict))
+        has_sem1_period = any(s.get('id') == 'sem-1' for s in cur_semesters if isinstance(s, dict))
+        if not has_sem1 and not any_sem and has_sem1_period:
+            cur_courses.extend(DEFAULT_COURSES_SEM1)
+            conn.execute('''UPDATE gpa_data SET courses = ?, updated_at = datetime('now','localtime')''',
+                         (json.dumps(cur_courses, ensure_ascii=False),))
+            conn.commit()
         conn.close()
-        return jsonify({'success': False, 'error': '无数据'}), 404
-    cur_courses = json.loads(row[2] or '[]')
-    cur_semesters = json.loads(row[1] or '[]')
-    # 懒迁移：缺乏sem-1课程时自动补充
-    has_sem1 = any(c.get('semesterId') == 'sem-1' for c in cur_courses)
-    any_sem = any(c.get('semesterId') for c in cur_courses)
-    if not has_sem1 and not any_sem and any(s.get('id') == 'sem-1' for s in cur_semesters):
-        cur_courses.extend(DEFAULT_COURSES_SEM1)
-        conn.execute('''UPDATE gpa_data SET courses = ?, updated_at = datetime('now','localtime')''',
-                     (json.dumps(cur_courses, ensure_ascii=False),))
-        conn.commit()
-    conn.close()
-    return jsonify({'success': True, 'data': {
-        'semesters': cur_semesters,
-        'courses': cur_courses,
-        'updated_at': row[3]
-    }})
+        return jsonify({'success': True, 'data': {
+            'semesters': cur_semesters,
+            'courses': cur_courses,
+            'updated_at': row[3]
+        }})
+    except Exception as e:
+        import traceback
+        print(f'[gpa_get_data ERROR] {e}\n{traceback.format_exc()}', flush=True)
+        return jsonify({'success': False, 'error': '服务器错误'}), 500
 
 @app.route('/api/gpa/data', methods=['POST'])
 def gpa_save_data():
