@@ -155,7 +155,7 @@ button:active{opacity:0.9;transform:scale(0.98)}
     </div>
 
     <div class="card">
-      <h3>按学期 GPA 趋势</h3>
+      <h3>GPA 趋势</h3>
       <div style="position:relative;width:100%;height:220px"><canvas id="gpaChart"></canvas></div>
     </div>
 
@@ -220,7 +220,7 @@ button:active{opacity:0.9;transform:scale(0.98)}
     <h4 id="semesterModalTitle">添加学期</h4>
     <input type="hidden" id="semEditId">
     <label>学期名称</label>
-    <input type="text" id="semName" placeholder="如：大一上学期">
+    <input type="text" id="semName" placeholder="如：大一上">
     <label>开始日期</label>
     <input type="date" id="semStart">
     <label>结束日期</label>
@@ -398,21 +398,21 @@ async function loadData() {
   // 首次使用预置8个学期
   if (semesters.length === 0) {
     semesters = [
-      { id: 'sem-1', name: '大一上学期', startDate: '', endDate: '', note: '' },
-      { id: 'sem-2', name: '大一下学期', startDate: '', endDate: '', note: '' },
-      { id: 'sem-3', name: '大二上学期', startDate: '', endDate: '', note: '' },
-      { id: 'sem-4', name: '大二下学期', startDate: '', endDate: '', note: '' },
-      { id: 'sem-5', name: '大三上学期', startDate: '', endDate: '', note: '' },
-      { id: 'sem-6', name: '大三下学期', startDate: '', endDate: '', note: '' },
-      { id: 'sem-7', name: '大四上学期', startDate: '', endDate: '', note: '' },
-      { id: 'sem-8', name: '大四下学期', startDate: '', endDate: '', note: '' }
+      { id: 'sem-1', name: '大一上', startDate: '', endDate: '', note: '' },
+      { id: 'sem-2', name: '大一下', startDate: '', endDate: '', note: '' },
+      { id: 'sem-3', name: '大二上', startDate: '', endDate: '', note: '' },
+      { id: 'sem-4', name: '大二下', startDate: '', endDate: '', note: '' },
+      { id: 'sem-5', name: '大三上', startDate: '', endDate: '', note: '' },
+      { id: 'sem-6', name: '大三下', startDate: '', endDate: '', note: '' },
+      { id: 'sem-7', name: '大四上', startDate: '', endDate: '', note: '' },
+      { id: 'sem-8', name: '大四下', startDate: '', endDate: '', note: '' }
     ];
   }
   // 确保有sem-1学期（补充缺失的学期）
   const semIds = new Set(semesters.map(s => s.id));
   ['sem-1','sem-2','sem-3','sem-4','sem-5','sem-6','sem-7','sem-8'].forEach(id => {
     if (!semIds.has(id)) {
-      const names = {'sem-1':'大一上学期','sem-2':'大一下学期','sem-3':'大二上学期','sem-4':'大二下学期','sem-5':'大三上学期','sem-6':'大三下学期','sem-7':'大四上学期','sem-8':'大四下学期'};
+      const names = {'sem-1':'大一上','sem-2':'大一下','sem-3':'大二上','sem-4':'大二下','sem-5':'大三上','sem-6':'大三下','sem-7':'大四上','sem-8':'大四下'};
       semesters.push({id, name: names[id], startDate: '', endDate: '', note: ''});
     }
   });
