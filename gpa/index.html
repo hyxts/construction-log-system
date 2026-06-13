@@ -434,9 +434,10 @@ let semesters = [];
 let courses = [];
 let _gpaTimer = null;
 
-// GPA 百分制转4.0分制
+// GPA 百分制转4.0分制，无效成绩返回 null（不计入GPA）
 function scoreToGpa(score) {
-  const s = Number(score) || 0;
+  const s = Number(score);
+  if (isNaN(s) || s <= 0) return null;
   if (s >= 90) return 4.0;
   if (s >= 85) return 3.7;
   if (s >= 82) return 3.3;
@@ -457,32 +458,37 @@ function getGpaLevel(gpa) {
   return 'grade-f';
 }
 
-// 计算某学期GPA
-function calcSemesterGpa(semesterId) {
-  const list = courses.filter(c => c.semesterId === semesterId);
+// 内部：从课程列表计算加权GPA（跳过无成绩课程）
+function _calcGpaFromList(list) {
   let totalCredits = 0, totalPoints = 0;
   list.forEach(c => {
     const credits = Number(c.credit) || 0;
-    totalCredits += credits;
-    totalPoints += credits * scoreToGpa(c.score);
+    const gpa = scoreToGpa(c.score);
+    if (credits > 0 && gpa !== null) {
+      totalCredits += credits;
+      totalPoints += credits * gpa;
+    }
   });
   return totalCredits > 0 ? (totalPoints / totalCredits) : 0;
 }
 
-// 计算某学期学分
+// 计算某学期GPA
+function calcSemesterGpa(semesterId) {
+  const list = courses.filter(c => c.semesterId === semesterId);
+  return _calcGpaFromList(list);
+}
+
+// 计算某学期学分（仅统计有成绩的课程）
 function calcSemesterCredits(semesterId) {
   return courses.filter(c => c.semesterId === semesterId)
-    .reduce((sum, c) => sum + (Number(c.credit) || 0), 0);
+    .reduce((sum, c) => {
+      return sum + ((Number(c.credit) && scoreToGpa(c.score) !== null) ? Number(c.credit) : 0);
+    }, 0);
 }
 
+// 累计GPA
 function calcCumulativeGpa() {
-  let totalCredits = 0, totalPoints = 0;
-  courses.forEach(c => {
-    const credits = Number(c.credit) || 0;
-    totalCredits += credits;
-    totalPoints += credits * scoreToGpa(c.score);
-  });
-  return totalCredits > 0 ? (totalPoints / totalCredits) : 0;
+  return _calcGpaFromList(courses);
 }
 
 function escapeHtml(s) {
@@ -628,14 +634,12 @@ function renderGpaChart() {
   const ctx = canvas.getContext('2d');
   if (_gpaChart) _gpaChart.destroy();
 
-  // 只显示有课程数据的学期（GPA > 0）
+  // 只显示有课程数据的学期
   const items = [];
   semesters.forEach(s => {
     const sc = courses.filter(c => c.semesterId === s.id);
     if (sc.length > 0) {
-      let credits = 0, points = 0;
-      sc.forEach(c => { credits += Number(c.credit) || 0; points += (Number(c.credit) || 0) * scoreToGpa(c.score); });
-      items.push({ name: s.name, gpa: credits > 0 ? points / credits : 0 });
+      items.push({ name: s.name, gpa: calcSemesterGpa(s.id) });
     }
   });
 
@@ -675,13 +679,15 @@ function renderGpaChart() {
 
 function renderGradeDist() {
   const canvas = document.getElementById('gradeDist');
-  if (!canvas || courses.length === 0) return;
+  if (!canvas) return;
+  if (_gradeChart) { _gradeChart.destroy(); _gradeChart = null; }
+  if (courses.length === 0) return;
   const ctx = canvas.getContext('2d');
-  if (_gradeChart) _gradeChart.destroy();
 
   const bins = { 'A (90-100)': 0, 'B (80-89)': 0, 'C (70-79)': 0, 'D (60-69)': 0, 'F (<60)': 0 };
   courses.forEach(c => {
-    const s = Number(c.score) || 0;
+    const s = Number(c.score);
+    if (isNaN(s) || s <= 0) return; // 跳过无成绩课程
     if (s >= 90) bins['A (90-100)']++;
     else if (s >= 80) bins['B (80-89)']++;
     else if (s >= 70) bins['C (70-79)']++;
@@ -1015,11 +1021,15 @@ function saveCourse() {
   const name = document.getElementById('courseName').value.trim();
   const semesterId = document.getElementById('courseSemester').value;
   const credits = Number(document.getElementById('courseCredits').value) || 0;
-  const score = Number(document.getElementById('courseScore').value) || 0;
+  const score = Number(document.getElementById('courseScore').value);
+  const validScore = !isNaN(score) && score > 0 && score <= 100;
   if (!name) { alert('请输入课程名称'); return; }
   if (!semesterId) { alert('请先添加学期'); return; }
   if (credits <= 0) { alert('请输入有效学分'); return; }
-  if (score < 0 || score > 100) { alert('成绩应在0-100之间'); return; }
+  if (!validScore && document.getElementById('courseScore').value.trim() !== '') {
+    alert('成绩应在1-100之间');
+    return;
+  }
 
   const editId = document.getElementById('courseEditId').value;
   if (editId) {
@@ -1077,7 +1087,6 @@ function switchTab(name) {
   else if (name === 'plan') renderPlan();
 }
 
-// ==================== 保研规划 ====================
 // ==================== 保研规划 (基于2025级PPE培养方案) ====================
 
 // PPE方向完整必修课程清单 (来源：弘毅学堂2025级数智人文试验班培养方案)
@@ -1193,7 +1202,10 @@ function renderPlan() {
   document.getElementById('requiredCourseList').innerHTML = reqHtml;
 
   // 关键条件
-  var hasFailed = courses.some(function(c) { return (Number(c.score) || 0) < 60; });
+  var hasFailed = courses.some(function(c) {
+    var s = Number(c.score);
+    return !isNaN(s) && s > 0 && s < 60;
+  });
   var reqs = [
     { name: '累计 GPA >= 3.20', desc: '弘毅学堂官方推免最低线', pass: gpa >= 3.2, pending: false },
     { name: '建议 GPA >= 3.50', desc: '竞争性安全线', pass: gpa >= 3.5, pending: false },
@@ -1238,14 +1250,20 @@ function quickAddCourse(name, credit, category) {
   if (!semesters.length) {
     alert('请先在"概览"页添加学期'); return;
   }
-  // 自动选择第一个学期
-  var firstSem = semesters[0];
   // 打开课程弹窗并预填
   showCourseModal();
   setTimeout(function() {
     document.getElementById('courseName').value = name;
     document.getElementById('courseCredits').value = credit;
     document.getElementById('courseCategory').value = category || 'major_required';
+    // 若课程数据带有推荐学期，预选对应学期
+    var rcInfo = PPE_REQUIRED_COURSES.find(function(x) { return x.name === name; });
+    if (rcInfo && rcInfo.sem) {
+      var sid = 'sem-' + rcInfo.sem;
+      if (semesters.some(function(s) { return s.id === sid; })) {
+        document.getElementById('courseSemester').value = sid;
+      }
+    }
   }, 50);
 }
 
