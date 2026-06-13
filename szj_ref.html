@@ -1,0 +1,2259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="format-detection" content="telephone=no">
+    <title>成绩记录与分析</title>
+    <!-- 引入 Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 引入 Supabase 官方 JS 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root {
+            --primary: #374151;
+            --primary-hover: #1f2937;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
+            --bg: #ffffff;
+            --card-bg: #ffffff;
+            --border: #e5e7eb;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --text-subtle: #9ca3af;
+            --radius: 6px;
+            --radius-sm: 4px;
+            --shadow-sm: none;
+            --shadow: none;
+            --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --transition: 0.15s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC",
+                "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            padding: 0;
+            min-height: 100vh;
+            line-height: 1.6;
+            font-size: 15px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* ========== 顶部导航栏 ========== */
+        nav {
+            background: #eff6ff;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 56px;
+        }
+        .nav-brand {
+            font-weight: 600;
+            font-size: 17px;
+            letter-spacing: -0.2px;
+            color: #1e40af;
+        }
+        .nav-menu {
+            display: flex;
+            gap: 24px;
+        }
+        .nav-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 8px;
+            text-decoration: none;
+            color: #4b5563;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .nav-item:hover {
+            color: #1e40af;
+        }
+        .nav-item.active {
+            color: #1e40af;
+            font-weight: 600;
+        }
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .mobile-nav-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        /* ========== 头部 ========== */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            white-space: nowrap;
+        }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .countdown {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(239, 68, 68, 0.08);
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .countdown-label {
+            color: #ef4444;
+            font-weight: 500;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .countdown-value {
+            display: flex;
+            align-items: baseline;
+            gap: 2px;
+        }
+        #countdownDays {
+            font-size: 17px;
+            font-weight: 700;
+            color: #ef4444;
+        }
+        .countdown-unit {
+            font-size: 13px;
+            color: #ef4444;
+        }
+
+        /* ========== 按钮 ========== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 18px;
+            border: none;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all var(--transition);
+            background: transparent;
+            color: var(--primary);
+            white-space: nowrap;
+            text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+            border-radius: 6px;
+        }
+        .btn:hover {
+            color: var(--primary-hover);
+            background: rgba(30, 64, 175, 0.05);
+            text-decoration: none;
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+        .btn-outline {
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 10px 18px;
+        }
+        .btn-outline:hover {
+            background: rgba(30, 64, 175, 0.05);
+        }
+        .btn-danger {
+            color: var(--danger);
+        }
+        .btn-danger:hover {
+            color: var(--danger-hover);
+            background: rgba(220, 38, 38, 0.05);
+        }
+        .btn-sm {
+            font-size: 13px;
+            padding: 8px 14px;
+        }
+
+        /* ========== 统计卡片 ========== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--card-bg);
+            padding: 16px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            color: var(--text-main);
+        }
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text-subtle);
+            margin-top: 4px;
+        }
+
+        /* ========== 表格区域 ========== */
+        .table-wrapper {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            background: #fafafa;
+        }
+        .table-header-title {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .table-header-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .table-scroll {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead th {
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+            color: var(--text-muted);
+            letter-spacing: 0.3px;
+            background: #f8fafc;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        thead th:first-child {
+            width: 100px;
+            min-width: 100px;
+        }
+        .th-sub {
+            font-size: 10px;
+            font-weight: 400;
+            color: var(--text-subtle);
+        }
+        tbody td {
+            padding: 9px 12px;
+            text-align: center;
+            border-bottom: 1px solid #f1f5f9;
+            color: var(--text-main);
+        }
+        tbody tr {
+            transition: background var(--transition);
+        }
+        tbody tr:hover {
+            background: #f8fafc;
+        }
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .cell-score {
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+        .cell-rank {
+            font-variant-numeric: tabular-nums;
+            font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .cell-rank-high {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        .cell-raw {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: 2px;
+        }
+        .cell-scaled {
+            font-size: 10px;
+            color: var(--text-subtle);
+            display: block;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+        }
+        .loading-row td {
+            padding: 20px;
+            text-align: center;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e2e8f0;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .actions-cell {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        /* ========== 图表区域 ========== */
+        .chart-section {
+            margin-bottom: 24px;
+        }
+        .chart-container {
+            padding: 16px;
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .chart-grid.single {
+            grid-template-columns: 1fr;
+        }
+        .chart-grid:last-child {
+            margin-bottom: 0;
+        }
+        .chart-card {
+            background: #fafafa;
+            padding: 14px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+        }
+        .chart-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            letter-spacing: 0.3px;
+        }
+        .subjects-values {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .subject-value-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: #f8fafc;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .subject-value-name {
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+        .subject-value-score {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* ========== 模态框 ========== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: #fff;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 640px;
+            max-height: 90vh;
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            transform: scale(0.95);
+            opacity: 0;
+            animation: modalIn 0.15s ease forwards;
+            display: flex;
+            flex-direction: column;
+        }
+        @keyframes modalIn {
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-header {
+            padding: 16px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fafbfc;
+            flex-shrink: 0;
+        }
+        .modal-header h3 {
+            font-size: 17px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+        }
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 26px;
+            cursor: pointer;
+            color: var(--text-muted);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+            line-height: 1;
+        }
+        .close-modal:hover {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+        .modal-body {
+            padding: 20px 22px;
+            overflow-y: auto;
+            flex: 1;
+            -webkit-overflow-scrolling: touch;
+        }
+        .modal-footer {
+            padding: 14px 22px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            background: #fafbfc;
+            flex-shrink: 0;
+        }
+
+        /* 表单 */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .form-group label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: 0.2px;
+        }
+        .form-group input,
+        .form-group select {
+            padding: 9px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            transition: all var(--transition);
+            background: #fff;
+            color: var(--text-main);
+            width: 100%;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+        }
+        .form-group input::placeholder {
+            color: #cbd5e1;
+        }
+        .form-group input[type="number"]::-webkit-outer-spin-button,
+        .form-group input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .form-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .form-full {
+            grid-column: span 2;
+        }
+        .form-section-title {
+            grid-column: span 2;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 12px 0 8px;
+            border-top: 1px dashed var(--border);
+            margin-top: 8px;
+        }
+        .form-section-title:first-of-type {
+            border-top: none;
+            padding-top: 0;
+            margin-top: 0;
+        }
+
+        /* Toast 提示 */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 12px 20px;
+            background: #1f2937;
+            color: #fff;
+            border-radius: var(--radius);
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 2000;
+            box-shadow: var(--shadow-lg);
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .toast.error {
+            background: #dc2626;
+        }
+
+        /* ========== 移动端菜单按钮 ========== */
+        .mobile-bottom-nav {
+            display: none;
+        }
+
+        .mobile-menu-button {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            border: none;
+            background: transparent;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .mobile-menu-button:active {
+            background: #f3f4f6;
+        }
+
+        .menu-icon {
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .menu-text {
+            font-size: 14px;
+        }
+
+        /* 移动端导航菜单遮罩 */
+        .mobile-nav-menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .mobile-nav-menu-overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        /* 移动端导航菜单 */
+        .mobile-nav-menu {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            z-index: 2001;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .mobile-nav-menu.show {
+            display: block;
+            transform: translateY(0);
+        }
+
+        .mobile-nav-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .mobile-nav-menu-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .mobile-nav-menu-close {
+            border: none;
+            background: #f3f4f6;
+            color: #6b7280;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .mobile-nav-menu-close:active {
+            background: #e5e7eb;
+        }
+
+        .mobile-nav-menu-items {
+            padding: 8px 0;
+        }
+
+        .mobile-nav-menu-item {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        .mobile-nav-menu-item:hover {
+            background: #f8fafc;
+        }
+
+        .mobile-nav-menu-item:active {
+            background: #f1f5f9;
+        }
+
+        .mobile-nav-menu-item.active {
+            background: rgba(30, 64, 175, 0.05);
+        }
+
+        .mobile-nav-menu-item.active .menu-item-label {
+            color: #1e40af;
+            font-weight: 600;
+        }
+
+        .menu-item-label {
+            font-size: 16px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .main-content {
+            padding-bottom: 80px;
+        }
+
+        /* 页面由JavaScript控制显示 */
+        .page {
+            display: none;
+        }
+
+        /* ========== 响应式布局 ========== */
+        @media (max-width: 1024px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+            .table-wrapper {
+                overflow-x: auto;
+            }
+        }
+
+        /* 移动端样式 - 768px以下 */
+        @media (max-width: 768px) {
+            /* 显示菜单按钮 */
+            .mobile-menu-button {
+                display: flex;
+            }
+            
+            /* 顶部导航调整 */
+            nav {
+                position: relative;
+            }
+            .nav-container {
+                padding: 0 12px;
+                height: 56px;
+                flex-wrap: wrap;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+            }
+            .nav-brand {
+                width: auto;
+                font-size: 16px;
+            }
+            .nav-menu {
+                display: none !important;
+            }
+            .mobile-nav-toggle {
+                display: none !important;
+            }
+            .nav-actions {
+                width: auto;
+                justify-content: flex-end;
+                gap: 10px;
+            }
+            .countdown {
+                display: flex !important;
+                width: auto;
+            }
+            
+            /* 主内容区 */
+            .container {
+                padding: 16px;
+            }
+            .container.main-content {
+                padding: 16px;
+                padding-bottom: 16px;
+            }
+            
+            /* 头部区域 */
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+                margin-bottom: 20px;
+            }
+            .header-left {
+                width: 100%;
+            }
+            .header-actions {
+                width: 100%;
+                justify-content: flex-start;
+                gap: 8px;
+            }
+            h1 {
+                font-size: 20px;
+            }
+            
+            /* 统计卡片 */
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            .stat-card {
+                padding: 16px 12px;
+                text-align: center;
+            }
+            .stat-value {
+                font-size: 22px;
+            }
+            .stat-label {
+                font-size: 12px;
+            }
+            
+            /* 表格 */
+            table {
+                font-size: 13px;
+                min-width: 750px;
+            }
+            thead th {
+                padding: 12px 8px;
+                font-size: 11px;
+            }
+            tbody td {
+                padding: 10px 8px;
+            }
+            .actions-cell {
+                flex-direction: row;
+                gap: 6px;
+            }
+            
+            /* 按钮 */
+            .btn {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+            .btn-sm {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            /* 表单 */
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+            .form-full,
+            .form-section-title {
+                grid-column: span 1;
+            }
+            
+            /* 模态框 */
+            .modal-overlay {
+                padding: 0;
+            }
+            .modal {
+                width: 100%;
+                max-width: none;
+                margin: 0;
+                border-radius: 20px 20px 0 0;
+                max-height: 90vh;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                display: flex;
+                flex-direction: column;
+            }
+            .modal-header {
+                padding: 16px 20px;
+                flex-shrink: 0;
+            }
+            .modal-body {
+                flex: 1;
+                padding: 20px;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .modal-footer {
+                padding: 16px 20px;
+                flex-shrink: 0;
+            }
+            
+            /* 图表和表格头部 */
+            .table-header {
+                padding: 14px 16px;
+            }
+            .chart-container {
+                padding: 16px;
+            }
+            .chart-card {
+                padding: 16px;
+            }
+        }
+
+        /* 小屏手机 - 560px以下 */
+        @media (max-width: 560px) {
+            .container {
+                padding: 12px;
+            }
+            .container.main-content {
+                padding: 12px;
+                padding-bottom: 12px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            .stat-card {
+                padding: 12px 8px;
+            }
+            .stat-value {
+                font-size: 20px;
+            }
+            .stat-label {
+                font-size: 11px;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            h1 {
+                font-size: 18px;
+            }
+            
+            .table-header {
+                padding: 12px;
+            }
+        }
+
+        /* 超小屏 - 380px以下 */
+        @media (max-width: 380px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            .stat-card:last-child {
+                grid-column: span 2;
+            }
+            
+            /* 在超小屏上调整倒计时显示，不隐藏 */
+            .countdown {
+                padding: 4px 8px;
+                gap: 4px;
+            }
+            .countdown-label {
+                font-size: 11px;
+            }
+            #countdownDays {
+                font-size: 15px;
+            }
+            .countdown-unit {
+                font-size: 11px;
+            }
+            
+            .nav-brand {
+                font-size: 14px;
+            }
+            
+            h1 {
+                font-size: 17px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav>
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span>成绩管理系统</span>
+            </div>
+            <div class="nav-menu" id="navMenu">
+                <div class="nav-item" data-page="records">成绩记录</div>
+                <div class="nav-item active" data-page="analysis">数据分析</div>
+            </div>
+            <div class="nav-actions">
+                <div class="countdown" id="gaokaoCountdown">
+                    <span class="countdown-label">高考倒计时</span>
+                    <span class="countdown-value">
+                        <span id="countdownDays">—</span>
+                        <span class="countdown-unit">天</span>
+                    </span>
+                </div>
+                <button class="mobile-menu-button" id="mobileMenuButton">
+                    <span class="menu-icon">☰</span>
+                    <span class="menu-text">菜单</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 移动端底部标签栏（隐藏） -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" style="display: none;"></nav>
+    
+    <!-- 移动端导航菜单 -->
+    <div class="mobile-nav-menu-overlay" id="mobileNavMenuOverlay"></div>
+    <div class="mobile-nav-menu" id="mobileNavMenu">
+        <div class="mobile-nav-menu-header">
+            <span class="mobile-nav-menu-title">导航</span>
+            <button class="mobile-nav-menu-close" id="mobileNavMenuClose">×</button>
+        </div>
+        <div class="mobile-nav-menu-items">
+            <div class="mobile-nav-menu-item" data-page="records">
+                <span class="menu-item-label">成绩记录</span>
+            </div>
+            <div class="mobile-nav-menu-item active" data-page="analysis">
+                <span class="menu-item-label">数据分析</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="container main-content">
+        <!-- 页面内容 -->
+        <div class="page-container">
+            <!-- 成绩记录页 -->
+            <div class="page" id="page-records" style="display: none;">
+                <!-- 头部 -->
+                <header>
+                    <div class="header-left">
+                        <h1>成绩记录</h1>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn" onclick="window.openAddModal()">添加记录</button>
+                        <button class="btn btn-outline" onclick="window.refreshData()">刷新</button>
+                    </div>
+                </header>
+
+                <!-- 主表格 -->
+                <div class="table-wrapper">
+                    <div class="table-header">
+                        <span class="table-header-title">成绩列表</span>
+                        <span class="table-header-subtitle" id="tableInfo">正在加载数据...</span>
+                    </div>
+                    <div class="table-scroll">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>操作</th>
+                                    <th>考试类型</th>
+                                    <th>总分</th>
+                                    <th>区排名</th>
+                                    <th>校排名</th>
+                                    <th>班排名</th>
+                                    <th>主科</th>
+                                    <th>语文</th>
+                                    <th>数学</th>
+                                    <th>英语</th>
+                                    <th>三科</th>
+                                    <th>历史</th>
+                                    <th>政治<br><span class="th-sub">赋分 / 原始</span></th>
+                                    <th>地理<br><span class="th-sub">赋分 / 原始</span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="examTableBody">
+                                <tr class="loading-row">
+                                    <td colspan="14">
+                                        <span class="loading-spinner"></span>正在加载数据...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据分析页 -->
+            <div class="page" id="page-analysis">
+                <!-- 头部 -->
+                <header>
+                    <div class="header-left">
+                        <h1>数据分析</h1>
+                    </div>
+                </header>
+                <!-- 统计卡片 -->
+                <div class="stats-grid" id="statsGrid">
+                    <div class="stat-card">
+                        <div class="stat-label">总记录数</div>
+                        <div class="stat-value" id="totalRecords">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">平均总分</div>
+                        <div class="stat-value" id="avgScore">—</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">最高总分</div>
+                        <div class="stat-value" id="maxScore">—</div>
+                    </div>
+                </div>
+
+                <!-- 图表区域 -->
+                <div class="chart-section" id="chartSection">
+                    <div class="table-wrapper">
+                        <div class="table-header">
+                            <span class="table-header-title">成绩趋势分析</span>
+                            <span class="table-header-subtitle" id="chartInfo">请添加至少2次考试记录以生成图表</span>
+                        </div>
+                        <div class="chart-container">
+                            <div class="chart-grid single">
+                                <div class="chart-card">
+                                    <h4>排名变化对比</h4>
+                                    <canvas id="rankCompareChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-grid single">
+                                <div class="chart-card">
+                                    <h4>总分趋势</h4>
+                                    <canvas id="totalScoreChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-grid">
+                                <div class="chart-card">
+                                    <h4>主科三科趋势</h4>
+                                    <canvas id="mainSubjectsChart"></canvas>
+                                </div>
+                                <div class="chart-card">
+                                    <h4>各科成绩对比</h4>
+                                    <div id="subjectsValues" class="subjects-values"></div>
+                                    <canvas id="subjectsChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="chart-grid single">
+                                <div class="chart-card">
+                                    <h4>各科成绩趋势</h4>
+                                    <canvas id="allSubjectsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 统计数据表格 -->
+                <div class="table-wrapper">
+                    <div class="table-header">
+                        <span class="table-header-title">统计数据</span>
+                    </div>
+                    <div class="table-scroll">
+                        <table id="statsTable">
+                            <thead>
+                                <tr>
+                                    <th>科目</th>
+                                    <th>平均分</th>
+                                    <th>最高分</th>
+                                    <th>最低分</th>
+                                    <th>标准差</th>
+                                </tr>
+                            </thead>
+                            <tbody id="statsTableBody">
+                                <tr class="loading-row">
+                                    <td colspan="5">
+                                        <span class="loading-spinner"></span>正在计算统计数据...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模态框 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">添加成绩记录</h3>
+                <button class="close-modal" onclick="window.closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="examForm" onsubmit="event.preventDefault()">
+                    <input type="hidden" id="editId" name="editId">
+                    <div class="form-grid">
+                        <div class="form-group form-full">
+                            <label>考试类型</label>
+                            <input type="text" id="exam_type" placeholder="如：高一上期末" required>
+                        </div>
+
+                        <div class="form-section-title">基本信息</div>
+                        <div class="form-group">
+                            <label>总分</label>
+                            <input type="number" step="0.1" id="total_score" placeholder="0.0" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>区排名</label>
+                            <input type="number" id="rank_district" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>校排名</label>
+                            <input type="number" id="rank_school" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>班排名</label>
+                            <input type="number" id="rank_class" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>主科总分</label>
+                            <input type="number" step="0.1" id="main_subjects_score" placeholder="0.0" readonly>
+                        </div>
+
+                        <!-- 语文 -->
+                        <div class="form-section-title">语文</div>
+                        <div class="form-group">
+                            <label>语文分数</label>
+                            <input type="number" step="0.1" id="chinese_score" placeholder="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label>语文 · 区排名</label>
+                            <input type="number" id="chinese_rank_district" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>语文 · 校排名</label>
+                            <input type="number" id="chinese_rank_school" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>语文 · 班排名</label>
+                            <input type="number" id="chinese_rank_class" placeholder="—">
+                        </div>
+
+                        <!-- 数学 -->
+                        <div class="form-section-title">数学</div>
+                        <div class="form-group">
+                            <label>数学分数</label>
+                            <input type="number" step="0.1" id="math_score" placeholder="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label>数学 · 区排名</label>
+                            <input type="number" id="math_rank_district" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>数学 · 校排名</label>
+                            <input type="number" id="math_rank_school" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>数学 · 班排名</label>
+                            <input type="number" id="math_rank_class" placeholder="—">
+                        </div>
+
+                        <!-- 英语 -->
+                        <div class="form-section-title">英语</div>
+                        <div class="form-group">
+                            <label>英语分数</label>
+                            <input type="number" step="0.1" id="english_score" placeholder="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label>英语 · 区排名</label>
+                            <input type="number" id="english_rank_district" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>英语 · 校排名</label>
+                            <input type="number" id="english_rank_school" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>英语 · 班排名</label>
+                            <input type="number" id="english_rank_class" placeholder="—">
+                        </div>
+
+                        <div class="form-group">
+                            <label>三科总分</label>
+                            <input type="number" step="0.1" id="three_subjects_sum" placeholder="0.0" readonly>
+                        </div>
+
+                        <!-- 历史 -->
+                        <div class="form-section-title">历史</div>
+                        <div class="form-group">
+                            <label>历史分数</label>
+                            <input type="number" step="0.1" id="history_score" placeholder="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label>历史 · 区排名</label>
+                            <input type="number" id="history_rank_district" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>历史 · 校排名</label>
+                            <input type="number" id="history_rank_school" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>历史 · 班排名</label>
+                            <input type="number" id="history_rank_class" placeholder="—">
+                        </div>
+
+                        <!-- 政治 -->
+                        <div class="form-section-title">政治</div>
+                        <div class="form-group">
+                            <label>政治原始分</label>
+                            <input type="number" step="0.1" id="politics_score" placeholder="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label>政治 · 赋分</label>
+                            <input type="number" step="0.1" id="politics_scaled_score" placeholder="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label>政治 · 区排名</label>
+                            <input type="number" id="politics_rank_district" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>政治 · 校排名</label>
+                            <input type="number" id="politics_rank_school" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>政治 · 班排名</label>
+                            <input type="number" id="politics_rank_class" placeholder="—">
+                        </div>
+
+                        <!-- 地理 -->
+                        <div class="form-section-title">地理</div>
+                        <div class="form-group">
+                            <label>地理原始分</label>
+                            <input type="number" step="0.1" id="geography_score" placeholder="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label>地理 · 赋分</label>
+                            <input type="number" step="0.1" id="geography_scaled_score" placeholder="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label>地理 · 区排名</label>
+                            <input type="number" id="geography_rank_district" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>地理 · 校排名</label>
+                            <input type="number" id="geography_rank_school" placeholder="—">
+                        </div>
+                        <div class="form-group">
+                            <label>地理 · 班排名</label>
+                            <input type="number" id="geography_rank_class" placeholder="—">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="window.closeModal()">取消</button>
+                <button class="btn" id="saveBtn" onclick="window.saveRecord()">保存记录</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div id="toast"></div>
+
+    <script>
+        (function() {
+            // ==================== 配置区 ====================
+            const SUPABASE_CONFIG = {
+                url: 'https://ogfzjjlzxpxosnyxjxci.supabase.co',
+                anonKey: 'sb_publishable_WvalsHmw093vcsHkKMIU5w_0ozf0XOE'
+            };
+            const TABLE_NAME = 'exams';
+            // ================================================
+
+            // 全局状态
+            let isEditMode = false;
+            let toastTimer = null;
+            let countdownTimer = null;
+            let charts = {};
+            let currentPage = 'analysis';
+
+            // DOM 元素引用
+            const DOM = {
+                tbody: document.getElementById('examTableBody'),
+                modal: document.getElementById('modalOverlay'),
+                form: document.getElementById('examForm'),
+                modalTitle: document.getElementById('modalTitle'),
+                editIdInput: document.getElementById('editId'),
+                saveBtn: document.getElementById('saveBtn'),
+                tableInfo: document.getElementById('tableInfo'),
+                toastEl: document.getElementById('toast')
+            };
+
+            // 初始化 Supabase
+            let supabaseClient;
+            try {
+                supabaseClient = supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+                window.supabase = supabaseClient;
+            } catch (error) {
+                console.error('Supabase 初始化失败:', error);
+                showToast('数据库连接失败', 'error');
+            }
+
+            // ============ 工具函数 ============
+            
+            /**
+             * 格式化数字显示
+             */
+            function formatNum(val) {
+                if (val === null || val === undefined || val === '') return '—';
+                const num = parseFloat(val);
+                if (isNaN(num)) return '—';
+                return Number.isInteger(num) ? num.toString() : num.toFixed(1);
+            }
+
+            /**
+             * 格式化排名显示
+             */
+            function formatRank(val) {
+                if (val === null || val === undefined || val === '') return '—';
+                const num = parseInt(val);
+                if (isNaN(num)) return '—';
+                if (num <= 10) return `<span class="cell-rank-high">${num}</span>`;
+                return num.toString();
+            }
+
+            /**
+             * HTML 转义
+             */
+            function escapeHtml(str) {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            /**
+             * Toast 提示
+             */
+            function showToast(message, type = '') {
+                if (toastTimer) clearTimeout(toastTimer);
+                DOM.toastEl.textContent = message;
+                DOM.toastEl.className = 'toast ' + type + ' show';
+                toastTimer = setTimeout(() => {
+                    DOM.toastEl.classList.remove('show');
+                }, 2200);
+            }
+
+            // ============ 高考倒计时 ============
+            
+            function updateGaokaoCountdown() {
+                const daysEl = document.getElementById('countdownDays');
+                if (!daysEl) return;
+
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                let gaokaoDate = new Date(currentYear, 5, 7);
+
+                if (now > gaokaoDate) {
+                    gaokaoDate = new Date(currentYear + 1, 5, 7);
+                }
+
+                const diff = gaokaoDate - now;
+                const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+
+                if (days > 0) {
+                    daysEl.textContent = days;
+                } else if (days === 0) {
+                    daysEl.textContent = '今天';
+                } else {
+                    daysEl.textContent = '考试中';
+                }
+            }
+
+            function startCountdownTimer() {
+                updateGaokaoCountdown();
+                if (countdownTimer) clearInterval(countdownTimer);
+                countdownTimer = setInterval(updateGaokaoCountdown, 60000);
+            }
+
+            // ============ 页面切换 ============
+            
+            function switchPage(pageId, force = false) {
+                if (currentPage === pageId && !force) return;
+
+                document.querySelectorAll('.page').forEach(page => {
+                    page.style.display = 'none';
+                });
+
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+
+                document.querySelectorAll('.mobile-nav-menu-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+
+                const targetPage = document.getElementById('page-' + pageId);
+                if (targetPage) {
+                    targetPage.style.display = 'block';
+                }
+
+                const navItem = document.querySelector('.nav-item[data-page="' + pageId + '"]');
+                if (navItem) {
+                    navItem.classList.add('active');
+                }
+
+                const mobileNavItem = document.querySelector('.mobile-nav-menu-item[data-page="' + pageId + '"]');
+                if (mobileNavItem) {
+                    mobileNavItem.classList.add('active');
+                }
+
+                currentPage = pageId;
+                
+                // 切换页面后关闭菜单
+                closeMobileNavMenu();
+            }
+
+            // 移动端菜单功能
+            function openMobileNavMenu() {
+                const overlay = document.getElementById('mobileNavMenuOverlay');
+                const menu = document.getElementById('mobileNavMenu');
+                if (overlay && menu) {
+                    overlay.classList.add('show');
+                    menu.classList.add('show');
+                    // 禁止背景滚动
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+
+            function closeMobileNavMenu() {
+                const overlay = document.getElementById('mobileNavMenuOverlay');
+                const menu = document.getElementById('mobileNavMenu');
+                if (overlay && menu) {
+                    overlay.classList.remove('show');
+                    menu.classList.remove('show');
+                    // 恢复背景滚动
+                    document.body.style.overflow = '';
+                }
+            }
+
+            function setupNavListeners() {
+                // 桌面端导航
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const pageId = this.getAttribute('data-page');
+                        switchPage(pageId);
+                    });
+                });
+
+                // 移动端菜单按钮
+                const menuButton = document.getElementById('mobileMenuButton');
+                if (menuButton) {
+                    menuButton.addEventListener('click', function() {
+                        openMobileNavMenu();
+                    });
+                }
+
+                // 移动端菜单关闭按钮
+                const closeButton = document.getElementById('mobileNavMenuClose');
+                if (closeButton) {
+                    closeButton.addEventListener('click', function() {
+                        closeMobileNavMenu();
+                    });
+                }
+
+                // 移动端菜单遮罩点击关闭
+                const overlay = document.getElementById('mobileNavMenuOverlay');
+                if (overlay) {
+                    overlay.addEventListener('click', function() {
+                        closeMobileNavMenu();
+                    });
+                }
+
+                // 移动端菜单项
+                document.querySelectorAll('.mobile-nav-menu-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        const pageId = this.getAttribute('data-page');
+                        switchPage(pageId);
+                    });
+                });
+            }
+
+            function toggleMobileNav() {
+                const navMenu = document.getElementById('navMenu');
+                navMenu.classList.toggle('mobile-active');
+            }
+
+            // ============ 总分计算 ============
+            
+            /**
+             * 计算单条记录的总分
+             */
+            function calculateRecordTotals(record) {
+                const chinese = parseFloat(record.chinese_score) || 0;
+                const math = parseFloat(record.math_score) || 0;
+                const english = parseFloat(record.english_score) || 0;
+                const history = parseFloat(record.history_score) || 0;
+                const politicsScaled = parseFloat(record.politics_scaled_score) || 0;
+                const geographyScaled = parseFloat(record.geography_scaled_score) || 0;
+                
+                const mainSum = chinese + math + english;
+                const threeSum = history + politicsScaled + geographyScaled;
+                const totalSum = mainSum + threeSum;
+                
+                return {
+                    main_subjects_score: mainSum > 0 ? mainSum.toFixed(1) : null,
+                    three_subjects_sum: threeSum > 0 ? threeSum.toFixed(1) : null,
+                    total_score: totalSum > 0 ? totalSum.toFixed(1) : null
+                };
+            }
+
+            /**
+             * 自动计算表单总分
+             */
+            function calculateFormTotals() {
+                const totals = calculateRecordTotals({
+                    chinese_score: document.getElementById('chinese_score').value,
+                    math_score: document.getElementById('math_score').value,
+                    english_score: document.getElementById('english_score').value,
+                    history_score: document.getElementById('history_score').value,
+                    politics_scaled_score: document.getElementById('politics_scaled_score').value,
+                    geography_scaled_score: document.getElementById('geography_scaled_score').value
+                });
+                
+                if (totals.main_subjects_score) {
+                    document.getElementById('main_subjects_score').value = totals.main_subjects_score;
+                }
+                if (totals.three_subjects_sum) {
+                    document.getElementById('three_subjects_sum').value = totals.three_subjects_sum;
+                }
+                if (totals.total_score) {
+                    document.getElementById('total_score').value = totals.total_score;
+                }
+            }
+
+            /**
+             * 设置表单自动计算监听
+             */
+            function setupAutoCalculate() {
+                const subjectFields = [
+                    'chinese_score', 'math_score', 'english_score',
+                    'history_score', 'politics_scaled_score', 'geography_scaled_score'
+                ];
+                
+                subjectFields.forEach(field => {
+                    const el = document.getElementById(field);
+                    if (el) {
+                        el.addEventListener('input', calculateFormTotals);
+                        el.addEventListener('change', calculateFormTotals);
+                    }
+                });
+            }
+
+            // ============ 数据操作 ============
+            
+            /**
+             * 获取数据
+             */
+            async function fetchData() {
+                DOM.tbody.innerHTML = `
+                    <tr class="loading-row">
+                        <td colspan="14">
+                            <span class="loading-spinner"></span>正在加载数据...
+                        </td>
+                    </tr>`;
+                DOM.tableInfo.textContent = '加载中...';
+
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAME)
+                        .select('*')
+                        .order('created_at', { ascending: false });
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    const calculatedData = data.map(record => ({
+                        ...record,
+                        ...calculateRecordTotals(record)
+                    }));
+
+                    renderTable(calculatedData);
+                    updateStats(calculatedData);
+                    updateCharts(calculatedData);
+                    DOM.tableInfo.textContent = `共 ${data.length} 条记录 - 通过 Supabase 同步`;
+                    document.getElementById('chartInfo').textContent = data.length >= 2 
+                        ? `基于 ${data.length} 次考试数据生成` 
+                        : '请添加至少2次考试记录以生成图表';
+
+                } catch (error) {
+                    console.error('数据加载失败:', error);
+                    DOM.tbody.innerHTML = `
+                        <tr>
+                            <td colspan="14" class="empty-state">
+                                数据加载失败：${error.message}
+                                <br><button class="btn btn-sm btn-outline" style="margin-top:10px;" onclick="window.refreshData()">重试</button>
+                            </td>
+                        </tr>`;
+                    DOM.tableInfo.textContent = '加载失败';
+                    updateStats([]);
+                    showToast('数据加载失败，请检查网络连接', 'error');
+                }
+            }
+
+            /**
+             * 渲染表格
+             */
+            function renderTable(data) {
+                DOM.tbody.innerHTML = '';
+                if (!data || data.length === 0) {
+                    DOM.tbody.innerHTML = `
+                        <tr>
+                            <td colspan="14" class="empty-state">
+                                暂无成绩数据
+                                <br><span style="font-size:12px;color:#94a3b8;">点击右上角"添加记录"开始录入</span>
+                            </td>
+                        </tr>`;
+                    return;
+                }
+
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    const politicsDisplay = buildScaledDisplay(row.politics_score, row.politics_scaled_score);
+                    const geographyDisplay = buildScaledDisplay(row.geography_score, row.geography_scaled_score);
+
+                    tr.innerHTML = `
+                        <td>
+                            <div class="actions-cell">
+                                <button class="btn btn-sm btn-outline" onclick="window.editRecord('${row.id}')" title="编辑">编辑</button>
+                                <button class="btn btn-sm btn-danger" onclick="window.deleteRecord('${row.id}')" title="删除">删除</button>
+                            </div>
+                        </td>
+                        <td><strong>${escapeHtml(row.exam_type) || '—'}</strong></td>
+                        <td class="cell-score">${formatNum(row.total_score)}</td>
+                        <td class="cell-rank">${formatRank(row.rank_district)}</td>
+                        <td class="cell-rank">${formatRank(row.rank_school)}</td>
+                        <td class="cell-rank">${formatRank(row.rank_class)}</td>
+                        <td class="cell-score">${formatNum(row.main_subjects_score)}</td>
+                        <td class="cell-score">${formatNum(row.chinese_score)}</td>
+                        <td class="cell-score">${formatNum(row.math_score)}</td>
+                        <td class="cell-score">${formatNum(row.english_score)}</td>
+                        <td class="cell-score">${formatNum(row.three_subjects_sum)}</td>
+                        <td class="cell-score">${formatNum(row.history_score)}</td>
+                        <td>${politicsDisplay}</td>
+                        <td>${geographyDisplay}</td>
+                    `;
+                    DOM.tbody.appendChild(tr);
+                });
+            }
+
+            /**
+             * 构建赋分显示格式
+             */
+            function buildScaledDisplay(rawScore, scaledScore) {
+                const raw = formatNum(rawScore);
+                const scaled = formatNum(scaledScore);
+                if (raw === '—' && scaled === '—') return '—';
+                return `<span class="cell-score">${scaled}</span><span class="cell-raw">/${raw}</span>`;
+            }
+
+            /**
+             * 更新统计数据
+             */
+            function updateStats(data) {
+                try {
+                    const totalEl = document.getElementById('totalRecords');
+                    const avgEl = document.getElementById('avgScore');
+                    const maxEl = document.getElementById('maxScore');
+
+                    if (!totalEl || !avgEl || !maxEl) {
+                        updateStatsTable([]);
+                        return;
+                    }
+
+                    if (!data || data.length === 0) {
+                        totalEl.textContent = '0';
+                        avgEl.textContent = '—';
+                        maxEl.textContent = '—';
+                        updateStatsTable([]);
+                        return;
+                    }
+
+                    totalEl.textContent = data.length;
+
+                    let totalSum = 0, count = 0, maxS = -Infinity;
+                    data.forEach(row => {
+                        if (row.total_score !== null && row.total_score !== undefined && row.total_score !== '') {
+                            const val = parseFloat(row.total_score);
+                            if (!isNaN(val)) {
+                                totalSum += val;
+                                count++;
+                                if (val > maxS) maxS = val;
+                            }
+                        }
+                    });
+
+                    avgEl.textContent = count > 0 ? (totalSum / count).toFixed(1) : '—';
+                    maxEl.textContent = maxS > -Infinity ? maxS : '—';
+                    updateStatsTable(data);
+                } catch (e) {
+                    console.warn('统计更新失败:', e);
+                }
+            }
+
+            /**
+             * 更新统计表格
+             */
+            function updateStatsTable(data) {
+                const statsTableBody = document.getElementById('statsTableBody');
+                if (!statsTableBody) return;
+
+                if (!data || data.length === 0) {
+                    statsTableBody.innerHTML = `<tr><td colspan="5" class="empty-state">暂无数据</td></tr>`;
+                    return;
+                }
+
+                const subjects = [
+                    { name: '语文', field: 'chinese_score' },
+                    { name: '数学', field: 'math_score' },
+                    { name: '英语', field: 'english_score' },
+                    { name: '历史', field: 'history_score' },
+                    { name: '政治', field: 'politics_scaled_score' },
+                    { name: '地理', field: 'geography_scaled_score' },
+                    { name: '主科', field: 'main_subjects_score' },
+                    { name: '三科', field: 'three_subjects_sum' },
+                    { name: '总分', field: 'total_score' }
+                ];
+
+                let html = '';
+                subjects.forEach(subject => {
+                    const values = data.map(row => {
+                        const val = parseFloat(row[subject.field]);
+                        return isNaN(val) ? null : val;
+                    }).filter(v => v !== null);
+
+                    if (values.length === 0) {
+                        html += `<tr><td>${subject.name}</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>`;
+                    } else {
+                        const avg = values.reduce((a, b) => a + b, 0) / values.length;
+                        const max = Math.max(...values);
+                        const min = Math.min(...values);
+                        const variance = values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / values.length;
+                        const std = Math.sqrt(variance);
+
+                        html += `
+                            <tr>
+                                <td><strong>${subject.name}</strong></td>
+                                <td>${avg.toFixed(1)}</td>
+                                <td>${max}</td>
+                                <td>${min}</td>
+                                <td>${std.toFixed(1)}</td>
+                            </tr>`;
+                    }
+                });
+
+                statsTableBody.innerHTML = html;
+            }
+
+            // ============ 图表功能 ============
+            
+            /**
+             * 初始化图表
+             */
+            function initCharts() {
+                const chartConfig = {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 11 },
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: false, grid: { color: '#f1f5f9' } },
+                        x: { grid: { display: false } }
+                    }
+                };
+
+                // 安全地初始化图表函数
+                function safeInitChart(id, type, options = {}) {
+                    const el = document.getElementById(id);
+                    if (!el) return null;
+                    try {
+                        return new Chart(el, {
+                            type: type,
+                            data: { labels: [], datasets: [] },
+                            options: { ...chartConfig, ...options }
+                        });
+                    } catch (e) {
+                        console.warn('图表初始化失败:', id, e);
+                        return null;
+                    }
+                }
+
+                // 概览页图表
+                charts.totalScore = safeInitChart('totalScoreChart', 'line', {
+                    plugins: { ...chartConfig.plugins, tooltip: { mode: 'index', intersect: false } }
+                });
+
+                charts.subjects = safeInitChart('subjectsChart', 'bar', {
+                    plugins: {
+                        ...chartConfig.plugins,
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                });
+
+                charts.mainSubjects = safeInitChart('mainSubjectsChart', 'line', {
+                    plugins: { ...chartConfig.plugins, tooltip: { mode: 'index', intersect: false } }
+                });
+
+                charts.rankCompare = safeInitChart('rankCompareChart', 'line', {
+                    plugins: { ...chartConfig.plugins, tooltip: { mode: 'index', intersect: false } }
+                });
+
+                // 数据分析页图表
+                charts.allSubjects = safeInitChart('allSubjectsChart', 'line', {
+                    plugins: { ...chartConfig.plugins, tooltip: { mode: 'index', intersect: false } }
+                });
+            }
+
+            /**
+             * 更新图表数据
+             */
+            function updateCharts(data) {
+                // 安全地更新图表
+                function safeUpdateChart(chart, dataFn) {
+                    if (!chart) return;
+                    try {
+                        dataFn(chart);
+                        chart.update();
+                    } catch (e) {
+                        console.warn('图表更新失败:', e);
+                    }
+                }
+
+                if (!data || data.length === 0) {
+                    Object.values(charts).forEach(chart => {
+                        if (chart) {
+                            safeUpdateChart(chart, (c) => {
+                                c.data.labels = [];
+                                c.data.datasets = [];
+                            });
+                        }
+                    });
+                    // 清空数值显示
+                    const subjectsValuesEl = document.getElementById('subjectsValues');
+                    if (subjectsValuesEl) {
+                        subjectsValuesEl.innerHTML = '';
+                    }
+                    return;
+                }
+
+                const sortedData = [...data].reverse();
+                const labels = sortedData.map(item => item.exam_type || '未知考试');
+                const colors = ['#4f46e5', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899'];
+
+                // 排名变化对比
+                safeUpdateChart(charts.rankCompare, (c) => {
+                    c.data.labels = labels;
+                    c.data.datasets = [
+                        { label: '区排名', data: sortedData.map(item => item.rank_district || null), borderColor: '#4f46e5', tension: 0.3, pointRadius: 4 },
+                        { label: '校排名', data: sortedData.map(item => item.rank_school || null), borderColor: '#f59e0b', tension: 0.3, pointRadius: 4 },
+                        { label: '班排名', data: sortedData.map(item => item.rank_class || null), borderColor: '#10b981', tension: 0.3, pointRadius: 4 }
+                    ];
+                });
+
+                // 总分趋势
+                safeUpdateChart(charts.totalScore, (c) => {
+                    c.data.labels = labels;
+                    c.data.datasets = [{
+                        label: '总分',
+                        data: sortedData.map(item => item.total_score || null),
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }];
+                });
+
+                // 各科成绩对比（最新一次考试）
+                const latestData = sortedData[sortedData.length - 1];
+                const subjects = ['语文', '数学', '英语', '历史', '政治', '地理'];
+                const subjectKeys = ['chinese_score', 'math_score', 'english_score', 'history_score', 'politics_scaled_score', 'geography_scaled_score'];
+                
+                // 更新数值显示
+                const subjectsValuesEl = document.getElementById('subjectsValues');
+                if (subjectsValuesEl) {
+                    let valuesHtml = '';
+                    subjects.forEach((subj, idx) => {
+                        const val = latestData[subjectKeys[idx]];
+                        const displayVal = val !== null && val !== undefined && val !== '' ? val : '—';
+                        const color = colors[idx % colors.length];
+                        valuesHtml += `
+                            <div class="subject-value-item">
+                                <span class="subject-value-name" style="color: ${color}">${subj}</span>
+                                <span class="subject-value-score">${displayVal}</span>
+                            </div>
+                        `;
+                    });
+                    subjectsValuesEl.innerHTML = valuesHtml;
+                }
+                
+                safeUpdateChart(charts.subjects, (c) => {
+                    c.data.labels = subjects;
+                    c.data.datasets = [{
+                        label: '最新成绩',
+                        data: subjectKeys.map(key => latestData[key] || null),
+                        backgroundColor: colors,
+                        borderRadius: 6
+                    }];
+                });
+
+                // 主科三科趋势
+                safeUpdateChart(charts.mainSubjects, (c) => {
+                    c.data.labels = labels;
+                    c.data.datasets = [
+                        { label: '语文', data: sortedData.map(item => item.chinese_score || null), borderColor: '#4f46e5', tension: 0.3, pointRadius: 4 },
+                        { label: '数学', data: sortedData.map(item => item.math_score || null), borderColor: '#f59e0b', tension: 0.3, pointRadius: 4 },
+                        { label: '英语', data: sortedData.map(item => item.english_score || null), borderColor: '#10b981', tension: 0.3, pointRadius: 4 }
+                    ];
+                });
+
+                // 数据分析页 - 各科成绩趋势
+                safeUpdateChart(charts.allSubjects, (c) => {
+                    c.data.labels = labels;
+                    c.data.datasets = [
+                        { label: '语文', data: sortedData.map(item => item.chinese_score || null), borderColor: '#4f46e5', tension: 0.3, pointRadius: 4 },
+                        { label: '数学', data: sortedData.map(item => item.math_score || null), borderColor: '#f59e0b', tension: 0.3, pointRadius: 4 },
+                        { label: '英语', data: sortedData.map(item => item.english_score || null), borderColor: '#10b981', tension: 0.3, pointRadius: 4 },
+                        { label: '历史', data: sortedData.map(item => item.history_score || null), borderColor: '#ef4444', tension: 0.3, pointRadius: 4 },
+                        { label: '政治', data: sortedData.map(item => item.politics_scaled_score || null), borderColor: '#8b5cf6', tension: 0.3, pointRadius: 4 },
+                        { label: '地理', data: sortedData.map(item => item.geography_scaled_score || null), borderColor: '#ec4899', tension: 0.3, pointRadius: 4 }
+                    ];
+                });
+            }
+
+            // ============ 模态框操作 ============
+            
+            window.refreshData = function() {
+                fetchData();
+            };
+
+            window.openAddModal = function() {
+                isEditMode = false;
+                DOM.modalTitle.textContent = '添加成绩记录';
+                DOM.editIdInput.value = '';
+                DOM.form.reset();
+                DOM.saveBtn.textContent = '保存记录';
+                DOM.modal.classList.add('active');
+                setTimeout(() => {
+                    document.getElementById('exam_type').focus();
+                }, 150);
+            };
+
+            window.editRecord = async function(id) {
+                isEditMode = true;
+                DOM.modalTitle.textContent = '编辑成绩记录';
+                DOM.editIdInput.value = id;
+                DOM.saveBtn.textContent = '更新记录';
+
+                DOM.modal.classList.add('active');
+
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(TABLE_NAME)
+                        .select('*')
+                        .eq('id', id)
+                        .single();
+
+                    if (error || !data) {
+                        throw new Error(error?.message || '未找到该记录');
+                    }
+
+                    const fields = [
+                        'exam_type', 'total_score', 'rank_district', 'rank_school', 'rank_class',
+                        'main_subjects_score',
+                        'chinese_score', 'chinese_rank_district', 'chinese_rank_school', 'chinese_rank_class',
+                        'math_score', 'math_rank_district', 'math_rank_school', 'math_rank_class',
+                        'english_score', 'english_rank_district', 'english_rank_school', 'english_rank_class',
+                        'three_subjects_sum',
+                        'history_score', 'history_rank_district', 'history_rank_school', 'history_rank_class',
+                        'politics_score', 'politics_scaled_score', 'politics_rank_district', 'politics_rank_school', 'politics_rank_class',
+                        'geography_score', 'geography_scaled_score', 'geography_rank_district', 'geography_rank_school', 'geography_rank_class'
+                    ];
+
+                    fields.forEach(field => {
+                        const el = document.getElementById(field);
+                        if (el) {
+                            el.value = data[field] || '';
+                        }
+                    });
+
+                } catch (error) {
+                    showToast('获取数据失败: ' + error.message, 'error');
+                    closeModal();
+                }
+            };
+
+            window.deleteRecord = async function(id) {
+                if (!confirm('确定要删除这条记录吗？')) return;
+
+                try {
+                    const { error } = await supabaseClient.from(TABLE_NAME).delete().eq('id', id);
+                    if (error) throw error;
+
+                    showToast('删除成功');
+                    fetchData();
+
+                } catch (error) {
+                    showToast('删除失败: ' + error.message, 'error');
+                }
+            };
+
+            window.closeModal = function() {
+                DOM.modal.classList.remove('active');
+                DOM.form.reset();
+                DOM.editIdInput.value = '';
+            };
+
+            DOM.modal.addEventListener('click', function(e) {
+                if (e.target === DOM.modal) {
+                    closeModal();
+                }
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && DOM.modal.classList.contains('active')) {
+                    closeModal();
+                }
+            });
+
+            // ============ 保存记录 ============
+            
+            window.saveRecord = async function() {
+                const examType = document.getElementById('exam_type').value.trim();
+                if (!examType) {
+                    showToast('请输入考试类型', 'error');
+                    document.getElementById('exam_type').focus();
+                    return;
+                }
+
+                const numericFields = [
+                    'total_score', 'rank_district', 'rank_school', 'rank_class', 'main_subjects_score',
+                    'chinese_score', 'chinese_rank_district', 'chinese_rank_school', 'chinese_rank_class',
+                    'math_score', 'math_rank_district', 'math_rank_school', 'math_rank_class',
+                    'english_score', 'english_rank_district', 'english_rank_school', 'english_rank_class',
+                    'three_subjects_sum',
+                    'history_score', 'history_rank_district', 'history_rank_school', 'history_rank_class',
+                    'politics_score', 'politics_scaled_score', 'politics_rank_district', 'politics_rank_school', 'politics_rank_class',
+                    'geography_score', 'geography_scaled_score', 'geography_rank_district', 'geography_rank_school', 'geography_rank_class'
+                ];
+
+                const data = { exam_type: examType };
+                
+                numericFields.forEach(field => {
+                    const el = document.getElementById(field);
+                    if (el && el.value !== '') {
+                        const val = parseFloat(el.value);
+                        if (!isNaN(val)) {
+                            data[field] = val;
+                        }
+                    }
+                });
+
+                try {
+                    if (isEditMode) {
+                        const { error } = await supabaseClient
+                            .from(TABLE_NAME)
+                            .update(data)
+                            .eq('id', DOM.editIdInput.value);
+                        if (error) throw error;
+                        showToast('更新成功');
+                    } else {
+                        const { error } = await supabaseClient.from(TABLE_NAME).insert([data]);
+                        if (error) throw error;
+                        showToast('添加成功');
+                    }
+                    
+                    closeModal();
+                    fetchData();
+                } catch (error) {
+                    showToast('保存失败: ' + error.message, 'error');
+                }
+            };
+
+            // ============ 表单回车提交 ============
+            DOM.form.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey && e.target.tagName === 'INPUT') {
+                    e.preventDefault();
+                    const inputs = Array.from(DOM.form.querySelectorAll('input:not([type="hidden"])'));
+                    const currentIndex = inputs.indexOf(e.target);
+                    if (currentIndex < inputs.length - 1) {
+                        inputs[currentIndex + 1].focus();
+                    } else {
+                        window.saveRecord();
+                    }
+                }
+            });
+
+            // ============ 初始化 ============
+            try {
+                // 首先确保数据分析页正确显示（强制刷新）
+                switchPage('analysis', true);
+            } catch (e) {
+                console.warn('页面初始化失败:', e);
+            }
+            
+            try {
+                setupNavListeners();
+            } catch (e) {
+                console.warn('导航监听器初始化失败:', e);
+            }
+            
+            try {
+                initCharts();
+            } catch (e) {
+                console.warn('图表初始化失败:', e);
+            }
+            
+            try {
+                setupAutoCalculate();
+            } catch (e) {
+                console.warn('自动计算初始化失败:', e);
+            }
+            
+            try {
+                fetchData();
+            } catch (e) {
+                console.warn('数据加载失败:', e);
+                showToast('数据加载失败，请刷新页面重试', 'error');
+            }
+            
+            try {
+                startCountdownTimer();
+            } catch (e) {
+                console.warn('倒计时初始化失败:', e);
+            }
+        })();
+    </script>
+</body>
+</html>

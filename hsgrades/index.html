@@ -416,8 +416,9 @@ function escapeHtml(s) {
 function fmtNum(v, decimals) {
   if (v === null || v === undefined || v === '') return '-';
   var n = Number(v);
-  if (isNaN(n) || n === 0) return '-';
-  return decimals ? n.toFixed(decimals) : String(n);
+  if (isNaN(n)) return '-';
+  if (decimals !== undefined && decimals !== null) return n.toFixed(decimals);
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
 // ==================== 计算 ====================
@@ -659,19 +660,20 @@ function renderOverview() {
       '<tr><td style="color:#6b7280;padding:3px 0">校排名</td><td style="font-weight:600;color:#0891b2">' + (lastExam.schoolRank ? lastExam.schoolRank : '-') + '</td></tr>' +
       '<tr><td style="color:#6b7280;padding:3px 0">班排名</td><td style="font-weight:600;color:#d946ef">' + (lastExam.classRank ? lastExam.classRank : '-') + '</td></tr>' +
       SUBJECTS.map(function(s) {
-        var v = Number(lastExam.scores[s.key]) || 0;
+        var rawVal = lastExam.scores[s.key];
+        var v = (rawVal !== null && rawVal !== undefined && rawVal !== '') ? Number(rawVal) : null;
         var a = s.assigned ? getSubjectAssigned(lastExam, s.key) : 0;
         var rd = getSubjectRank(lastExam, s.key, 'district');
         var rs = getSubjectRank(lastExam, s.key, 'school');
         var rc = getSubjectRank(lastExam, s.key, 'class');
         var desc;
         if (s.assigned) {
-          desc = (v > 0 ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(1) + '</span>' : '-');
+          desc = (v !== null && !isNaN(v) ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(1) + '</span>' : '-');
           desc += ' <span style="font-size:10px;color:#94a3b8">/</span> ';
           desc += (a > 0 ? '<span style="font-weight:700;color:' + s.color + '">' + a.toFixed(0) + '</span>' : '<span style="color:#94a3b8">-</span>');
           desc += '<span style="font-size:10px;color:#94a3b8">赋</span>';
         } else {
-          desc = (v > 0 ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(1) + '</span>' : '-');
+          desc = (v !== null && !isNaN(v) ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(1) + '</span>' : '-');
         }
         var rankStr = '';
         if (rd) rankStr += '区' + rd + ' ';
@@ -832,11 +834,12 @@ function renderExams() {
     var three = calcThreeScore(e);
 
     function buildScoreStr(sKey) {
-      var v = Number(e.scores[sKey]) || 0;
+      var rawVal = e.scores[sKey];
+      var v = (rawVal !== null && rawVal !== undefined && rawVal !== '') ? Number(rawVal) : null;
       var a = getSubjectAssigned(e, sKey);
       var subj = SUBJECTS.find(function(x) { return x.key === sKey; });
       if (subj && subj.assigned) {
-        var s = (v > 0 ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(0) + '</span>' : '-');
+        var s = (v !== null && !isNaN(v) ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(0) + '</span>' : '-');
         s += '<br><span style="font-size:10px;color:#94a3b8">赋' + (a > 0 ? '<span style="color:' + subj.color + ';font-weight:700">' + a.toFixed(0) + '</span>' : '-') + '</span>';
         return s;
       }
@@ -851,10 +854,10 @@ function renderExams() {
       '<td class="rank-cell">' + fmtNum(e.classRank) + '</td>' +
       '<td class="cell-score" style="color:#f59e0b">' + fmtNum(main, 1) + '</td>' +
       '<td class="cell-score" style="color:#be185d">' + fmtNum(three, 1) + '</td>' +
-      '<td class="cell-score">' + fmtNum(e.scores.chinese, 0) + '</td>' +
-      '<td class="cell-score">' + fmtNum(e.scores.math, 0) + '</td>' +
-      '<td class="cell-score">' + fmtNum(e.scores.english, 0) + '</td>' +
-      '<td class="cell-score">' + fmtNum(e.scores.history, 0) + '</td>' +
+      '<td class="cell-score ' + getScoreColor(e.scores.chinese) + '">' + fmtNum(e.scores.chinese, 0) + '</td>' +
+      '<td class="cell-score ' + getScoreColor(e.scores.math) + '">' + fmtNum(e.scores.math, 0) + '</td>' +
+      '<td class="cell-score ' + getScoreColor(e.scores.english) + '">' + fmtNum(e.scores.english, 0) + '</td>' +
+      '<td class="cell-score ' + getScoreColor(e.scores.history) + '">' + fmtNum(e.scores.history, 0) + '</td>' +
       '<td>' + buildScoreStr('politics') + '</td>' +
       '<td>' + buildScoreStr('geography') + '</td>' +
       '<td style="white-space:nowrap">' +
