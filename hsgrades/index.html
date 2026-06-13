@@ -838,7 +838,7 @@ function renderSubjectChart() {
       interaction: { intersect: false, mode: 'index' },
       plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, font: { size: 11 } } }, tooltip: { mode: 'index' } },
       scales: {
-        y: { min: 0, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
+        y: { min: 40, beginAtZero: false, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
         x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 45 } }
       }
     }
