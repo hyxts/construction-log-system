@@ -2412,8 +2412,8 @@ def gpa_save_data():
 HSGRADES_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hsgrades', 'hsgrades.db')
 
 DEFAULT_HSGRADES_EXAMS = [
-    {'id': 'ex-1', 'name': '高一上期末', 'className': '', 'scores': {'chinese': 492.5, 'math': None, 'english': None, 'history': None, 'politics': None, 'geography': None}, 'ranks': {'chinese': 594}, 'distRank': 230, 'schoolRank': None, 'classRank': None, 'totalScore': 492.5, 'note': ''},
-    {'id': 'ex-2', 'name': '高一下期中', 'className': '', 'scores': {'chinese': 490.5, 'math': 594, 'english': 252, 'history': 60, 'politics': 280, 'geography': 100}, 'ranks': {'chinese': 1191, 'math': 53, 'english': 60, 'politics': 113, 'history': 395, 'geography': 103}, 'distRank': 388, 'schoolRank': None, 'classRank': None, 'totalScore': 1776.5, 'note': ''},
+    {'id': 'ex-1', 'name': '高一上期末', 'className': '', 'scores': {'chinese': 492.5, 'math': None, 'english': None, 'history': None, 'politics': None, 'geography': None}, 'assignedScores': {'politics': None, 'geography': None}, 'ranks': {'chinese': 594}, 'distRank': 230, 'schoolRank': None, 'classRank': None, 'totalScore': 492.5, 'note': ''},
+    {'id': 'ex-2', 'name': '高一下期中', 'className': '', 'scores': {'chinese': 490.5, 'math': 594, 'english': 252, 'history': 60, 'politics': 280, 'geography': 100}, 'assignedScores': {'politics': None, 'geography': None}, 'ranks': {'chinese': 1191, 'math': 53, 'english': 60, 'politics': 113, 'history': 395, 'geography': 103}, 'distRank': 388, 'schoolRank': None, 'classRank': None, 'totalScore': 1776.5, 'note': ''},
 ]
 
 def init_hsgrades_db():

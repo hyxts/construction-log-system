@@ -204,7 +204,7 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
     <div class="form-row">
       <div class="form-group">
         <label style="color:#b45309">语文</label>
-        <input type="number" id="s_chinese" placeholder="分数">
+        <input type="number" id="s_chinese" placeholder="原分">
       </div>
       <div class="form-group">
         <label style="color:#94a3b8">语文排名</label>
@@ -214,7 +214,7 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
     <div class="form-row">
       <div class="form-group">
         <label style="color:#1d4ed8">数学</label>
-        <input type="number" id="s_math" placeholder="分数">
+        <input type="number" id="s_math" placeholder="原分">
       </div>
       <div class="form-group">
         <label style="color:#94a3b8">数学排名</label>
@@ -224,7 +224,7 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
     <div class="form-row">
       <div class="form-group">
         <label style="color:#6d28d9">英语</label>
-        <input type="number" id="s_english" placeholder="分数">
+        <input type="number" id="s_english" placeholder="原分">
       </div>
       <div class="form-group">
         <label style="color:#94a3b8">英语排名</label>
@@ -234,30 +234,39 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
     <div class="form-row">
       <div class="form-group">
         <label style="color:#b91c1c">历史</label>
-        <input type="number" id="s_history" placeholder="分数">
+        <input type="number" id="s_history" placeholder="原分">
       </div>
       <div class="form-group">
         <label style="color:#94a3b8">历史排名</label>
         <input type="number" id="r_history" placeholder="排名">
       </div>
     </div>
-    <div class="form-row">
+    <div style="border-top:1px dashed #e5e7eb;margin:10px 0;padding-top:8px;font-size:12px;color:#6b7280">以下科目录入原分和赋分，总分按赋分计算</div>
+    <div class="form-row" style="grid-template-columns:2fr 2fr 1fr">
       <div class="form-group">
-        <label style="color:#047857">政治</label>
-        <input type="number" id="s_politics" placeholder="分数">
+        <label style="color:#047857">政治 原分</label>
+        <input type="number" id="s_politics" placeholder="原分">
       </div>
       <div class="form-group">
-        <label style="color:#94a3b8">政治排名</label>
+        <label style="color:#047857;font-weight:700">政治 赋分</label>
+        <input type="number" id="a_politics" placeholder="赋分">
+      </div>
+      <div class="form-group">
+        <label style="color:#94a3b8">排名</label>
         <input type="number" id="r_politics" placeholder="排名">
       </div>
     </div>
-    <div class="form-row">
+    <div class="form-row" style="grid-template-columns:2fr 2fr 1fr">
       <div class="form-group">
-        <label style="color:#3730a3">地理</label>
-        <input type="number" id="s_geography" placeholder="分数">
+        <label style="color:#3730a3">地理 原分</label>
+        <input type="number" id="s_geography" placeholder="原分">
       </div>
       <div class="form-group">
-        <label style="color:#94a3b8">地理排名</label>
+        <label style="color:#3730a3;font-weight:700">地理 赋分</label>
+        <input type="number" id="a_geography" placeholder="赋分">
+      </div>
+      <div class="form-group">
+        <label style="color:#94a3b8">排名</label>
         <input type="number" id="r_geography" placeholder="排名">
       </div>
     </div>
@@ -291,12 +300,12 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
 // ==================== 数据层 ====================
 let exams = [];
 const SUBJECTS = [
-  { key: 'chinese', label: '语文', color: '#f59e0b' },
-  { key: 'math', label: '数学', color: '#3b82f6' },
-  { key: 'english', label: '英语', color: '#8b5cf6' },
-  { key: 'history', label: '历史', color: '#ef4444' },
-  { key: 'politics', label: '政治', color: '#10b981' },
-  { key: 'geography', label: '地理', color: '#6366f1' }
+  { key: 'chinese', label: '语文', color: '#f59e0b', assigned: false },
+  { key: 'math', label: '数学', color: '#3b82f6', assigned: false },
+  { key: 'english', label: '英语', color: '#8b5cf6', assigned: false },
+  { key: 'history', label: '历史', color: '#ef4444', assigned: false },
+  { key: 'politics', label: '政治', color: '#10b981', assigned: true },
+  { key: 'geography', label: '地理', color: '#6366f1', assigned: true }
 ];
 
 function escapeHtml(s) {
@@ -395,6 +404,7 @@ var DEFAULT_EXAMS = [
     name: '高一上期末',
     className: '',
     scores: { chinese: 492.5, math: null, english: null, history: null, politics: null, geography: null },
+    assignedScores: { politics: null, geography: null },
     ranks: { chinese: 594, math: null, english: null, history: null, politics: null, geography: null },
     distRank: 230,
     schoolRank: null,
@@ -407,6 +417,7 @@ var DEFAULT_EXAMS = [
     name: '高一下期中',
     className: '',
     scores: { chinese: 490.5, math: 594, english: 252, history: 60, politics: 280, geography: 100 },
+    assignedScores: { politics: null, geography: null },
     ranks: { chinese: 1191, math: 53, english: 60, politics: 113, history: 395, geography: 103 },
     distRank: 388,
     schoolRank: null,
@@ -418,6 +429,7 @@ var DEFAULT_EXAMS = [
     name: '高二下期中',
     className: '',
     scores: { chinese: 0, math: 0, english: 0, history: 0, politics: 0, geography: 0 },
+    assignedScores: { politics: null, geography: null },
     ranks: { chinese: null, math: null, english: null, history: null, politics: null, geography: null },
     distRank: null,
     schoolRank: null,
@@ -452,7 +464,15 @@ let _subjectChart = null;
 function calcTotal(exam) {
   var t = 0;
   SUBJECTS.forEach(function(s) {
-    var v = Number(exam.scores[s.key]) || 0;
+    var v;
+    if (s.assigned) {
+      // 政治/地理：优先用赋分，无赋分则用原分
+      var av = exam.assignedScores ? Number(exam.assignedScores[s.key]) || 0 : 0;
+      v = av > 0 ? av : (Number(exam.scores[s.key]) || 0);
+    } else {
+      // 语数外历史：只用原分
+      v = Number(exam.scores[s.key]) || 0;
+    }
     if (v > 0) t += v;
   });
   return t;
@@ -506,9 +526,19 @@ function renderOverview() {
       SUBJECTS.map(function(s) {
         var v = Number(lastExam.scores[s.key]) || 0;
         var r = lastExam.ranks ? lastExam.ranks[s.key] : null;
+        var a = s.assigned ? (lastExam.assignedScores ? Number(lastExam.assignedScores[s.key]) || 0 : 0) : 0;
+        var desc;
+        if (s.assigned) {
+          desc = (v > 0 ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(1) + '</span>' : '-');
+          desc += ' <span style="font-size:10px;color:#94a3b8">/</span> ';
+          desc += (a > 0 ? '<span style="font-weight:700;color:' + s.color + '">' + a.toFixed(0) + '</span>' : '<span style="color:#94a3b8">-</span>');
+          desc += '<span style="font-size:10px;color:#94a3b8">赋</span>';
+        } else {
+          desc = (v > 0 ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(1) + '</span>' : '-');
+        }
         return '<tr><td style="color:#6b7280;padding:3px 0">' +
           '<span class="subj-badge" style="background:' + s.color + '22;color:' + s.color + '">' + s.label + '</span></td>' +
-          '<td>' + (v > 0 ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(1) + '</span>' : '-') +
+          '<td>' + desc +
           (r ? ' <span class="rank-cell">(第' + r + '名)</span>' : '') + '</td></tr>';
       }).join('') +
       '</table>';
@@ -593,8 +623,14 @@ function renderSubjectChart() {
       labels: items.map(function(i) { return i.name; }),
       datasets: SUBJECTS.map(function(s) {
         return {
-          label: s.label,
-          data: items.map(function(e) { return Number(e.scores[s.key]) || 0; }),
+          label: s.label + (s.assigned ? '(赋分)' : ''),
+          data: items.map(function(e) {
+            if (s.assigned) {
+              var av = e.assignedScores ? Number(e.assignedScores[s.key]) || 0 : 0;
+              return av > 0 ? av : (Number(e.scores[s.key]) || 0);
+            }
+            return Number(e.scores[s.key]) || 0;
+          }),
           borderColor: s.color,
           backgroundColor: s.color + '22',
           fill: false,
@@ -647,9 +683,19 @@ function renderExams() {
       SUBJECTS.map(function(s) {
         var v = Number(e.scores[s.key]) || 0;
         var r = e.ranks ? e.ranks[s.key] : null;
+        var a = s.assigned ? (e.assignedScores ? Number(e.assignedScores[s.key]) || 0 : 0) : 0;
+        var detail;
+        if (s.assigned) {
+          detail = '<div style="font-size:14px;font-weight:700;' + (v > 0 ? ('color:' + s.color) : 'color:#cbd5e1') + '">' + (v > 0 ? v.toFixed(0) : '-') + '</div>';
+          detail += '<div style="font-size:9px;color:#94a3b8">';
+          detail += (a > 0 ? '<span style="font-weight:700;color:' + s.color + '">赋' + a.toFixed(0) + '</span>' : '赋-');
+          detail += '</div>';
+        } else {
+          detail = '<div style="font-size:14px;font-weight:700;' + (v > 0 ? ('color:' + s.color) : 'color:#cbd5e1') + '">' + (v > 0 ? v.toFixed(0) : '-') + '</div>';
+        }
         return '<div style="text-align:center;padding:4px 2px;background:#f8fafc;border-radius:6px">' +
           '<div style="font-size:10px;color:#94a3b8">' + s.label + '</div>' +
-          '<div style="font-size:14px;font-weight:700;' + (v > 0 ? ('color:' + s.color) : 'color:#cbd5e1') + '">' + (v > 0 ? v.toFixed(0) : '-') + '</div>' +
+          detail +
           (r ? '<div style="font-size:9px;color:#94a3b8">第' + r + '名</div>' : '') +
           '</div>';
       }).join('') +
@@ -675,6 +721,10 @@ function showExamModal(id) {
         var rv = document.getElementById('r_' + s.key);
         if (sv) sv.value = (ex.scores && ex.scores[s.key] !== undefined && ex.scores[s.key] !== null) ? ex.scores[s.key] : '';
         if (rv) rv.value = (ex.ranks && ex.ranks[s.key]) ? ex.ranks[s.key] : '';
+        if (s.assigned) {
+          var av = document.getElementById('a_' + s.key);
+          if (av) av.value = (ex.assignedScores && ex.assignedScores[s.key] !== undefined && ex.assignedScores[s.key] !== null) ? ex.assignedScores[s.key] : '';
+        }
       });
     }
   } else {
@@ -688,6 +738,10 @@ function showExamModal(id) {
       var rv = document.getElementById('r_' + s.key);
       if (sv) sv.value = '';
       if (rv) rv.value = '';
+      if (s.assigned) {
+        var av = document.getElementById('a_' + s.key);
+        if (av) av.value = '';
+      }
     });
   }
 
@@ -709,12 +763,17 @@ function saveExam() {
   var classRank = document.getElementById('examClassRank').value;
 
   var scores = {};
+  var assignedScores = {};
   var ranks = {};
   SUBJECTS.forEach(function(s) {
     var sv = document.getElementById('s_' + s.key).value;
     var rv = document.getElementById('r_' + s.key).value;
     scores[s.key] = sv !== '' ? Number(sv) : null;
     ranks[s.key] = rv !== '' ? Number(rv) : null;
+    if (s.assigned) {
+      var av = document.getElementById('a_' + s.key).value;
+      assignedScores[s.key] = av !== '' ? Number(av) : null;
+    }
   });
 
   if (editId) {
@@ -723,12 +782,12 @@ function saveExam() {
       ex.name = name;
       ex.className = className;
       ex.scores = scores;
+      ex.assignedScores = assignedScores;
       ex.ranks = ranks;
       ex.distRank = distRank ? Number(distRank) : null;
       ex.schoolRank = schoolRank ? Number(schoolRank) : null;
       ex.classRank = classRank ? Number(classRank) : null;
-      ex.totalScore = 0;
-      Object.values(scores).forEach(function(v) { if (v) ex.totalScore += v; });
+      ex.totalScore = calcTotal(ex);
     }
   } else {
     exams.push({
@@ -736,11 +795,12 @@ function saveExam() {
       name: name,
       className: className,
       scores: scores,
+      assignedScores: assignedScores,
       ranks: ranks,
       distRank: distRank ? Number(distRank) : null,
       schoolRank: schoolRank ? Number(schoolRank) : null,
       classRank: classRank ? Number(classRank) : null,
-      totalScore: 0,
+      totalScore: calcTotal({scores: scores, assignedScores: assignedScores}),
       note: ''
     });
   }
