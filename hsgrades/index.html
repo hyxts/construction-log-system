@@ -71,6 +71,9 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
 .stat-card{background:#f8fafc;border-radius:10px;padding:12px 8px;text-align:center;border:1px solid #eef2f7}
 .stat-val{font-size:20px;font-weight:700;color:#7c3aed}
 .stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}
+.stat-card.countdown{background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #fcd34d}
+.stat-card.countdown .stat-val{color:#b45309;font-size:24px}
+.stat-card.countdown .stat-lbl{color:#92400e;font-weight:600}
 
 /* Exam table */
 .exam-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px}
@@ -133,7 +136,7 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
   </div>
 
   <div class="stats-grid">
-    <div class="stat-card"><div class="stat-val" id="totalExams">0</div><div class="stat-lbl">考试次数</div></div>
+    <div class="stat-card countdown"><div class="stat-val" id="gaokaoCountdown">-</div><div class="stat-lbl" id="gaokaoLabel">距高考</div></div>
     <div class="stat-card"><div class="stat-val" id="avgTotal">-</div><div class="stat-lbl">平均总分</div></div>
     <div class="stat-card"><div class="stat-val" id="maxTotal">-</div><div class="stat-lbl">最高总分</div></div>
     <div class="stat-card"><div class="stat-val" id="latestTotal">-</div><div class="stat-lbl">最近总分</div></div>
@@ -610,6 +613,34 @@ function switchTab(tabId) {
   if (tabId === 'exams') renderExams();
 }
 
+// ==================== 高考倒计时 ====================
+function updateGaokaoCountdown() {
+  var now = new Date();
+  var y = now.getFullYear();
+  // 高考日期: 每年6月7日
+  var gk = new Date(y, 5, 7); // 月份从0算，5=6月
+  if (now > gk) {
+    gk = new Date(y + 1, 5, 7);
+  }
+  var diff = Math.ceil((gk - now) / (1000 * 60 * 60 * 24));
+  var el = document.getElementById('gaokaoCountdown');
+  var lbl = document.getElementById('gaokaoLabel');
+  if (el) {
+    el.textContent = diff;
+    if (diff === 0) {
+      el.textContent = '今天';
+      if (lbl) lbl.textContent = '高考加油';
+    } else if (diff === 1) {
+      if (lbl) lbl.textContent = '距高考 明天';
+    } else if (diff <= 30) {
+      el.style.color = '#dc2626';
+      if (lbl) lbl.textContent = '距高考 ' + gk.getFullYear() + '年';
+    } else {
+      if (lbl) lbl.textContent = '距高考 ' + gk.getFullYear() + '年';
+    }
+  }
+}
+
 // ==================== 概览页 ====================
 var _totalChart = null;
 var _subjectChart = null;
@@ -619,7 +650,8 @@ function renderOverview() {
     return e.scores && Object.values(e.scores).some(function(v) { return Number(v) > 0; });
   });
 
-  document.getElementById('totalExams').textContent = exams.length;
+  // 高考倒计时
+  updateGaokaoCountdown();
 
   if (activeExams.length > 0) {
     // 平均总分 & 最高总分
