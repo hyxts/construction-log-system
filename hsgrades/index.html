@@ -74,6 +74,7 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
 .stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}
 .stat-card .countdown-num{color:#dc2626;font-weight:800}
 .stat-card .countdown-text{font-size:13px;color:#1f2937}
+#gaokaoCountdown{min-height:48px;display:flex;align-items:center;justify-content:center}
 
 /* Exam table */
 .exam-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px}
@@ -136,7 +137,7 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
   </div>
 
   <div class="stats-grid">
-    <div class="stat-card"><div class="stat-lbl" id="gaokaoLabel">距高考</div><div class="stat-val" id="gaokaoCountdown" style="font-size:15px;color:#1f2937">-</div></div>
+    <div class="stat-card"><div class="stat-val" id="gaokaoCountdown" style="font-size:15px;color:#1f2937;line-height:1.4">-</div></div>
     <div class="stat-card"><div class="stat-val" id="avgTotal">-</div><div class="stat-lbl">平均总分</div></div>
     <div class="stat-card"><div class="stat-val" id="maxTotal">-</div><div class="stat-lbl">最高总分</div></div>
     <div class="stat-card"><div class="stat-val" id="latestTotal">-</div><div class="stat-lbl">最近总分</div></div>
@@ -617,7 +618,6 @@ function switchTab(tabId) {
 function updateGaokaoCountdown() {
   var now = new Date();
   var y = now.getFullYear();
-  // 高考日期: 每年6月7日
   var gk = new Date(y, 5, 7);
   if (now > gk) {
     gk = new Date(y + 1, 5, 7);
@@ -625,15 +625,13 @@ function updateGaokaoCountdown() {
   var diff = Math.ceil((gk - now) / (1000 * 60 * 60 * 24));
   var el = document.getElementById('gaokaoCountdown');
   var lbl = document.getElementById('gaokaoLabel');
-  var year = gk.getFullYear();
   if (el) {
     if (diff === 0) {
-      el.innerHTML = '<span style="color:#dc2626;font-weight:800;font-size:18px">今天</span>';
-      if (lbl) lbl.textContent = '高考加油！';
+      el.innerHTML = '离高考还有<span class="countdown-num" style="font-size:22px">今天</span>';
     } else {
-      el.innerHTML = '距离' + year + '年高考还有<br><span class="countdown-num" style="font-size:22px">' + diff + '</span><span class="countdown-text"> 天</span>';
-      if (lbl) lbl.textContent = '高考加油！';
+      el.innerHTML = '离高考还有<span class="countdown-num" style="font-size:22px">' + diff + '</span><span class="countdown-text"> 天</span>';
     }
+    if (lbl) lbl.textContent = '';
   }
 }
 
