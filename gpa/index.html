@@ -146,6 +146,24 @@ button:active{opacity:0.9;transform:scale(0.98)}
 .score-formula{background:#f8fafc;border-radius:10px;padding:12px;margin-top:8px;text-align:center;font-size:13px;color:#475569}
 .score-formula strong{color:#2f7d6b;font-size:18px}
 
+.credit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.credit-item{background:#f8fafc;border-radius:8px;padding:10px;text-align:center}
+.credit-item .credit-val{font-size:22px;font-weight:700;color:#0f172a}
+.credit-item .credit-label{font-size:11px;color:#94a3b8;margin-top:2px}
+.credit-item .credit-sub{font-size:10px;color:#64748b;margin-top:1px}
+
+.cat-bar-wrap{margin-top:4px}
+.cat-bar-row{display:flex;align-items:center;margin-bottom:6px;gap:8px}
+.cat-bar-name{font-size:12px;color:#475569;width:56px;flex-shrink:0;text-align:right}
+.cat-bar-bg{flex:1;height:8px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.cat-bar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.cat-bar-fill.public{background:#3b82f6}
+.cat-bar-fill.major{background:#2f7d6b}
+.cat-bar-fill.elective{background:#8b5cf6}
+.cat-bar-num{font-size:11px;color:#94a3b8;width:44px;flex-shrink:0}
+
+.plan-note{font-size:11px;color:#94a3b8;margin-top:4px;line-height:1.5}
+
 .empty-state{text-align:center;color:#9ca3af;padding:30px 0;font-size:14px}
 .semester-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .semester-header .sem-name{font-weight:600;font-size:15px;color:#0f172a}
@@ -249,15 +267,41 @@ button:active{opacity:0.9;transform:scale(0.98)}
     </div>
     <div class="card">
       <h3>GPA 目标进度</h3>
-      <div style="font-size:13px;color:#64748b;margin-bottom:4px">推免要求: 前六学期累计 GPA >= 3.20</div>
+      <div class="plan-note">弘毅学堂官方推免最低线 GPA >= 3.20（来源：2025年推免实施办法）</div>
       <div class="plan-progress-bar" style="background:#e2e8f0;margin-top:8px">
         <div class="plan-progress-fill" id="planGpaBar" style="width:0%"></div>
         <div class="plan-target-line" id="planTargetLine" style="left:80%"></div>
+        <div class="plan-target-line" id="planSuggestLine" style="left:87.5%"></div>
       </div>
       <div class="plan-progress-text">
         <span style="font-size:14px;font-weight:700" id="planGpaText">-</span>
-        <span style="font-size:12px;color:#fbbf24;font-weight:600">目标 3.20</span>
+        <span style="font-size:11px"><span style="color:#fbbf24;font-weight:600">最低 3.20</span> <span style="color:#f97316;font-weight:600;margin-left:4px">建议 3.50</span></span>
       </div>
+    </div>
+    <div class="card">
+      <h3>学分与课程进度</h3>
+      <div class="plan-note">弘毅学堂 约120学分毕业（PPE方向参考总学分158，弘毅学堂减量提质约120学分）</div>
+      <div class="credit-grid">
+        <div class="credit-item">
+          <div class="credit-val" id="planEarnedCredits">0</div>
+          <div class="credit-label">已修学分</div>
+        </div>
+        <div class="credit-item">
+          <div class="credit-val" id="planRemainCredits">120</div>
+          <div class="credit-label">还需学分</div>
+          <div class="credit-sub">目标 120 学分</div>
+        </div>
+        <div class="credit-item">
+          <div class="credit-val" id="planEarnedCourses">0</div>
+          <div class="credit-label">已修课程</div>
+        </div>
+        <div class="credit-item">
+          <div class="credit-val" id="planCreditPct">0%</div>
+          <div class="credit-label">学分完成率</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;font-size:12px;color:#64748b">分类学分统计</div>
+      <div class="cat-bar-wrap" id="catBars"></div>
     </div>
     <div class="card">
       <h3>关键条件</h3>
@@ -293,8 +337,8 @@ button:active{opacity:0.9;transform:scale(0.98)}
       </div>
     </div>
     <div class="card" style="background:#fefce8;border:1px solid #fde68a">
-      <div style="font-size:13px;color:#92400e;line-height:1.6">
-        <strong>重要提醒:</strong> 推免申请在大四上学期9月进行（前六学期成绩），获得推免资格后仍需遵守校规校纪、按期完成学业，否则取消资格。
+      <div style="font-size:12px;color:#92400e;line-height:1.6">
+        <strong>政策说明:</strong> 3.20为弘毅学堂官方推免最低GPA门槛。实际竞争激烈，建议保持3.50以上。推免申请在大四上学期9月进行（前六学期成绩），获得资格后仍需遵守校规校纪、按期完成学业。
       </div>
     </div>
   </div>
@@ -1021,19 +1065,50 @@ function switchTab(name) {
 // ==================== 保研规划 ====================
 function renderPlan() {
   var gpa = calcCumulativeGpa();
-  // GPA 进度条 (max 4.0, target 3.2)
-  var pct = Math.min(gpa / 3.2 * 100, 100);
+
+  // GPA 进度条 (max 4.0, 最低线3.2, 建议线3.5)
+  var pct = Math.min(gpa / 4.0 * 100, 100);
   document.getElementById('planGpaBar').style.width = pct + '%';
   document.getElementById('planGpaText').textContent = courses.length > 0 ? '当前累计 GPA: ' + gpa.toFixed(2) : '暂无课程数据';
   document.getElementById('planTargetLine').style.left = (3.2 / 4.0 * 100) + '%';
+  document.getElementById('planSuggestLine').style.left = (3.5 / 4.0 * 100) + '%';
+
+  // 学分与课程统计
+  var targetCredits = 120; // 弘毅学堂约120学分毕业
+  var earnedCredits = courses.reduce(function(s, c) { return s + (Number(c.credit) || 0); }, 0);
+  var remainCredits = Math.max(targetCredits - earnedCredits, 0);
+  var creditPct = targetCredits > 0 ? Math.min(earnedCredits / targetCredits * 100, 100) : 0;
+
+  document.getElementById('planEarnedCredits').textContent = earnedCredits.toFixed(1);
+  document.getElementById('planRemainCredits').textContent = remainCredits.toFixed(1);
+  document.getElementById('planEarnedCourses').textContent = courses.length;
+  document.getElementById('planCreditPct').textContent = creditPct.toFixed(0) + '%';
+
+  // 分类学分统计 (参考弘毅学堂课程体系)
+  var catTargets = { public_required: 28, major_required: 52, elective: 24, other: 16 };
+  var catLabels = { public_required: '公共必修', major_required: '专业必修', elective: '选修', other: '其他' };
+  var catColors = { public_required: 'public', major_required: 'major', elective: 'elective', other: '' };
+  var cats = ['public_required', 'major_required', 'elective', 'other'];
+  var catHtml = cats.map(function(cat) {
+    var earned = courses.filter(function(c) { return (c.category || 'public_required') === cat; })
+      .reduce(function(s, c) { return s + (Number(c.credit) || 0); }, 0);
+    var target = catTargets[cat] || 0;
+    var barPct = target > 0 ? Math.min(earned / target * 100, 100) : 0;
+    var barCls = catColors[cat] || 'public';
+    return '<div class="cat-bar-row"><span class="cat-bar-name">' + catLabels[cat] + '</span>' +
+      '<span class="cat-bar-bg"><span class="cat-bar-fill ' + barCls + '" style="width:' + barPct + '%"></span></span>' +
+      '<span class="cat-bar-num">' + earned.toFixed(0) + '/' + target + '</span></div>';
+  }).join('');
+  document.getElementById('catBars').innerHTML = catHtml;
 
   // 关键条件
   var hasFailed = courses.some(function(c) { return (Number(c.score) || 0) < 60; });
   var reqs = [
-    { name: '累计 GPA >= 3.20', desc: '前六学期主修课程总平均绩点', pass: gpa >= 3.2, pending: false },
+    { name: '累计 GPA >= 3.20', desc: '官方最低线（前六学期主修课程总平均绩点）', pass: gpa >= 3.2, pending: false },
+    { name: '建议 GPA >= 3.50', desc: '竞争性安全线（弘毅保研率虽高仍需保持优势）', pass: gpa >= 3.5, pending: false },
     { name: '无不及格课程', desc: '重修后全部课程及格', pass: !hasFailed, pending: courses.length === 0 },
     { name: '英语六级 >= 425', desc: '或 雅思>=6.5 / 托福>=90', pass: false, pending: true },
-    { name: '综合素质 >= 60分', desc: '班级评分50% + 学堂评分50%', pass: false, pending: true }
+    { name: '综合素质 >= 60分', desc: '班级评分50% + 学堂评分50%，任一项不低于满分60%', pass: false, pending: true }
   ];
 
   document.getElementById('reqList').innerHTML = reqs.map(function(r) {
