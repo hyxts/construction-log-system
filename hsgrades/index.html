@@ -112,14 +112,7 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
 .badge-geo{background:#e0e7ff;color:#3730a3}
 .badge-total{background:#f3e8ff;background:#f3e8ff;color:#7c3aed}
 
-/* Sync badge */
-.sync-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 8px;border-radius:10px;background:#f0fdf4;color:#15803d}
-.sync-badge.offline{background:#fefce8;color:#a16207}
-.sync-badge.syncing{background:#eff6ff;color:#1d4ed8}
-.sync-dot{width:6px;height:6px;border-radius:50%;background:#22c55e}
-.sync-dot.offline{background:#eab308}
-.sync-dot.syncing{background:#3b82f6;animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
 </style>
 </head>
 
@@ -129,14 +122,8 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
 
 <!-- Overview -->
 <div class="tab-content active" id="tab-overview">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-    <div style="display:flex;align-items:center;gap:6px">
-      <span id="syncBadge" class="sync-badge offline"><span class="sync-dot offline"></span><span id="syncText">离线</span></span>
-      <button class="btn-sm btn-gray" onclick="pullFromServer()" title="从服务器拉取最新数据">同步</button>
-    </div>
-    <div style="display:flex;gap:6px">
-      <button class="btn-sm btn-gray" onclick="switchTab('exams')">成绩录入</button>
-    </div>
+  <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px">
+    <button class="btn-sm btn-gray" onclick="switchTab('exams')">成绩录入</button>
   </div>
 
   <div class="stats-grid">
@@ -314,27 +301,7 @@ function escapeHtml(s) {
 }
 
 // ==================== 持久化 ====================
-function updateSyncStatus(text) {
-  const el = document.getElementById('syncText');
-  const dot = document.querySelector('#syncBadge .sync-dot');
-  const badge = document.getElementById('syncBadge');
-  if (el) el.textContent = text || '';
-  if (badge) {
-    if (text === '已同步') {
-      badge.className = 'sync-badge';
-      if (dot) { dot.className = 'sync-dot'; }
-    } else if (text === '离线' || text === '同步失败' || text === '拉取失败') {
-      badge.className = 'sync-badge offline';
-      if (dot) { dot.className = 'sync-dot offline'; }
-    } else {
-      badge.className = 'sync-badge syncing';
-      if (dot) { dot.className = 'sync-dot syncing'; }
-    }
-  }
-}
-
 async function loadData() {
-  updateSyncStatus('加载中...');
   let serverLoaded = false;
   try {
     const resp = await fetch('/api/hsgrades/data');
@@ -343,12 +310,10 @@ async function loadData() {
       exams = json.data.exams || [];
       localStorage.setItem('hsgradesData', JSON.stringify(exams));
       serverLoaded = true;
-      updateSyncStatus('已同步');
     }
   } catch(e) {}
 
   if (!serverLoaded) {
-    updateSyncStatus('离线');
     const d = localStorage.getItem('hsgradesData');
     if (d) {
       try { exams = JSON.parse(d); } catch(e) { exams = []; }
@@ -366,35 +331,25 @@ async function loadData() {
 
 function saveData() {
   localStorage.setItem('hsgradesData', JSON.stringify(exams));
-  updateSyncStatus('同步中...');
   try {
     fetch('/api/hsgrades/data', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ exams })
-    }).then(r => r.json()).then(j => {
-      if (j && j.success) updateSyncStatus('已同步');
-      else updateSyncStatus('同步失败');
-    }).catch(() => updateSyncStatus('离线'));
-  } catch(e) { updateSyncStatus('离线'); }
+    }).catch(() => {});
+  } catch(e) {}
 }
 
 async function pullFromServer() {
-  updateSyncStatus('拉取中...');
   try {
     const resp = await fetch('/api/hsgrades/data');
     const json = await resp.json();
     if (json.success && json.data) {
       exams = json.data.exams || [];
       localStorage.setItem('hsgradesData', JSON.stringify(exams));
-      updateSyncStatus('已同步');
       refreshAll();
-    } else {
-      updateSyncStatus('拉取失败');
     }
-  } catch(e) {
-    updateSyncStatus('离线');
-  }
+  } catch(e) {}
 }
 
 // 预置数据（来自截图）
