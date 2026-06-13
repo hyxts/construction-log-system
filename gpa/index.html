@@ -338,6 +338,17 @@ function escapeHtml(s) {
 }
 
 // ==================== 持久化 ====================
+// 数据字段标准化：兼容旧格式 credits/中文名称
+function normalizeCourse(c) {
+  if (typeof c !== 'object' || !c) return c;
+  // 统一学分字段为 credit
+  if (!c.credit && c.credits) c.credit = c.credits;
+  // 统一分类字段
+  const catAlias = { '公共必修': 'public_required', '专业必修': 'major_required', '必修': 'public_required', '选修': 'elective', '其他': 'other' };
+  if (catAlias[c.category]) c.category = catAlias[c.category];
+  return c;
+}
+
 function updateSyncStatus() {}
 
 function saveData() {
@@ -363,7 +374,7 @@ async function loadData() {
     const json = await resp.json();
     if (json.success && json.data) {
       semesters = json.data.semesters || [];
-      courses = json.data.courses || [];
+      courses = (json.data.courses || []).map(normalizeCourse);
       localStorage.setItem('gpaData', JSON.stringify({ semesters, courses }));
       serverLoaded = true;
       updateSyncStatus('已同步');
@@ -377,7 +388,7 @@ async function loadData() {
       try {
         const obj = JSON.parse(d);
         semesters = obj.semesters || [];
-        courses = obj.courses || [];
+        courses = (obj.courses || []).map(normalizeCourse);
       } catch (e) {
         semesters = [];
         courses = [];
@@ -673,8 +684,8 @@ function renderCourses() {
     return;
   }
 
-  const catMap = { public_required: '公共必修', major_required: '专业必修', elective: '选修', other: '其他' };
-  const catClass = { public_required: 'badge-required', major_required: 'badge-major', elective: 'badge-elective', other: 'badge-other' };
+  const catMap = { public_required: '公共必修', major_required: '专业必修', elective: '选修', other: '其他', required: '必修', '公共必修': '公共必修', '专业必修': '专业必修', '必修': '必修' };
+  const catClass = { public_required: 'badge-required', major_required: 'badge-major', elective: 'badge-elective', other: 'badge-other', required: 'badge-required', '公共必修': 'badge-required', '专业必修': 'badge-major', '必修': 'badge-required' };
 
   container.innerHTML = semesters.filter(s => grouped[s.id]).map(s => {
     const items = grouped[s.id];
@@ -698,7 +709,7 @@ function renderCourses() {
           <div class="item-title" style="font-size:14px">${escapeHtml(c.name)}
             <span class="course-badge ${catClass[c.category] || 'badge-other'}">${catMap[c.category] || '其他'}</span>
           </div>
-          <div class="item-sub">${c.credit} 学分 · 成绩 ${c.score} · GPA ${scoreToGpa(c.score).toFixed(2)}${c.note ? ' · ' + escapeHtml(c.note) : ''}</div>
+          <div class="item-sub">${(c.credit || c.credits || 0)} 学分 · 成绩 ${c.score} · GPA ${scoreToGpa(c.score).toFixed(2)}${c.note ? ' · ' + escapeHtml(c.note) : ''}</div>
         </div>
         <div class="item-actions" style="display:flex;align-items:center;gap:3px">
           <button class="course-order-btn" title="上移" onclick="event.stopPropagation();moveCourseUp('${c.id}')" ${isFirst ? 'disabled' : ''}>&#9650;</button>
