@@ -67,14 +67,14 @@ button:active{filter:brightness(.92);transform:scale(.98)}
 label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:500}
 
 /* Stats */
-.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .stat-card{background:#f8fafc;border-radius:10px;padding:12px 8px;text-align:center;border:1px solid #eef2f7}
 .stat-val{font-size:20px;font-weight:700;color:#7c3aed}
 .stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}
 
 /* Exam table */
 .exam-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px}
-.exam-table{min-width:720px;width:100%;border-collapse:collapse;font-size:12px}
+.exam-table{min-width:1100px;width:100%;border-collapse:collapse;font-size:12px}
 .exam-table th{background:#f1f5f9;color:#475569;font-weight:600;padding:6px 4px;text-align:center;white-space:nowrap;border-bottom:2px solid #e2e8f0;position:sticky;top:0;z-index:2;font-size:11px}
 .exam-table td{padding:5px 4px;text-align:center;border-bottom:1px solid #f1f5f9;white-space:nowrap;color:#334155}
 .exam-table tr:hover td{background:#fafafa}
@@ -92,13 +92,17 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
 /* Modal */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center}
 .modal-overlay.show{display:flex}
-.modal-box{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:85vh;overflow-y:auto;padding:20px 18px 28px;animation:slideUp .25s ease}
+.modal-box{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;padding:20px 18px 28px;animation:slideUp .25s ease}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .modal-box h4{font-size:17px;margin-bottom:14px;text-align:center}
 .form-group{margin-bottom:12px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.form-row-4{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:6px}
+.form-row-3{display:grid;grid-template-columns:2fr 2fr 1fr 1fr 1fr;gap:6px}
 .form-actions{display:flex;gap:8px;margin-top:14px}
 .form-actions button{margin-bottom:0}
+.form-section-title{font-size:13px;font-weight:600;color:#1e293b;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px dashed #e5e7eb}
+.auto-score{background:#f8fafc;color:#6b7280;font-weight:500}
 .confirm-danger{background:#dc2626}
 .empty-state{text-align:center;padding:30px 16px;color:#94a3b8;font-size:14px}
 
@@ -110,9 +114,10 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
 .badge-history{background:#fecaca;color:#b91c1c}
 .badge-politics{background:#d1fae5;color:#047857}
 .badge-geo{background:#e0e7ff;color:#3730a3}
-.badge-total{background:#f3e8ff;background:#f3e8ff;color:#7c3aed}
+.badge-main{background:#f3e8ff;color:#7c3aed}
+.badge-three{background:#fce7f3;color:#be185d}
 
-
+.th-sub{font-size:9px;font-weight:400;color:#94a3b8}
 </style>
 </head>
 
@@ -128,10 +133,9 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
 
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-val" id="totalExams">0</div><div class="stat-lbl">考试次数</div></div>
+    <div class="stat-card"><div class="stat-val" id="avgTotal">-</div><div class="stat-lbl">平均总分</div></div>
+    <div class="stat-card"><div class="stat-val" id="maxTotal">-</div><div class="stat-lbl">最高总分</div></div>
     <div class="stat-card"><div class="stat-val" id="latestTotal">-</div><div class="stat-lbl">最近总分</div></div>
-    <div class="stat-card"><div class="stat-val" id="latestDistRank">-</div><div class="stat-lbl">最近区排名</div></div>
-    <div class="stat-card"><div class="stat-val" id="latestSchoolRank">-</div><div class="stat-lbl">最近校排名</div></div>
-    <div class="stat-card"><div class="stat-val" id="latestClassRank">-</div><div class="stat-lbl">最近班排名</div></div>
   </div>
 
   <div class="card">
@@ -156,7 +160,33 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
     <button onclick="showExamModal()">添加考试</button>
     <button class="btn-gray btn-sm" onclick="switchTab('overview')">返回</button>
   </div>
-  <div id="examList"></div>
+
+  <div class="card" style="padding:8px 14px">
+    <h3>成绩列表</h3>
+    <div class="exam-table-wrap">
+      <table class="exam-table">
+        <thead>
+          <tr>
+            <th class="col-period">考试</th>
+            <th>总分</th>
+            <th>区排</th>
+            <th>校排</th>
+            <th>班排</th>
+            <th>主科</th>
+            <th>三科</th>
+            <th>语文</th>
+            <th>数学</th>
+            <th>英语</th>
+            <th>历史</th>
+            <th>政治<br><span class="th-sub">赋分 / 原始</span></th>
+            <th>地理<br><span class="th-sub">赋分 / 原始</span></th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="examTableBody"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 </div>
@@ -179,99 +209,182 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
     <h4 id="examModalTitle">添加考试成绩</h4>
     <input type="hidden" id="examEditId">
     <div class="form-group">
-      <label>考试名称</label>
-      <input type="text" id="examName" placeholder="如：高一上期末">
+      <label>考试类型</label>
+      <input type="text" id="examName" placeholder="如：高一上期末" required>
     </div>
     <div class="form-group">
       <label>班级</label>
       <input type="text" id="examClass" placeholder="如：1班">
     </div>
 
-    <h3 style="margin:14px 0 8px;font-size:14px">科目成绩</h3>
+    <!-- 总分总排名 -->
+    <div class="form-section-title">总分排名</div>
     <div class="form-row">
       <div class="form-group">
-        <label style="color:#b45309">语文</label>
-        <input type="number" id="s_chinese" placeholder="原分">
+        <label style="color:#7c3aed">总分</label>
+        <input type="number" step="0.1" id="totalScore" placeholder="自动计算" readonly class="auto-score">
       </div>
       <div class="form-group">
-        <label style="color:#94a3b8">语文排名</label>
-        <input type="number" id="r_chinese" placeholder="排名">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label style="color:#1d4ed8">数学</label>
-        <input type="number" id="s_math" placeholder="原分">
-      </div>
-      <div class="form-group">
-        <label style="color:#94a3b8">数学排名</label>
-        <input type="number" id="r_math" placeholder="排名">
+        <label style="color:#7c3aed">主科总分</label>
+        <input type="number" step="0.1" id="mainScore" placeholder="自动计算" readonly class="auto-score">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label style="color:#6d28d9">英语</label>
-        <input type="number" id="s_english" placeholder="原分">
+        <label>区排名</label>
+        <input type="number" id="examDistRank" placeholder="--">
       </div>
       <div class="form-group">
-        <label style="color:#94a3b8">英语排名</label>
-        <input type="number" id="r_english" placeholder="排名">
+        <label>校排名</label>
+        <input type="number" id="examSchoolRank" placeholder="--">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label style="color:#b91c1c">历史</label>
-        <input type="number" id="s_history" placeholder="原分">
+        <label>班排名</label>
+        <input type="number" id="examClassRank" placeholder="--">
       </div>
       <div class="form-group">
-        <label style="color:#94a3b8">历史排名</label>
-        <input type="number" id="r_history" placeholder="排名">
-      </div>
-    </div>
-    <div style="border-top:1px dashed #e5e7eb;margin:10px 0;padding-top:8px;font-size:12px;color:#6b7280">以下科目录入原分和赋分，总分按赋分计算</div>
-    <div class="form-row" style="grid-template-columns:2fr 2fr 1fr">
-      <div class="form-group">
-        <label style="color:#047857">政治 原分</label>
-        <input type="number" id="s_politics" placeholder="原分">
-      </div>
-      <div class="form-group">
-        <label style="color:#047857;font-weight:700">政治 赋分</label>
-        <input type="number" id="a_politics" placeholder="赋分">
-      </div>
-      <div class="form-group">
-        <label style="color:#94a3b8">排名</label>
-        <input type="number" id="r_politics" placeholder="排名">
-      </div>
-    </div>
-    <div class="form-row" style="grid-template-columns:2fr 2fr 1fr">
-      <div class="form-group">
-        <label style="color:#3730a3">地理 原分</label>
-        <input type="number" id="s_geography" placeholder="原分">
-      </div>
-      <div class="form-group">
-        <label style="color:#3730a3;font-weight:700">地理 赋分</label>
-        <input type="number" id="a_geography" placeholder="赋分">
-      </div>
-      <div class="form-group">
-        <label style="color:#94a3b8">排名</label>
-        <input type="number" id="r_geography" placeholder="排名">
+        <label style="color:#be185d">三科总分</label>
+        <input type="number" step="0.1" id="threeScore" placeholder="自动计算" readonly class="auto-score">
       </div>
     </div>
 
-    <div class="form-row">
+    <!-- 语文 -->
+    <div class="form-section-title">语文</div>
+    <div class="form-row-4">
       <div class="form-group">
-        <label style="color:#7c3aed">区排名</label>
-        <input type="number" id="examDistRank" placeholder="全区排名">
+        <label style="color:#b45309">分数</label>
+        <input type="number" step="0.1" id="s_chinese" placeholder="0.0" onchange="autoCalc()">
       </div>
       <div class="form-group">
-        <label style="color:#0891b2">校排名</label>
-        <input type="number" id="examSchoolRank" placeholder="全校排名">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_chinese" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_chinese" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_chinese" placeholder="--">
+      </div>
+    </div>
+
+    <!-- 数学 -->
+    <div class="form-section-title">数学</div>
+    <div class="form-row-4">
+      <div class="form-group">
+        <label style="color:#1d4ed8">分数</label>
+        <input type="number" step="0.1" id="s_math" placeholder="0.0" onchange="autoCalc()">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_math" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_math" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_math" placeholder="--">
+      </div>
+    </div>
+
+    <!-- 英语 -->
+    <div class="form-section-title">英语</div>
+    <div class="form-row-4">
+      <div class="form-group">
+        <label style="color:#6d28d9">分数</label>
+        <input type="number" step="0.1" id="s_english" placeholder="0.0" onchange="autoCalc()">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_english" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_english" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_english" placeholder="--">
+      </div>
+    </div>
+
+    <!-- 历史 -->
+    <div class="form-section-title">历史</div>
+    <div class="form-row-4">
+      <div class="form-group">
+        <label style="color:#b91c1c">分数</label>
+        <input type="number" step="0.1" id="s_history" placeholder="0.0" onchange="autoCalc()">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_history" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_history" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_history" placeholder="--">
+      </div>
+    </div>
+
+    <!-- 政治 -->
+    <div class="form-section-title">政治（总分按赋分计算）</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label style="color:#047857">原始分</label>
+        <input type="number" step="0.1" id="s_politics" placeholder="0.0" onchange="autoCalc()">
+      </div>
+      <div class="form-group">
+        <label style="color:#047857;font-weight:700">赋分</label>
+        <input type="number" step="0.1" id="a_politics" placeholder="0.0" onchange="autoCalc()">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group">
-        <label style="color:#d946ef">班排名</label>
-        <input type="number" id="examClassRank" placeholder="全班排名">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_politics" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_politics" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_politics" placeholder="--">
+      </div>
+    </div>
+
+    <!-- 地理 -->
+    <div class="form-section-title">地理（总分按赋分计算）</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label style="color:#3730a3">原始分</label>
+        <input type="number" step="0.1" id="s_geography" placeholder="0.0" onchange="autoCalc()">
+      </div>
+      <div class="form-group">
+        <label style="color:#3730a3;font-weight:700">赋分</label>
+        <input type="number" step="0.1" id="a_geography" placeholder="0.0" onchange="autoCalc()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_geography" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_geography" placeholder="--">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_geography" placeholder="--">
       </div>
     </div>
 
@@ -300,12 +413,99 @@ function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function fmtNum(v, decimals) {
+  if (v === null || v === undefined || v === '') return '-';
+  var n = Number(v);
+  if (isNaN(n) || n === 0) return '-';
+  return decimals ? n.toFixed(decimals) : String(n);
+}
+
+// ==================== 计算 ====================
+function getSubjectScore(exam, key) {
+  if (!exam || !exam.scores) return 0;
+  return Number(exam.scores[key]) || 0;
+}
+
+function getSubjectAssigned(exam, key) {
+  if (!exam || !exam.assignedScores) return 0;
+  return Number(exam.assignedScores[key]) || 0;
+}
+
+function getEffectiveScore(exam, key) {
+  var subj = SUBJECTS.find(function(s) { return s.key === key; });
+  var raw = getSubjectScore(exam, key);
+  if (subj && subj.assigned) {
+    var av = getSubjectAssigned(exam, key);
+    return av > 0 ? av : raw;
+  }
+  return raw;
+}
+
+function calcMainScore(exam) {
+  var c = getSubjectScore(exam, 'chinese');
+  var m = getSubjectScore(exam, 'math');
+  var e = getSubjectScore(exam, 'english');
+  return (c + m + e) || 0;
+}
+
+function calcThreeScore(exam) {
+  var h = getSubjectScore(exam, 'history');
+  var p = getEffectiveScore(exam, 'politics');
+  var g = getEffectiveScore(exam, 'geography');
+  return (h + p + g) || 0;
+}
+
+function calcTotal(exam) {
+  return calcMainScore(exam) + calcThreeScore(exam);
+}
+
+// 获取单科排名（兼容旧数据格式）
+function getSubjectRank(exam, key, level) {
+  if (!exam || !exam.ranks) return null;
+  var r = exam.ranks[key];
+  if (r === null || r === undefined) return null;
+  if (typeof r === 'object') return r[level] || null;
+  if (typeof r === 'number') return level === 'district' ? r : null;
+  return null;
+}
+
+function getScoreColor(val) {
+  val = Number(val) || 0;
+  if (val >= 90) return 'score-good';
+  if (val >= 70) return 'score-mid';
+  if (val > 0 && val < 60) return 'score-low';
+  return '';
+}
+
+// 自动计算总分
+function autoCalc() {
+  var scores = {};
+  var assignedScores = {};
+  SUBJECTS.forEach(function(s) {
+    var sv = document.getElementById('s_' + s.key).value;
+    scores[s.key] = sv !== '' ? Number(sv) : null;
+    if (s.assigned) {
+      var av = document.getElementById('a_' + s.key).value;
+      assignedScores[s.key] = av !== '' ? Number(av) : null;
+    }
+  });
+  var tmp = { scores: scores, assignedScores: assignedScores };
+
+  var mainVal = calcMainScore(tmp);
+  var threeVal = calcThreeScore(tmp);
+  var totalVal = calcTotal(tmp);
+
+  document.getElementById('totalScore').value = totalVal > 0 ? totalVal.toFixed(1) : '';
+  document.getElementById('mainScore').value = mainVal > 0 ? mainVal.toFixed(1) : '';
+  document.getElementById('threeScore').value = threeVal > 0 ? threeVal.toFixed(1) : '';
+}
+
 // ==================== 持久化 ====================
 async function loadData() {
-  let serverLoaded = false;
+  var serverLoaded = false;
   try {
-    const resp = await fetch('/api/hsgrades/data');
-    const json = await resp.json();
+    var resp = await fetch('/api/hsgrades/data');
+    var json = await resp.json();
     if (json.success && json.data) {
       exams = json.data.exams || [];
       localStorage.setItem('hsgradesData', JSON.stringify(exams));
@@ -314,13 +514,12 @@ async function loadData() {
   } catch(e) {}
 
   if (!serverLoaded) {
-    const d = localStorage.getItem('hsgradesData');
+    var d = localStorage.getItem('hsgradesData');
     if (d) {
       try { exams = JSON.parse(d); } catch(e) { exams = []; }
     }
   }
 
-  // 首次使用预置考试
   if (!exams || exams.length === 0) {
     exams = DEFAULT_EXAMS;
     saveData();
@@ -336,14 +535,14 @@ function saveData() {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ exams })
-    }).catch(() => {});
+    }).catch(function() {});
   } catch(e) {}
 }
 
 async function pullFromServer() {
   try {
-    const resp = await fetch('/api/hsgrades/data');
-    const json = await resp.json();
+    var resp = await fetch('/api/hsgrades/data');
+    var json = await resp.json();
     if (json.success && json.data) {
       exams = json.data.exams || [];
       localStorage.setItem('hsgradesData', JSON.stringify(exams));
@@ -352,7 +551,6 @@ async function pullFromServer() {
   } catch(e) {}
 }
 
-// 预置数据（来自截图）
 var DEFAULT_EXAMS = [
   {
     id: 'ex-1',
@@ -360,11 +558,10 @@ var DEFAULT_EXAMS = [
     className: '',
     scores: { chinese: 492.5, math: null, english: null, history: null, politics: null, geography: null },
     assignedScores: { politics: null, geography: null },
-    ranks: { chinese: 594, math: null, english: null, history: null, politics: null, geography: null },
+    ranks: { chinese: 594 },
     distRank: 230,
     schoolRank: null,
     classRank: null,
-    totalScore: 492.5,
     note: ''
   },
   {
@@ -385,11 +582,10 @@ var DEFAULT_EXAMS = [
     className: '',
     scores: { chinese: 0, math: 0, english: 0, history: 0, politics: 0, geography: 0 },
     assignedScores: { politics: null, geography: null },
-    ranks: { chinese: null, math: null, english: null, history: null, politics: null, geography: null },
+    ranks: {},
     distRank: null,
     schoolRank: null,
     classRank: null,
-    totalScore: 0,
     note: ''
   }
 ];
@@ -401,8 +597,8 @@ function refreshAll() {
 
 // ==================== Tab 切换 ====================
 function switchTab(tabId) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.tab-item').forEach(function(el) { el.classList.remove('active'); });
   var tabEl = document.getElementById('tab-' + tabId);
   if (tabEl) tabEl.classList.add('active');
   var navItem = document.querySelector('.tab-item[data-tab="' + tabId + '"]');
@@ -413,54 +609,34 @@ function switchTab(tabId) {
 }
 
 // ==================== 概览页 ====================
-let _totalChart = null;
-let _subjectChart = null;
-
-function calcTotal(exam) {
-  var t = 0;
-  SUBJECTS.forEach(function(s) {
-    var v;
-    if (s.assigned) {
-      // 政治/地理：优先用赋分，无赋分则用原分
-      var av = exam.assignedScores ? Number(exam.assignedScores[s.key]) || 0 : 0;
-      v = av > 0 ? av : (Number(exam.scores[s.key]) || 0);
-    } else {
-      // 语数外历史：只用原分
-      v = Number(exam.scores[s.key]) || 0;
-    }
-    if (v > 0) t += v;
-  });
-  return t;
-}
-
-function getScoreColor(val) {
-  val = Number(val) || 0;
-  if (val >= 90) return 'score-good';
-  if (val >= 70) return 'score-mid';
-  if (val > 0 && val < 60) return 'score-low';
-  return '';
-}
+var _totalChart = null;
+var _subjectChart = null;
 
 function renderOverview() {
-  document.getElementById('totalExams').textContent = exams.length;
-
-  // 有数据的考试
   var activeExams = exams.filter(function(e) {
     return e.scores && Object.values(e.scores).some(function(v) { return Number(v) > 0; });
   });
 
+  document.getElementById('totalExams').textContent = exams.length;
+
   if (activeExams.length > 0) {
+    // 平均总分 & 最高总分
+    var totals = activeExams.map(function(e) { return calcTotal(e); }).filter(function(t) { return t > 0; });
+    if (totals.length > 0) {
+      var sum = totals.reduce(function(a, b) { return a + b; }, 0);
+      document.getElementById('avgTotal').textContent = (sum / totals.length).toFixed(1);
+      document.getElementById('maxTotal').textContent = Math.max.apply(null, totals).toFixed(1);
+    } else {
+      document.getElementById('avgTotal').textContent = '-';
+      document.getElementById('maxTotal').textContent = '-';
+    }
     var last = activeExams[activeExams.length - 1];
     var total = calcTotal(last);
     document.getElementById('latestTotal').textContent = total > 0 ? total.toFixed(1) : '-';
-    document.getElementById('latestDistRank').textContent = last.distRank ? String(last.distRank) : '-';
-    document.getElementById('latestSchoolRank').textContent = last.schoolRank ? String(last.schoolRank) : '-';
-    document.getElementById('latestClassRank').textContent = last.classRank ? String(last.classRank) : '-';
   } else {
+    document.getElementById('avgTotal').textContent = '-';
+    document.getElementById('maxTotal').textContent = '-';
     document.getElementById('latestTotal').textContent = '-';
-    document.getElementById('latestDistRank').textContent = '-';
-    document.getElementById('latestSchoolRank').textContent = '-';
-    document.getElementById('latestClassRank').textContent = '-';
   }
 
   // 最近考试详情
@@ -470,18 +646,24 @@ function renderOverview() {
   } else {
     var lastExam = activeExams[activeExams.length - 1];
     var totalVal = calcTotal(lastExam);
+    var mainVal = calcMainScore(lastExam);
+    var threeVal = calcThreeScore(lastExam);
     detailEl.innerHTML =
       '<div style="font-size:14px;font-weight:600;color:#1e293b;margin-bottom:8px">' + escapeHtml(lastExam.name) +
       (lastExam.className ? ' · ' + escapeHtml(lastExam.className) : '') + '</div>' +
       '<table style="width:100%;font-size:13px">' +
-      '<tr><td style="color:#6b7280;padding:3px 0;width:50%">总成绩</td><td style="font-weight:600;color:#7c3aed">' + (totalVal > 0 ? totalVal.toFixed(1) : '-') + '</td></tr>' +
+      '<tr><td style="color:#6b7280;padding:3px 0;width:45%">总成绩</td><td style="font-weight:600;color:#7c3aed">' + (totalVal > 0 ? totalVal.toFixed(1) : '-') + '</td></tr>' +
+      '<tr><td style="color:#6b7280;padding:3px 0">主科总分</td><td style="font-weight:600;color:#7c3aed">' + (mainVal > 0 ? mainVal.toFixed(1) : '-') + '</td></tr>' +
+      '<tr><td style="color:#6b7280;padding:3px 0">三科总分</td><td style="font-weight:600;color:#be185d">' + (threeVal > 0 ? threeVal.toFixed(1) : '-') + '</td></tr>' +
       '<tr><td style="color:#6b7280;padding:3px 0">区排名</td><td style="font-weight:600;color:#7c3aed">' + (lastExam.distRank ? lastExam.distRank : '-') + '</td></tr>' +
       '<tr><td style="color:#6b7280;padding:3px 0">校排名</td><td style="font-weight:600;color:#0891b2">' + (lastExam.schoolRank ? lastExam.schoolRank : '-') + '</td></tr>' +
       '<tr><td style="color:#6b7280;padding:3px 0">班排名</td><td style="font-weight:600;color:#d946ef">' + (lastExam.classRank ? lastExam.classRank : '-') + '</td></tr>' +
       SUBJECTS.map(function(s) {
         var v = Number(lastExam.scores[s.key]) || 0;
-        var r = lastExam.ranks ? lastExam.ranks[s.key] : null;
-        var a = s.assigned ? (lastExam.assignedScores ? Number(lastExam.assignedScores[s.key]) || 0 : 0) : 0;
+        var a = s.assigned ? getSubjectAssigned(lastExam, s.key) : 0;
+        var rd = getSubjectRank(lastExam, s.key, 'district');
+        var rs = getSubjectRank(lastExam, s.key, 'school');
+        var rc = getSubjectRank(lastExam, s.key, 'class');
         var desc;
         if (s.assigned) {
           desc = (v > 0 ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(1) + '</span>' : '-');
@@ -491,10 +673,14 @@ function renderOverview() {
         } else {
           desc = (v > 0 ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(1) + '</span>' : '-');
         }
+        var rankStr = '';
+        if (rd) rankStr += '区' + rd + ' ';
+        if (rs) rankStr += '校' + rs + ' ';
+        if (rc) rankStr += '班' + rc;
         return '<tr><td style="color:#6b7280;padding:3px 0">' +
           '<span class="subj-badge" style="background:' + s.color + '22;color:' + s.color + '">' + s.label + '</span></td>' +
           '<td>' + desc +
-          (r ? ' <span class="rank-cell">(第' + r + '名)</span>' : '') + '</td></tr>';
+          (rankStr ? ' <span class="rank-cell">(' + rankStr.trim() + ')</span>' : '') + '</td></tr>';
       }).join('') +
       '</table>';
   }
@@ -521,31 +707,57 @@ function renderTotalChart() {
     return;
   }
 
-  var labels = items.map(function(i) { return i.name; });
-  var data = items.map(function(i) { return calcTotal(i); });
-
   _totalChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: labels,
-      datasets: [{
-        label: '总分',
-        data: data,
-        borderColor: '#7c3aed',
-        backgroundColor: 'rgba(124,58,237,.1)',
-        fill: true,
-        tension: .35,
-        pointRadius: 5,
-        pointBackgroundColor: '#7c3aed',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2,
-        pointHoverRadius: 7
-      }]
+      labels: items.map(function(i) { return i.name; }),
+      datasets: [
+        {
+          label: '总分',
+          data: items.map(function(i) { return calcTotal(i); }),
+          borderColor: '#7c3aed',
+          backgroundColor: 'rgba(124,58,237,.1)',
+          fill: true,
+          tension: .35,
+          pointRadius: 5,
+          pointBackgroundColor: '#7c3aed',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 7
+        },
+        {
+          label: '主科',
+          data: items.map(function(i) { return calcMainScore(i); }),
+          borderColor: '#f59e0b',
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: .35,
+          pointRadius: 3,
+          pointBackgroundColor: '#f59e0b',
+          borderWidth: 2,
+          borderDash: [5, 3]
+        },
+        {
+          label: '三科',
+          data: items.map(function(i) { return calcThreeScore(i); }),
+          borderColor: '#be185d',
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: .35,
+          pointRadius: 3,
+          pointBackgroundColor: '#be185d',
+          borderWidth: 2,
+          borderDash: [5, 3]
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return '总分: ' + ctx.parsed.y.toFixed(1); } } } },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, font: { size: 11 } } },
+        tooltip: { mode: 'index' }
+      },
       scales: {
         y: { beginAtZero: false, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
         x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 45 } }
@@ -579,13 +791,7 @@ function renderSubjectChart() {
       datasets: SUBJECTS.map(function(s) {
         return {
           label: s.label + (s.assigned ? '(赋分)' : ''),
-          data: items.map(function(e) {
-            if (s.assigned) {
-              var av = e.assignedScores ? Number(e.assignedScores[s.key]) || 0 : 0;
-              return av > 0 ? av : (Number(e.scores[s.key]) || 0);
-            }
-            return Number(e.scores[s.key]) || 0;
-          }),
+          data: items.map(function(e) { return getEffectiveScore(e, s.key); }),
           borderColor: s.color,
           backgroundColor: s.color + '22',
           fill: false,
@@ -612,49 +818,49 @@ function renderSubjectChart() {
 
 // ==================== 考试列表 ====================
 function renderExams() {
-  var container = document.getElementById('examList');
+  var tbody = document.getElementById('examTableBody');
+  if (!tbody) return;
+
   if (exams.length === 0) {
-    container.innerHTML = '<div class="empty-state">暂无考试记录，点击上方按钮添加</div>';
+    tbody.innerHTML = '<tr><td colspan="14" class="empty-state">暂无考试记录，点击上方按钮添加</td></tr>';
     return;
   }
 
-  container.innerHTML = exams.map(function(e) {
+  tbody.innerHTML = exams.map(function(e) {
     var total = calcTotal(e);
-    return '<div class="card" style="padding:12px">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
-      '<div style="font-size:15px;font-weight:600;color:#1e293b">' + escapeHtml(e.name) +
-      (e.className ? '<span style="font-weight:400;font-size:12px;color:#94a3b8;margin-left:6px">' + escapeHtml(e.className) + '</span>' : '') + '</div>' +
-      '<div style="display:flex;gap:4px">' +
-      '<button class="btn-xs btn-gray" onclick="editExam(\'' + e.id + '\')">编辑</button>' +
-      '<button class="btn-xs btn-red" onclick="confirmDelExam(\'' + e.id + '\')">删除</button>' +
-      '</div></div>' +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-      '<div style="font-size:12px;color:#6b7280">总分: <strong style="color:#7c3aed">' + (total > 0 ? total.toFixed(1) : '-') + '</strong></div>' +
-      (e.distRank ? '<div style="font-size:12px;color:#6b7280">区名: <strong style="color:#7c3aed">' + e.distRank + '</strong></div>' : '') +
-      (e.schoolRank ? '<div style="font-size:12px;color:#6b7280">校名: <strong style="color:#0891b2">' + e.schoolRank + '</strong></div>' : '') +
-      (e.classRank ? '<div style="font-size:12px;color:#6b7280">班名: <strong style="color:#d946ef">' + e.classRank + '</strong></div>' : '') +
-      '</div>' +
-      '<div style="margin-top:8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px">' +
-      SUBJECTS.map(function(s) {
-        var v = Number(e.scores[s.key]) || 0;
-        var r = e.ranks ? e.ranks[s.key] : null;
-        var a = s.assigned ? (e.assignedScores ? Number(e.assignedScores[s.key]) || 0 : 0) : 0;
-        var detail;
-        if (s.assigned) {
-          detail = '<div style="font-size:14px;font-weight:700;' + (v > 0 ? ('color:' + s.color) : 'color:#cbd5e1') + '">' + (v > 0 ? v.toFixed(0) : '-') + '</div>';
-          detail += '<div style="font-size:9px;color:#94a3b8">';
-          detail += (a > 0 ? '<span style="font-weight:700;color:' + s.color + '">赋' + a.toFixed(0) + '</span>' : '赋-');
-          detail += '</div>';
-        } else {
-          detail = '<div style="font-size:14px;font-weight:700;' + (v > 0 ? ('color:' + s.color) : 'color:#cbd5e1') + '">' + (v > 0 ? v.toFixed(0) : '-') + '</div>';
-        }
-        return '<div style="text-align:center;padding:4px 2px;background:#f8fafc;border-radius:6px">' +
-          '<div style="font-size:10px;color:#94a3b8">' + s.label + '</div>' +
-          detail +
-          (r ? '<div style="font-size:9px;color:#94a3b8">第' + r + '名</div>' : '') +
-          '</div>';
-      }).join('') +
-      '</div></div>';
+    var main = calcMainScore(e);
+    var three = calcThreeScore(e);
+
+    function buildScoreStr(sKey) {
+      var v = Number(e.scores[sKey]) || 0;
+      var a = getSubjectAssigned(e, sKey);
+      var subj = SUBJECTS.find(function(x) { return x.key === sKey; });
+      if (subj && subj.assigned) {
+        var s = (v > 0 ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(0) + '</span>' : '-');
+        s += '<br><span style="font-size:10px;color:#94a3b8">赋' + (a > 0 ? '<span style="color:' + subj.color + ';font-weight:700">' + a.toFixed(0) + '</span>' : '-') + '</span>';
+        return s;
+      }
+      return '<span class="cell-score">' + fmtNum(v, 0) + '</span>';
+    }
+
+    return '<tr>' +
+      '<td class="col-period">' + escapeHtml(e.name) + (e.className ? ' <span style="font-weight:400;font-size:10px;color:#94a3b8">' + escapeHtml(e.className) + '</span>' : '') + '</td>' +
+      '<td class="cell-score" style="font-weight:700;color:#7c3aed">' + fmtNum(total, 1) + '</td>' +
+      '<td class="rank-cell">' + fmtNum(e.distRank) + '</td>' +
+      '<td class="rank-cell">' + fmtNum(e.schoolRank) + '</td>' +
+      '<td class="rank-cell">' + fmtNum(e.classRank) + '</td>' +
+      '<td class="cell-score" style="color:#f59e0b">' + fmtNum(main, 1) + '</td>' +
+      '<td class="cell-score" style="color:#be185d">' + fmtNum(three, 1) + '</td>' +
+      '<td class="cell-score">' + fmtNum(e.scores.chinese, 0) + '</td>' +
+      '<td class="cell-score">' + fmtNum(e.scores.math, 0) + '</td>' +
+      '<td class="cell-score">' + fmtNum(e.scores.english, 0) + '</td>' +
+      '<td class="cell-score">' + fmtNum(e.scores.history, 0) + '</td>' +
+      '<td>' + buildScoreStr('politics') + '</td>' +
+      '<td>' + buildScoreStr('geography') + '</td>' +
+      '<td style="white-space:nowrap">' +
+      '<button class="btn-xs btn-gray" onclick="editExam(\'' + e.id + '\')" style="margin:0 2px">编辑</button>' +
+      '<button class="btn-xs btn-red" onclick="confirmDelExam(\'' + e.id + '\')" style="margin:0">删除</button>' +
+      '</td></tr>';
   }).join('');
 }
 
@@ -671,16 +877,30 @@ function showExamModal(id) {
       document.getElementById('examDistRank').value = ex.distRank || '';
       document.getElementById('examSchoolRank').value = ex.schoolRank || '';
       document.getElementById('examClassRank').value = ex.classRank || '';
+
       SUBJECTS.forEach(function(s) {
         var sv = document.getElementById('s_' + s.key);
-        var rv = document.getElementById('r_' + s.key);
         if (sv) sv.value = (ex.scores && ex.scores[s.key] !== undefined && ex.scores[s.key] !== null) ? ex.scores[s.key] : '';
-        if (rv) rv.value = (ex.ranks && ex.ranks[s.key]) ? ex.ranks[s.key] : '';
+
+        // 三级排名
+        var rd = getSubjectRank(ex, s.key, 'district');
+        var rs = getSubjectRank(ex, s.key, 'school');
+        var rc = getSubjectRank(ex, s.key, 'class');
+        var rdEl = document.getElementById('rd_' + s.key);
+        var rsEl = document.getElementById('rs_' + s.key);
+        var rcEl = document.getElementById('rc_' + s.key);
+        if (rdEl) rdEl.value = rd || '';
+        if (rsEl) rsEl.value = rs || '';
+        if (rcEl) rcEl.value = rc || '';
+
         if (s.assigned) {
           var av = document.getElementById('a_' + s.key);
           if (av) av.value = (ex.assignedScores && ex.assignedScores[s.key] !== undefined && ex.assignedScores[s.key] !== null) ? ex.assignedScores[s.key] : '';
         }
       });
+
+      // 自动计算显示
+      autoCalc();
     }
   } else {
     document.getElementById('examName').value = '';
@@ -688,11 +908,19 @@ function showExamModal(id) {
     document.getElementById('examDistRank').value = '';
     document.getElementById('examSchoolRank').value = '';
     document.getElementById('examClassRank').value = '';
+    document.getElementById('totalScore').value = '';
+    document.getElementById('mainScore').value = '';
+    document.getElementById('threeScore').value = '';
+
     SUBJECTS.forEach(function(s) {
       var sv = document.getElementById('s_' + s.key);
-      var rv = document.getElementById('r_' + s.key);
       if (sv) sv.value = '';
-      if (rv) rv.value = '';
+      var rdEl = document.getElementById('rd_' + s.key);
+      var rsEl = document.getElementById('rs_' + s.key);
+      var rcEl = document.getElementById('rc_' + s.key);
+      if (rdEl) rdEl.value = '';
+      if (rsEl) rsEl.value = '';
+      if (rcEl) rcEl.value = '';
       if (s.assigned) {
         var av = document.getElementById('a_' + s.key);
         if (av) av.value = '';
@@ -720,11 +948,26 @@ function saveExam() {
   var scores = {};
   var assignedScores = {};
   var ranks = {};
+
   SUBJECTS.forEach(function(s) {
     var sv = document.getElementById('s_' + s.key).value;
-    var rv = document.getElementById('r_' + s.key).value;
     scores[s.key] = sv !== '' ? Number(sv) : null;
-    ranks[s.key] = rv !== '' ? Number(rv) : null;
+
+    // 三级排名
+    var rd = document.getElementById('rd_' + s.key).value;
+    var rs = document.getElementById('rs_' + s.key).value;
+    var rc = document.getElementById('rc_' + s.key).value;
+    var hasRank = (rd !== '' || rs !== '' || rc !== '');
+    if (hasRank) {
+      ranks[s.key] = {
+        district: rd !== '' ? Number(rd) : null,
+        school: rs !== '' ? Number(rs) : null,
+        class: rc !== '' ? Number(rc) : null
+      };
+    } else {
+      ranks[s.key] = null;
+    }
+
     if (s.assigned) {
       var av = document.getElementById('a_' + s.key).value;
       assignedScores[s.key] = av !== '' ? Number(av) : null;
