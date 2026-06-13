@@ -148,8 +148,9 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
   </div>
 
   <div class="card">
-    <h3>各科趋势</h3>
-    <div class="chart-container"><canvas id="subjectChart"></canvas></div>
+    <h3>各科位次趋势</h3>
+    <div class="chart-container" style="height:250px"><canvas id="subjectRankChart"></canvas></div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:center" id="subjRankBtns"></div>
   </div>
 
   <div class="card">
@@ -636,7 +637,8 @@ function updateGaokaoCountdown() {
 
 // ==================== 概览页 ====================
 var _totalChart = null;
-var _subjectChart = null;
+var _subjectRankChart = null;
+var _currentRankSubj = 'chinese';
 
 function renderOverview() {
   var activeExams = exams.filter(function(e) {
@@ -714,7 +716,7 @@ function renderOverview() {
   }
 
   renderTotalChart();
-  renderSubjectChart();
+  renderSubjectRankChart();
 }
 
 function renderTotalChart() {
@@ -795,11 +797,29 @@ function renderTotalChart() {
   });
 }
 
-function renderSubjectChart() {
-  var canvas = document.getElementById('subjectChart');
+function renderSubjectRankBtns() {
+  var container = document.getElementById('subjRankBtns');
+  if (!container) return;
+  container.innerHTML = SUBJECTS.map(function(s) {
+    var active = _currentRankSubj === s.key;
+    return '<button class="btn-xs" style="' +
+      (active ? 'background:' + s.color + ';color:#fff;font-weight:700' : 'background:#f1f5f9;color:' + s.color) +
+      ';border:2px solid ' + (active ? s.color : '#e2e8f0') + ';border-radius:8px;padding:6px 12px;font-size:12px;margin:0;flex-shrink:0' +
+      '" onclick="switchRankSubj(\'' + s.key + '\')">' + s.label + '</button>';
+  }).join('');
+}
+
+function switchRankSubj(key) {
+  _currentRankSubj = key;
+  renderSubjectRankBtns();
+  renderSubjectRankChart();
+}
+
+function renderSubjectRankChart() {
+  var canvas = document.getElementById('subjectRankChart');
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
-  if (_subjectChart) _subjectChart.destroy();
+  if (_subjectRankChart) { _subjectRankChart.destroy(); _subjectRankChart = null; }
 
   var items = exams.filter(function(e) {
     return e.scores && Object.values(e.scores).some(function(v) { return Number(v) > 0; });
@@ -810,39 +830,128 @@ function renderSubjectChart() {
     ctx.fillStyle = '#94a3b8';
     ctx.font = '13px sans-serif';
     ctx.fillText('暂无数据', canvas.width / 2, canvas.height / 2);
+    renderSubjectRankBtns();
     return;
   }
 
-  _subjectChart = new Chart(ctx, {
+  // 收集当前科目的三级排名数据
+  var subj = SUBJECTS.find(function(s) { return s.key === _currentRankSubj; });
+  var labels = items.map(function(e) { return e.name; });
+
+  var distData = [];
+  var schData = [];
+  var clsData = [];
+  var hasAnyRank = false;
+
+  items.forEach(function(e) {
+    var rd = getSubjectRank(e, _currentRankSubj, 'district');
+    var rs = getSubjectRank(e, _currentRankSubj, 'school');
+    var rc = getSubjectRank(e, _currentRankSubj, 'class');
+    distData.push(rd !== null && rd !== undefined ? Number(rd) : null);
+    schData.push(rs !== null && rs !== undefined ? Number(rs) : null);
+    clsData.push(rc !== null && rc !== undefined ? Number(rc) : null);
+    if (rd || rs || rc) hasAnyRank = true;
+  });
+
+  if (!hasAnyRank) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '13px sans-serif';
+    ctx.fillText('该科目暂无排名数据', canvas.width / 2, canvas.height / 2);
+    renderSubjectRankBtns();
+    return;
+  }
+
+  // 计算 Y 轴范围：取 1 到最大排名的范围，反转表示越靠上排名越好
+  var allVals = distData.concat(schData, clsData).filter(function(v) { return v !== null && v > 0; });
+  var yMax = allVals.length > 0 ? Math.max.apply(null, allVals) : 100;
+  // Y轴留一点余量
+  yMax = Math.ceil(yMax * 1.05);
+
+  _subjectRankChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: items.map(function(i) { return i.name; }),
-      datasets: SUBJECTS.map(function(s) {
-        return {
-          label: s.label + (s.assigned ? '(赋分)' : ''),
-          data: items.map(function(e) { return getEffectiveScore(e, s.key); }),
-          borderColor: s.color,
-          backgroundColor: s.color + '22',
+      labels: labels,
+      datasets: [
+        {
+          label: '区排名',
+          data: distData,
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239,68,68,.08)',
           fill: false,
-          tension: .35,
-          pointRadius: 3,
-          pointBackgroundColor: s.color,
-          borderWidth: 2,
+          tension: .3,
+          pointRadius: 4,
+          pointBackgroundColor: '#ef4444',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          borderWidth: 2.5,
           spanGaps: true
-        };
-      })
+        },
+        {
+          label: '校排名',
+          data: schData,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,.08)',
+          fill: false,
+          tension: .3,
+          pointRadius: 4,
+          pointBackgroundColor: '#3b82f6',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          borderWidth: 2.5,
+          spanGaps: true
+        },
+        {
+          label: '班排名',
+          data: clsData,
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139,92,246,.08)',
+          fill: false,
+          tension: .3,
+          pointRadius: 4,
+          pointBackgroundColor: '#8b5cf6',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          borderWidth: 2.5,
+          spanGaps: true
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { intersect: false, mode: 'index' },
-      plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, font: { size: 11 } } }, tooltip: { mode: 'index' } },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 10, font: { size: 11 } } },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            label: function(ctx) {
+              if (ctx.raw === null) return ctx.dataset.label + ': 无数据';
+              return ctx.dataset.label + ': 第 ' + ctx.raw + ' 名';
+            }
+          }
+        }
+      },
       scales: {
-        y: { min: 40, beginAtZero: false, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
+        y: {
+          reverse: true,
+          min: 1,
+          max: yMax,
+          grid: { color: '#f1f5f9' },
+          ticks: {
+            font: { size: 11 },
+            stepSize: Math.max(1, Math.floor(yMax / 8)),
+            callback: function(v) { return v % 1 === 0 ? v : ''; }
+          },
+          title: { display: true, text: '排名 (越往上越靠前)', font: { size: 10 }, color: '#94a3b8' }
+        },
         x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 45 } }
       }
     }
   });
+
+  renderSubjectRankBtns();
 }
 
 // ==================== 考试列表 ====================
