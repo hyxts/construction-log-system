@@ -638,7 +638,11 @@ function updateGaokaoCountdown() {
 // ==================== 概览页 ====================
 var _totalChart = null;
 var _subjectRankChart = null;
-var _currentRankSubj = 'chinese';
+var _currentRankGroup = 'main3'; // 'main3' | 'three'
+var RANK_GROUPS = {
+  main3: { label: '语数英', keys: ['chinese', 'math', 'english'] },
+  three:  { label: '史政地', keys: ['history', 'politics', 'geography'] }
+};
 
 function renderOverview() {
   var activeExams = exams.filter(function(e) {
@@ -800,17 +804,18 @@ function renderTotalChart() {
 function renderSubjectRankBtns() {
   var container = document.getElementById('subjRankBtns');
   if (!container) return;
-  container.innerHTML = SUBJECTS.map(function(s) {
-    var active = _currentRankSubj === s.key;
+  container.innerHTML = Object.keys(RANK_GROUPS).map(function(gk) {
+    var g = RANK_GROUPS[gk];
+    var active = _currentRankGroup === gk;
     return '<button class="btn-xs" style="' +
-      (active ? 'background:' + s.color + ';color:#fff;font-weight:700' : 'background:#f1f5f9;color:' + s.color) +
-      ';border:2px solid ' + (active ? s.color : '#e2e8f0') + ';border-radius:8px;padding:6px 12px;font-size:12px;margin:0;flex-shrink:0' +
-      '" onclick="switchRankSubj(\'' + s.key + '\')">' + s.label + '</button>';
+      (active ? 'background:#7c3aed;color:#fff;font-weight:700' : 'background:#f1f5f9;color:#64748b') +
+      ';border:2px solid ' + (active ? '#7c3aed' : '#e2e8f0') + ';border-radius:8px;padding:8px 18px;font-size:13px;margin:0;flex-shrink:0' +
+      '" onclick="switchRankGroup(\'' + gk + '\')">' + g.label + '</button>';
   }).join('');
 }
 
-function switchRankSubj(key) {
-  _currentRankSubj = key;
+function switchRankGroup(key) {
+  _currentRankGroup = key;
   renderSubjectRankBtns();
   renderSubjectRankChart();
 }
@@ -834,81 +839,87 @@ function renderSubjectRankChart() {
     return;
   }
 
-  // 收集当前科目的三级排名数据
-  var subj = SUBJECTS.find(function(s) { return s.key === _currentRankSubj; });
+  var group = RANK_GROUPS[_currentRankGroup];
   var labels = items.map(function(e) { return e.name; });
 
-  var distData = [];
-  var schData = [];
-  var clsData = [];
+  // 为该组所有科目收集校排、班排数据
+  var datasets = [];
+  var allVals = [];
   var hasAnyRank = false;
 
-  items.forEach(function(e) {
-    var rd = getSubjectRank(e, _currentRankSubj, 'district');
-    var rs = getSubjectRank(e, _currentRankSubj, 'school');
-    var rc = getSubjectRank(e, _currentRankSubj, 'class');
-    distData.push(rd !== null && rd !== undefined ? Number(rd) : null);
-    schData.push(rs !== null && rs !== undefined ? Number(rs) : null);
-    clsData.push(rc !== null && rc !== undefined ? Number(rc) : null);
-    if (rs || rc) hasAnyRank = true;
+  group.keys.forEach(function(key) {
+    var subj = SUBJECTS.find(function(s) { return s.key === key; });
+    if (!subj) return;
+    var schData = [];
+    var clsData = [];
+    items.forEach(function(e) {
+      var rs = getSubjectRank(e, key, 'school');
+      var rc = getSubjectRank(e, key, 'class');
+      var rsv = (rs !== null && rs !== undefined && rs > 0) ? Number(rs) : null;
+      var rcv = (rc !== null && rc !== undefined && rc > 0) ? Number(rc) : null;
+      schData.push(rsv);
+      clsData.push(rcv);
+      if (rsv) { allVals.push(rsv); hasAnyRank = true; }
+      if (rcv) { allVals.push(rcv); hasAnyRank = true; }
+    });
+
+    // 校排名：实线
+    datasets.push({
+      label: subj.label + '校排',
+      data: schData,
+      borderColor: subj.color,
+      backgroundColor: subj.color + '18',
+      fill: false,
+      tension: .3,
+      pointRadius: 4,
+      pointBackgroundColor: subj.color,
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      borderWidth: 2.5,
+      spanGaps: true
+    });
+
+    // 班排名：虚线
+    datasets.push({
+      label: subj.label + '班排',
+      data: clsData,
+      borderColor: subj.color,
+      backgroundColor: 'transparent',
+      fill: false,
+      tension: .3,
+      pointRadius: 3,
+      pointBackgroundColor: subj.color,
+      pointBorderColor: '#fff',
+      pointBorderWidth: 1.5,
+      borderWidth: 2,
+      borderDash: [5, 3],
+      spanGaps: true
+    });
   });
 
   if (!hasAnyRank) {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#94a3b8';
     ctx.font = '13px sans-serif';
-    ctx.fillText('该科目暂无排名数据', canvas.width / 2, canvas.height / 2);
+    ctx.fillText('该组暂无排名数据', canvas.width / 2, canvas.height / 2);
     renderSubjectRankBtns();
     return;
   }
 
-  // 计算 Y 轴范围：取 1 到最大排名的范围，反转表示越靠上排名越好
-  var allVals = schData.concat(clsData).filter(function(v) { return v !== null && v > 0; });
-  var yMax = allVals.length > 0 ? Math.max.apply(null, allVals) : 100;
-  // Y轴留一点余量
-  yMax = Math.ceil(yMax * 1.05);
+  var yMax = allVals.length > 0 ? Math.ceil(Math.max.apply(null, allVals) * 1.05) : 100;
 
   _subjectRankChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
-      datasets: [
-        {
-          label: '校排名',
-          data: schData,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59,130,246,.08)',
-          fill: false,
-          tension: .3,
-          pointRadius: 4,
-          pointBackgroundColor: '#3b82f6',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          borderWidth: 2.5,
-          spanGaps: true
-        },
-        {
-          label: '班排名',
-          data: clsData,
-          borderColor: '#8b5cf6',
-          backgroundColor: 'rgba(139,92,246,.08)',
-          fill: false,
-          tension: .3,
-          pointRadius: 4,
-          pointBackgroundColor: '#8b5cf6',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          borderWidth: 2.5,
-          spanGaps: true
-        }
-      ]
+      datasets: datasets
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { intersect: false, mode: 'index' },
       plugins: {
-        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 10, font: { size: 11 } } },
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 10, font: { size: 10 }, boxWidth: 20 } },
         tooltip: {
           mode: 'index',
           callbacks: {
