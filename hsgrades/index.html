@@ -850,7 +850,7 @@ function renderSubjectRankChart() {
     distData.push(rd !== null && rd !== undefined ? Number(rd) : null);
     schData.push(rs !== null && rs !== undefined ? Number(rs) : null);
     clsData.push(rc !== null && rc !== undefined ? Number(rc) : null);
-    if (rd || rs || rc) hasAnyRank = true;
+    if (rs || rc) hasAnyRank = true;
   });
 
   if (!hasAnyRank) {
@@ -863,7 +863,7 @@ function renderSubjectRankChart() {
   }
 
   // 计算 Y 轴范围：取 1 到最大排名的范围，反转表示越靠上排名越好
-  var allVals = distData.concat(schData, clsData).filter(function(v) { return v !== null && v > 0; });
+  var allVals = schData.concat(clsData).filter(function(v) { return v !== null && v > 0; });
   var yMax = allVals.length > 0 ? Math.max.apply(null, allVals) : 100;
   // Y轴留一点余量
   yMax = Math.ceil(yMax * 1.05);
@@ -873,20 +873,6 @@ function renderSubjectRankChart() {
     data: {
       labels: labels,
       datasets: [
-        {
-          label: '区排名',
-          data: distData,
-          borderColor: '#ef4444',
-          backgroundColor: 'rgba(239,68,68,.08)',
-          fill: false,
-          tension: .3,
-          pointRadius: 4,
-          pointBackgroundColor: '#ef4444',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          borderWidth: 2.5,
-          spanGaps: true
-        },
         {
           label: '校排名',
           data: schData,
