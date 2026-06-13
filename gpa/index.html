@@ -278,31 +278,45 @@ button:active{opacity:0.9;transform:scale(0.98)}
         <span style="font-size:11px"><span style="color:#fbbf24;font-weight:600">最低 3.20</span> <span style="color:#f97316;font-weight:600;margin-left:4px">建议 3.50</span></span>
       </div>
     </div>
+
+    <!-- 学分总览 -->
     <div class="card">
-      <h3>学分与课程进度</h3>
-      <div class="plan-note">弘毅学堂 约120学分毕业（PPE方向参考总学分158，弘毅学堂减量提质约120学分）</div>
+      <h3>学分总览 (毕业要求 128 学分)</h3>
       <div class="credit-grid">
         <div class="credit-item">
-          <div class="credit-val" id="planEarnedCredits">0</div>
+          <div class="credit-val" id="planEarnedCredits" style="color:#0f172a">0</div>
           <div class="credit-label">已修学分</div>
+          <div class="credit-sub" id="planCreditSub"></div>
         </div>
         <div class="credit-item">
-          <div class="credit-val" id="planRemainCredits">120</div>
+          <div class="credit-val" id="planRemainCredits" style="color:#dc2626">128</div>
           <div class="credit-label">还需学分</div>
-          <div class="credit-sub">目标 120 学分</div>
+          <div class="credit-sub">目标 128</div>
         </div>
         <div class="credit-item">
-          <div class="credit-val" id="planEarnedCourses">0</div>
-          <div class="credit-label">已修课程</div>
+          <div class="credit-val" id="planEarnedCourses" style="color:#0f172a">0</div>
+          <div class="credit-label">已修课程数</div>
         </div>
         <div class="credit-item">
-          <div class="credit-val" id="planCreditPct">0%</div>
-          <div class="credit-label">学分完成率</div>
+          <div class="credit-val" id="planCreditPct" style="color:#0f172a">0%</div>
+          <div class="credit-label">完成率</div>
         </div>
       </div>
-      <div style="margin-top:10px;font-size:12px;color:#64748b">分类学分统计</div>
+    </div>
+
+    <!-- 分类学分 -->
+    <div class="card">
+      <h3>分类学分要求 (来源：2025级培养方案)</h3>
       <div class="cat-bar-wrap" id="catBars"></div>
     </div>
+
+    <!-- 必修课程清单 -->
+    <div class="card">
+      <h3>PPE必修课程 (38学分 + 通识6 + 公共37)</h3>
+      <div class="plan-note">点击课程可快速添加到成绩录入。绿色=已录入，灰色=待录入</div>
+      <div id="requiredCourseList"></div>
+    </div>
+
     <div class="card">
       <h3>关键条件</h3>
       <div class="req-list" id="reqList"></div>
@@ -337,8 +351,9 @@ button:active{opacity:0.9;transform:scale(0.98)}
       </div>
     </div>
     <div class="card" style="background:#fefce8;border:1px solid #fde68a">
-      <div style="font-size:12px;color:#92400e;line-height:1.6">
-        <strong>政策说明:</strong> 3.20为弘毅学堂官方推免最低GPA门槛。实际竞争激烈，建议保持3.50以上。推免申请在大四上学期9月进行（前六学期成绩），获得资格后仍需遵守校规校纪、按期完成学业。
+      <div style="font-size:11px;color:#92400e;line-height:1.7">
+        <strong>培养方案要点(2025级PPE):</strong> 总128学分 | 通识教育10分(必修6+选>=4) | 公共基础52分(必修37+选修改11) | 专业核心必修38分 | 专业选修>=23分 | 书院荣誉>=5分 | 创新创业2分 | 数智教育>=4分。<br>
+        <strong>推免政策:</strong> 3.20为弘毅学堂官方推免最低线，建议保持3.50以上应对竞争。前六学期成绩计入，申请时间大四上学期9月。
       </div>
     </div>
   </div>
@@ -1063,52 +1078,128 @@ function switchTab(name) {
 }
 
 // ==================== 保研规划 ====================
+// ==================== 保研规划 (基于2025级PPE培养方案) ====================
+
+// PPE方向完整必修课程清单 (来源：弘毅学堂2025级数智人文试验班培养方案)
+var PPE_REQUIRED_COURSES = [
+  // 通识教育 必修(6分)
+  { name: '人文社科经典导引', credit: 2, category: 'public_required', sem: 1, type: '通识必修' },
+  { name: '自然科学经典导引', credit: 2, category: 'public_required', sem: 1, type: '通识必修' },
+  { name: '中国精神导引', credit: 2, category: 'public_required', sem: 1, type: '通识必修' },
+  { name: '人工智能导引', credit: 2, category: 'public_required', sem: 1, type: '通识必修' },
+  // 公共基础 必修(37分)
+  { name: '马克思主义基本原理', credit: 2.5, category: 'major_required', sem: 2, type: '公共必修' },
+  { name: '毛泽东思想和中国特色社会主义理论体系概论', credit: 2.5, category: 'major_required', sem: 3, type: '公共必修' },
+  { name: '中国近现代史纲要', credit: 2.5, category: 'major_required', sem: 2, type: '公共必修' },
+  { name: '思想道德与法治', credit: 2.5, category: 'major_required', sem: 1, type: '公共必修' },
+  { name: '习近平新时代中国特色社会主义思想概论', credit: 3, category: 'major_required', sem: 4, type: '公共必修' },
+  { name: '大形势政策课', credit: 2, category: 'major_required', sem: 3, type: '公共必修' },
+  { name: '体育', credit: 4, category: 'public_required', sem: 4, type: '体育必修' },
+  { name: '英语', credit: 6, category: 'public_required', sem: 2, type: '外语必修' },
+  // 公共基础 选修改(11分) - 选修但建议
+  { name: '军事理论与技能', credit: 4, category: 'elective', sem: 1, type: '公共选修' },
+  { name: '高等数学C1/B1', credit: 4, category: 'other', sem: 1, type: '数学选修' },
+  { name: '高等数学C2/B2', credit: 4, category: 'other', sem: 2, type: '数学选修' },
+  { name: '线性代数A', credit: 3, category: 'other', sem: 2, type: '数学选修' },
+  // 数智教育 (>=4分)
+  { name: '逻辑思维训练', credit: 2, category: 'other', sem: 3, type: '数智教育' },
+  { name: '数据库与管理统计', credit: 2, category: 'other', sem: 1, type: '数智教育' },
+  { name: '概率论与数理统计A', credit: 3, category: 'other', sem: 3, type: '数智教育' },
+  { name: '数据结构与程序设计(Python)', credit: 3, category: 'other', sem: 4, type: '数智教育' },
+  // 专业核心 必修(38分) - PPE方向
+  { name: '政治学原理', credit: 3, category: 'major_required', sem: 1, type: '政治学' },
+  { name: '当代中国政治与政府', credit: 3, category: 'major_required', sem: 3, type: '政治学' },
+  { name: '比较政治学', credit: 3, category: 'major_required', sem: 6, type: '政治学' },
+  { name: '微观经济学', credit: 3, category: 'major_required', sem: 1, type: '经济学' },
+  { name: '宏观经济学', credit: 3, category: 'major_required', sem: 3, type: '经济学' },
+  { name: '计量经济学', credit: 3, category: 'major_required', sem: 4, type: '经济学' },
+  { name: '国际经济学', credit: 3, category: 'major_required', sem: 4, type: '经济学' },
+  { name: '逻辑哲学导论', credit: 3, category: 'major_required', sem: 1, type: '哲学' },
+  { name: '西方哲学', credit: 4, category: 'major_required', sem: 2, type: '哲学' },
+  { name: '中国哲学', credit: 4, category: 'major_required', sem: 3, type: '哲学' },
+  { name: '政治哲学(导论)', credit: 3, category: 'major_required', sem: 3, type: '哲学' },
+  { name: '国际政治学概论', credit: 3, category: 'major_required', sem: 3, type: '政治学' },
+  { name: '西方政治思想', credit: 3, category: 'major_required', sem: 2, type: '政治学' }
+];
+
+// 分类学分目标 (2025级PPE培养方案)
+var CREDIT_TARGETS = {
+  public_required: { target: 6 + 10, label: '通识+公共必修', desc: '通识6+公共基础16', color: '#3b82f6' },   // 通识必修6 + 公共必修部分(英语6+体育4+思政类约6=16)
+  major_required: { target: 38 + 21, label: '专业核心必修', desc: '专业38+公共基础思政21', color: '#2f7d6b' },  // 专业38 + 思政类21
+  elective: { target: 23 + 11, label: '专业/公共选修', desc: '专业选>=23+公选>=11', color: '#8b5cf6' },       // 专业选修23 + 公共选修11
+  other: { target: 12, label: '其他(数智+荣誉+创新)', desc: '数智>=4+荣誉>=5+创新2', color: '#f59e0b' }        // 数智4+荣誉5+创新2
+};
+
 function renderPlan() {
   var gpa = calcCumulativeGpa();
 
-  // GPA 进度条 (max 4.0, 最低线3.2, 建议线3.5)
+  // GPA 进度条 (max 4.0)
   var pct = Math.min(gpa / 4.0 * 100, 100);
   document.getElementById('planGpaBar').style.width = pct + '%';
   document.getElementById('planGpaText').textContent = courses.length > 0 ? '当前累计 GPA: ' + gpa.toFixed(2) : '暂无课程数据';
   document.getElementById('planTargetLine').style.left = (3.2 / 4.0 * 100) + '%';
   document.getElementById('planSuggestLine').style.left = (3.5 / 4.0 * 100) + '%';
 
-  // 学分与课程统计
-  var targetCredits = 120; // 弘毅学堂约120学分毕业
+  // 学分总览 (目标128)
+  var totalTarget = 128;
   var earnedCredits = courses.reduce(function(s, c) { return s + (Number(c.credit) || 0); }, 0);
-  var remainCredits = Math.max(targetCredits - earnedCredits, 0);
-  var creditPct = targetCredits > 0 ? Math.min(earnedCredits / targetCredits * 100, 100) : 0;
+  var remain = Math.max(totalTarget - earnedCredits, 0);
+  var creditPct = totalTarget > 0 ? Math.min(earnedCredits / totalTarget * 100, 100) : 0;
 
   document.getElementById('planEarnedCredits').textContent = earnedCredits.toFixed(1);
-  document.getElementById('planRemainCredits').textContent = remainCredits.toFixed(1);
+  document.getElementById('planRemainCredits').textContent = remain.toFixed(1);
   document.getElementById('planEarnedCourses').textContent = courses.length;
   document.getElementById('planCreditPct').textContent = creditPct.toFixed(0) + '%';
+  document.getElementById('planCreditSub').textContent = '目标 ' + totalTarget + ' 学分';
 
-  // 分类学分统计 (参考弘毅学堂课程体系)
-  var catTargets = { public_required: 28, major_required: 52, elective: 24, other: 16 };
-  var catLabels = { public_required: '公共必修', major_required: '专业必修', elective: '选修', other: '其他' };
-  var catColors = { public_required: 'public', major_required: 'major', elective: 'elective', other: '' };
+  // 分类学分柱状图
   var cats = ['public_required', 'major_required', 'elective', 'other'];
   var catHtml = cats.map(function(cat) {
-    var earned = courses.filter(function(c) { return (c.category || 'public_required') === cat; })
+    var info = CREDIT_TARGETS[cat];
+    if (!info) return '';
+    var earned = courses.filter(function(c) { return c.category === cat; })
       .reduce(function(s, c) { return s + (Number(c.credit) || 0); }, 0);
-    var target = catTargets[cat] || 0;
-    var barPct = target > 0 ? Math.min(earned / target * 100, 100) : 0;
-    var barCls = catColors[cat] || 'public';
-    return '<div class="cat-bar-row"><span class="cat-bar-name">' + catLabels[cat] + '</span>' +
-      '<span class="cat-bar-bg"><span class="cat-bar-fill ' + barCls + '" style="width:' + barPct + '%"></span></span>' +
-      '<span class="cat-bar-num">' + earned.toFixed(0) + '/' + target + '</span></div>';
+    var barPct = info.target > 0 ? Math.min(earned / info.target * 100, 100) : 0;
+    var isDone = earned >= info.target;
+    return '<div class="cat-bar-row">' +
+      '<span class="cat-bar-name">' + info.label + '</span>' +
+      '<span class="cat-bar-bg"><span class="cat-bar-fill" style="width:' + barPct + '%;background:' + info.color + '"></span></span>' +
+      '<span class="cat-bar-num" style="color:' + (isDone ? '#16a34a' : '') + '">' + earned.toFixed(0) + '/' + info.target + '</span></div>';
   }).join('');
   document.getElementById('catBars').innerHTML = catHtml;
+
+  // 必修课程清单（检查已录入状态）
+  var reqHtml = '';
+  var currentType = '';
+  PPE_REQUIRED_COURSES.forEach(function(rc) {
+    if (rc.type !== currentType) {
+      currentType = rc.type;
+      reqHtml += '<div style="font-size:12px;font-weight:700;color:#475569;margin:10px 0 4px;border-bottom:1px solid #e2e8f0;padding-bottom:2px">' +
+        currentType + '</div>';
+    }
+    // 检查是否已录入（模糊匹配）
+    var matched = courses.find(function(c) {
+      return c.name === rc.name ||
+             (c.name && rc.name && c.name.indexOf(rc.name) > -1) ||
+             (c.name && rc.name && rc.name.indexOf(c.name) > -1);
+    });
+    var statusCls = matched ? 'background:#dcfce7;color:#16a34a' : 'background:#f8fafc;color:#94a3b8';
+    var statusText = matched ? '已录入' : '待录入';
+    reqHtml += '<div onclick="quickAddCourse(\'' + rc.name.replace(/'/g, "\\'") + '\',' + rc.credit + ',\'' + rc.category + '\')" ' +
+      'style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;margin:2px 0;border-radius:6px;cursor:pointer;' + statusCls + ';font-size:13px">' +
+      '<span><strong>' + rc.name + '</strong> <span style="font-weight:400;opacity:.7">(' + rc.credit + '学分)</span></span>' +
+      '<span style="font-size:11px">' + statusText + '</span></div>';
+  });
+  document.getElementById('requiredCourseList').innerHTML = reqHtml;
 
   // 关键条件
   var hasFailed = courses.some(function(c) { return (Number(c.score) || 0) < 60; });
   var reqs = [
-    { name: '累计 GPA >= 3.20', desc: '官方最低线（前六学期主修课程总平均绩点）', pass: gpa >= 3.2, pending: false },
-    { name: '建议 GPA >= 3.50', desc: '竞争性安全线（弘毅保研率虽高仍需保持优势）', pass: gpa >= 3.5, pending: false },
-    { name: '无不及格课程', desc: '重修后全部课程及格', pass: !hasFailed, pending: courses.length === 0 },
+    { name: '累计 GPA >= 3.20', desc: '弘毅学堂官方推免最低线', pass: gpa >= 3.2, pending: false },
+    { name: '建议 GPA >= 3.50', desc: '竞争性安全线', pass: gpa >= 3.5, pending: false },
+    { name: '无不及格课程', desc: '重修后全部及格', pass: !hasFailed, pending: courses.length === 0 },
     { name: '英语六级 >= 425', desc: '或 雅思>=6.5 / 托福>=90', pass: false, pending: true },
-    { name: '综合素质 >= 60分', desc: '班级评分50% + 学堂评分50%，任一项不低于满分60%', pass: false, pending: true }
+    { name: '综合素质 >= 60分', desc: '班级50%+学堂50%，单项不低于满分60%', pass: false, pending: true }
   ];
 
   document.getElementById('reqList').innerHTML = reqs.map(function(r) {
@@ -1119,7 +1210,7 @@ function renderPlan() {
     return '<div class="req-item"><div><div class="req-name">' + r.name + '</div><div class="req-desc">' + r.desc + '</div></div><span class="req-status ' + cls + '">' + txt + '</span></div>';
   }).join('');
 
-  // 学期进度 (前六学期)
+  // 学期进度
   var evalSemIds = ['sem-1', 'sem-2', 'sem-3', 'sem-4', 'sem-5', 'sem-6'];
   var completed = 0;
   var semHtml = evalSemIds.map(function(sid) {
@@ -1134,7 +1225,28 @@ function renderPlan() {
     return '<div class="sem-node ' + cls + '"><div class="sem-dot">' + dot + '</div>' + name + '</div>';
   }).join('');
   document.getElementById('semTimeline').innerHTML = semHtml;
-  document.getElementById('semProgressText').textContent = '已完成 ' + completed + '/6 评定学期（前六学期为推免考核范围）';
+  document.getElementById('semProgressText').textContent = '已完成 ' + completed + '/6 评定学期';
+}
+
+// 快速添加必修课程
+function quickAddCourse(name, credit, category) {
+  // 检查是否已有同名课程
+  if (courses.some(function(c) { return c.name === name; })) {
+    alert('该课程已录入：' + name); return;
+  }
+  // 如果没有学期则提示
+  if (!semesters.length) {
+    alert('请先在"概览"页添加学期'); return;
+  }
+  // 自动选择第一个学期
+  var firstSem = semesters[0];
+  // 打开课程弹窗并预填
+  showCourseModal();
+  setTimeout(function() {
+    document.getElementById('courseName').value = name;
+    document.getElementById('courseCredits').value = credit;
+    document.getElementById('courseCategory').value = category || 'major_required';
+  }, 50);
 }
 
 // ==================== 启动 ====================
