@@ -2407,6 +2407,81 @@ def gpa_save_data():
     conn.close()
     return jsonify({'success': True})
 
+# ==================== 高中成绩系统（独立子系统，使用独立数据库） ====================
+
+HSGRADES_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hsgrades', 'hsgrades.db')
+
+DEFAULT_HSGRADES_EXAMS = [
+    {'id': 'ex-1', 'name': '高一上期末', 'className': '', 'scores': {'chinese': 492.5, 'math': None, 'english': None, 'history': None, 'politics': None, 'geography': None}, 'ranks': {'chinese': 594}, 'distRank': 230, 'totalScore': 492.5, 'note': ''},
+    {'id': 'ex-2', 'name': '高一下期中', 'className': '', 'scores': {'chinese': 490.5, 'math': 594, 'english': 252, 'history': 60, 'politics': 280, 'geography': 100}, 'ranks': {'chinese': 1191, 'math': 53, 'english': 60, 'politics': 113, 'history': 395, 'geography': 103}, 'distRank': 388, 'totalScore': 1776.5, 'note': ''},
+]
+
+def init_hsgrades_db():
+    """初始化高中成绩独立数据库"""
+    try:
+        os.makedirs(os.path.dirname(HSGRADES_DB_PATH), exist_ok=True)
+        conn = sqlite3.connect(HSGRADES_DB_PATH)
+        conn.execute('''CREATE TABLE IF NOT EXISTS hsgrades_data (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            exams TEXT DEFAULT '[]',
+            updated_at TEXT DEFAULT (datetime('now','localtime'))
+        )''')
+        existing = conn.execute('SELECT id, exams FROM hsgrades_data LIMIT 1').fetchone()
+        if not existing:
+            conn.execute('INSERT INTO hsgrades_data (exams) VALUES (?)',
+                         (json.dumps(DEFAULT_HSGRADES_EXAMS, ensure_ascii=False),))
+        else:
+            try:
+                cur_exams = json.loads(existing[1] or '[]')
+            except:
+                cur_exams = []
+            if len(cur_exams) == 0:
+                cur_exams = list(DEFAULT_HSGRADES_EXAMS)
+                conn.execute('''UPDATE hsgrades_data SET exams = ?, updated_at = datetime('now','localtime')''',
+                             (json.dumps(cur_exams, ensure_ascii=False),))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        import traceback
+        print(f'[init_hsgrades_db ERROR] {e}\n{traceback.format_exc()}', flush=True)
+
+@app.route('/api/hsgrades/data', methods=['GET'])
+def hsgrades_get_data():
+    """获取高中成绩全部数据"""
+    try:
+        conn = sqlite3.connect(HSGRADES_DB_PATH)
+        row = conn.execute('SELECT id, exams FROM hsgrades_data LIMIT 1').fetchone()
+        if not row:
+            conn.close()
+            return jsonify({'success': False, 'error': '无数据'}), 404
+        data = json.loads(row[1] or '[]')
+        conn.close()
+        return jsonify({'success': True, 'data': {'exams': data}})
+    except Exception as e:
+        import traceback
+        print(f'[hsgrades_get_data ERROR] {e}\n{traceback.format_exc()}', flush=True)
+        return jsonify({'success': False, 'error': '服务器错误'}), 500
+
+@app.route('/api/hsgrades/data', methods=['POST'])
+def hsgrades_save_data():
+    """保存高中成绩全部数据"""
+    data = request.get_json(silent=True) or {}
+    conn = sqlite3.connect(HSGRADES_DB_PATH)
+    conn.execute('''UPDATE hsgrades_data SET
+        exams = ?,
+        updated_at = datetime('now','localtime')
+    ''', (
+        json.dumps(data.get('exams', []), ensure_ascii=False),
+    ))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+@app.route('/hsgrades')
+def hsgrades_index():
+    """高中成绩系统（独立子系统）"""
+    return send_from_directory('hsgrades', 'index.html')
+
 # ==================== 前端路由 ====================
 
 @app.route('/gpa')
@@ -2433,6 +2508,7 @@ def static_files(path):
 init_db()
 init_paiban_db()
 init_gpa_db()
+init_hsgrades_db()
 
 if __name__ == '__main__':
     print('施工日志系统: http://localhost:5000')
