@@ -67,7 +67,7 @@ button:active{filter:brightness(.92);transform:scale(.98)}
 label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:500}
 
 /* Stats */
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .stat-card{background:#f8fafc;border-radius:10px;padding:12px 8px;text-align:center;border:1px solid #eef2f7}
 .stat-val{font-size:20px;font-weight:700;color:#7c3aed}
 .stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}
@@ -136,7 +136,9 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
   <div class="stats-grid">
     <div class="stat-card"><div class="stat-val" id="totalExams">0</div><div class="stat-lbl">考试次数</div></div>
     <div class="stat-card"><div class="stat-val" id="latestTotal">-</div><div class="stat-lbl">最近总分</div></div>
-    <div class="stat-card"><div class="stat-val" id="latestRank">-</div><div class="stat-lbl">最近区排名</div></div>
+    <div class="stat-card"><div class="stat-val" id="latestDistRank">-</div><div class="stat-lbl">最近区排名</div></div>
+    <div class="stat-card"><div class="stat-val" id="latestSchoolRank">-</div><div class="stat-lbl">最近校排名</div></div>
+    <div class="stat-card"><div class="stat-val" id="latestClassRank">-</div><div class="stat-lbl">最近班排名</div></div>
   </div>
 
   <div class="card">
@@ -254,9 +256,21 @@ label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:5
       </div>
     </div>
 
-    <div class="form-group">
-      <label style="color:#7c3aed">区排名</label>
-      <input type="number" id="examDistRank" placeholder="全区排名">
+    <div class="form-row">
+      <div class="form-group">
+        <label style="color:#7c3aed">区排名</label>
+        <input type="number" id="examDistRank" placeholder="全区排名">
+      </div>
+      <div class="form-group">
+        <label style="color:#0891b2">校排名</label>
+        <input type="number" id="examSchoolRank" placeholder="全校排名">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label style="color:#d946ef">班排名</label>
+        <input type="number" id="examClassRank" placeholder="全班排名">
+      </div>
     </div>
 
     <div class="form-actions">
@@ -355,6 +369,8 @@ var DEFAULT_EXAMS = [
     scores: { chinese: 492.5, math: null, english: null, history: null, politics: null, geography: null },
     ranks: { chinese: 594, math: null, english: null, history: null, politics: null, geography: null },
     distRank: 230,
+    schoolRank: null,
+    classRank: null,
     totalScore: 492.5,
     note: ''
   },
@@ -365,6 +381,8 @@ var DEFAULT_EXAMS = [
     scores: { chinese: 490.5, math: 594, english: 252, history: 60, politics: 280, geography: 100 },
     ranks: { chinese: 1191, math: 53, english: 60, politics: 113, history: 395, geography: 103 },
     distRank: 388,
+    schoolRank: null,
+    classRank: null,
     note: ''
   },
   {
@@ -374,6 +392,8 @@ var DEFAULT_EXAMS = [
     scores: { chinese: 0, math: 0, english: 0, history: 0, politics: 0, geography: 0 },
     ranks: { chinese: null, math: null, english: null, history: null, politics: null, geography: null },
     distRank: null,
+    schoolRank: null,
+    classRank: null,
     totalScore: 0,
     note: ''
   }
@@ -430,10 +450,14 @@ function renderOverview() {
     var last = activeExams[activeExams.length - 1];
     var total = calcTotal(last);
     document.getElementById('latestTotal').textContent = total > 0 ? total.toFixed(1) : '-';
-    document.getElementById('latestRank').textContent = last.distRank ? String(last.distRank) : '-';
+    document.getElementById('latestDistRank').textContent = last.distRank ? String(last.distRank) : '-';
+    document.getElementById('latestSchoolRank').textContent = last.schoolRank ? String(last.schoolRank) : '-';
+    document.getElementById('latestClassRank').textContent = last.classRank ? String(last.classRank) : '-';
   } else {
     document.getElementById('latestTotal').textContent = '-';
-    document.getElementById('latestRank').textContent = '-';
+    document.getElementById('latestDistRank').textContent = '-';
+    document.getElementById('latestSchoolRank').textContent = '-';
+    document.getElementById('latestClassRank').textContent = '-';
   }
 
   // 最近考试详情
@@ -448,7 +472,9 @@ function renderOverview() {
       (lastExam.className ? ' · ' + escapeHtml(lastExam.className) : '') + '</div>' +
       '<table style="width:100%;font-size:13px">' +
       '<tr><td style="color:#6b7280;padding:3px 0;width:50%">总成绩</td><td style="font-weight:600;color:#7c3aed">' + (totalVal > 0 ? totalVal.toFixed(1) : '-') + '</td></tr>' +
-      '<tr><td style="color:#6b7280;padding:3px 0">区排名</td><td style="font-weight:600">' + (lastExam.distRank ? lastExam.distRank : '-') + '</td></tr>' +
+      '<tr><td style="color:#6b7280;padding:3px 0">区排名</td><td style="font-weight:600;color:#7c3aed">' + (lastExam.distRank ? lastExam.distRank : '-') + '</td></tr>' +
+      '<tr><td style="color:#6b7280;padding:3px 0">校排名</td><td style="font-weight:600;color:#0891b2">' + (lastExam.schoolRank ? lastExam.schoolRank : '-') + '</td></tr>' +
+      '<tr><td style="color:#6b7280;padding:3px 0">班排名</td><td style="font-weight:600;color:#d946ef">' + (lastExam.classRank ? lastExam.classRank : '-') + '</td></tr>' +
       SUBJECTS.map(function(s) {
         var v = Number(lastExam.scores[s.key]) || 0;
         var r = lastExam.ranks ? lastExam.ranks[s.key] : null;
@@ -585,7 +611,9 @@ function renderExams() {
       '</div></div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
       '<div style="font-size:12px;color:#6b7280">总分: <strong style="color:#7c3aed">' + (total > 0 ? total.toFixed(1) : '-') + '</strong></div>' +
-      (e.distRank ? '<div style="font-size:12px;color:#6b7280">区排名: <strong>' + e.distRank + '</strong></div>' : '') +
+      (e.distRank ? '<div style="font-size:12px;color:#6b7280">区名: <strong style="color:#7c3aed">' + e.distRank + '</strong></div>' : '') +
+      (e.schoolRank ? '<div style="font-size:12px;color:#6b7280">校名: <strong style="color:#0891b2">' + e.schoolRank + '</strong></div>' : '') +
+      (e.classRank ? '<div style="font-size:12px;color:#6b7280">班名: <strong style="color:#d946ef">' + e.classRank + '</strong></div>' : '') +
       '</div>' +
       '<div style="margin-top:8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px">' +
       SUBJECTS.map(function(s) {
@@ -612,6 +640,8 @@ function showExamModal(id) {
       document.getElementById('examName').value = ex.name || '';
       document.getElementById('examClass').value = ex.className || '';
       document.getElementById('examDistRank').value = ex.distRank || '';
+      document.getElementById('examSchoolRank').value = ex.schoolRank || '';
+      document.getElementById('examClassRank').value = ex.classRank || '';
       SUBJECTS.forEach(function(s) {
         var sv = document.getElementById('s_' + s.key);
         var rv = document.getElementById('r_' + s.key);
@@ -623,6 +653,8 @@ function showExamModal(id) {
     document.getElementById('examName').value = '';
     document.getElementById('examClass').value = '';
     document.getElementById('examDistRank').value = '';
+    document.getElementById('examSchoolRank').value = '';
+    document.getElementById('examClassRank').value = '';
     SUBJECTS.forEach(function(s) {
       var sv = document.getElementById('s_' + s.key);
       var rv = document.getElementById('r_' + s.key);
@@ -645,6 +677,8 @@ function saveExam() {
   var editId = document.getElementById('examEditId').value;
   var className = document.getElementById('examClass').value.trim();
   var distRank = document.getElementById('examDistRank').value;
+  var schoolRank = document.getElementById('examSchoolRank').value;
+  var classRank = document.getElementById('examClassRank').value;
 
   var scores = {};
   var ranks = {};
@@ -663,6 +697,8 @@ function saveExam() {
       ex.scores = scores;
       ex.ranks = ranks;
       ex.distRank = distRank ? Number(distRank) : null;
+      ex.schoolRank = schoolRank ? Number(schoolRank) : null;
+      ex.classRank = classRank ? Number(classRank) : null;
       ex.totalScore = 0;
       Object.values(scores).forEach(function(v) { if (v) ex.totalScore += v; });
     }
@@ -674,6 +710,8 @@ function saveExam() {
       scores: scores,
       ranks: ranks,
       distRank: distRank ? Number(distRank) : null,
+      schoolRank: schoolRank ? Number(schoolRank) : null,
+      classRank: classRank ? Number(classRank) : null,
       totalScore: 0,
       note: ''
     });
