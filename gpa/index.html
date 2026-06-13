@@ -72,7 +72,7 @@ button:active{opacity:0.9;transform:scale(0.98)}
 .item-right{flex-shrink:0;text-align:right;font-weight:700;font-size:15px}
 .item-actions{flex-shrink:0;display:flex;gap:4px}
 
-.tab-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e5e7eb;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 8px rgba(15,23,42,.06);z-index:100;height:70px}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid #e5e7eb;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -2px 8px rgba(15,23,42,.06);z-index:100;height:70px}
 .tab{text-align:center;padding:10px 0;font-size:14px;color:#6b7280;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:700;touch-action:manipulation}
 .tab.active{color:#2f7d6b;font-weight:800}
 .tab-content{display:none}
@@ -112,6 +112,39 @@ button:active{opacity:0.9;transform:scale(0.98)}
 .grade-c{color:#d97706}
 .grade-d{color:#dc2626}
 .grade-f{color:#dc2626;font-weight:700}
+
+/* 保研规划 */
+.plan-header{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;border-radius:12px;padding:16px;margin-bottom:10px}
+.plan-header .plan-title{font-size:17px;font-weight:700;margin-bottom:2px}
+.plan-header .plan-sub{font-size:12px;opacity:.75}
+.plan-progress-bar{height:12px;background:rgba(255,255,255,.2);border-radius:6px;margin-top:10px;overflow:hidden;position:relative}
+.plan-progress-fill{height:100%;background:linear-gradient(90deg,#2f7d6b,#4ade80);border-radius:6px;transition:width .5s ease}
+.plan-progress-text{font-size:13px;margin-top:4px;display:flex;justify-content:space-between}
+.plan-target-line{position:absolute;top:-4px;bottom:-4px;width:2px;background:#fbbf24;z-index:2}
+.plan-target-label{position:absolute;top:-18px;transform:translateX(-50%);font-size:10px;color:#fbbf24;white-space:nowrap;font-weight:600}
+
+.req-list{margin:0}
+.req-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9}
+.req-item:last-child{border-bottom:none}
+.req-name{font-size:14px;color:#1f2937;font-weight:500}
+.req-desc{font-size:11px;color:#94a3b8;margin-top:1px}
+.req-status{font-size:13px;font-weight:700;padding:3px 10px;border-radius:6px;flex-shrink:0}
+.req-pass{background:#dcfce7;color:#16a34a}
+.req-fail{background:#fef2f2;color:#dc2626}
+.req-pending{background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0}
+
+.sem-timeline{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
+.sem-node{flex:1;min-width:44px;text-align:center;padding:8px 4px;border-radius:8px;font-size:11px;background:#f8fafc;border:1px solid #eef2f7}
+.sem-node .sem-dot{font-size:18px;line-height:1;margin-bottom:2px;font-weight:700}
+.sem-node.done{background:#dcfce7;border-color:#bbf7d0}
+.sem-node.done .sem-dot{color:#16a34a}
+.sem-node.current{background:#fef3c7;border-color:#fde68a}
+.sem-node.current .sem-dot{color:#d97706}
+.sem-node.future{background:#f8fafc;border-color:#eef2f7}
+.sem-node.future .sem-dot{color:#cbd5e1}
+
+.score-formula{background:#f8fafc;border-radius:10px;padding:12px;margin-top:8px;text-align:center;font-size:13px;color:#475569}
+.score-formula strong{color:#2f7d6b;font-size:18px}
 
 .empty-state{text-align:center;color:#9ca3af;padding:30px 0;font-size:14px}
 .semester-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
@@ -210,12 +243,74 @@ button:active{opacity:0.9;transform:scale(0.98)}
     </div>
     <div id="courseList"></div>
   </div>
+
+  <!-- 保研规划页 -->
+  <div class="tab-content" id="tab-plan">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+      <button class="btn-sm btn-gray" onclick="location.href='/'">返回主页</button>
+    </div>
+    <div class="plan-header">
+      <div class="plan-title">弘毅学堂 · 数智人文试验班</div>
+      <div class="plan-sub">2025级 · 主修PPE方向 · 推免保研规划</div>
+    </div>
+    <div class="card">
+      <h3>GPA 目标进度</h3>
+      <div style="font-size:13px;color:#64748b;margin-bottom:4px">推免要求: 前六学期累计 GPA >= 3.20</div>
+      <div class="plan-progress-bar" style="background:#e2e8f0;margin-top:8px">
+        <div class="plan-progress-fill" id="planGpaBar" style="width:0%"></div>
+        <div class="plan-target-line" id="planTargetLine" style="left:80%"></div>
+      </div>
+      <div class="plan-progress-text">
+        <span style="font-size:14px;font-weight:700" id="planGpaText">-</span>
+        <span style="font-size:12px;color:#fbbf24;font-weight:600">目标 3.20</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>关键条件</h3>
+      <div class="req-list" id="reqList"></div>
+    </div>
+    <div class="card">
+      <h3>考核学期进度</h3>
+      <div style="font-size:13px;color:#64748b;margin-bottom:4px" id="semProgressText">已完成 0/6 评定学期</div>
+      <div class="sem-timeline" id="semTimeline"></div>
+      <div class="score-formula" style="margin-top:12px">
+        综合成绩 = 课程 GPA <strong>90%</strong> + 学术活动 <strong>10%</strong>
+      </div>
+    </div>
+    <div class="card">
+      <h3>学术加分建议 (10%)</h3>
+      <div class="req-list">
+        <div class="req-item">
+          <div><div class="req-name">发表论文</div><div class="req-desc">核心期刊及以上，武大为第一单位，限3篇</div></div>
+          <span class="req-status req-pending">待参与</span>
+        </div>
+        <div class="req-item">
+          <div><div class="req-name">学科竞赛</div><div class="req-desc">互联网+、挑战杯、数学建模等 I/II 类赛事</div></div>
+          <span class="req-status req-pending">待参与</span>
+        </div>
+        <div class="req-item">
+          <div><div class="req-name">国家级大创项目</div><div class="req-desc">结题良好及以上可加分</div></div>
+          <span class="req-status req-pending">待参与</span>
+        </div>
+        <div class="req-item">
+          <div><div class="req-name">专利</div><div class="req-desc">第一完成人，武大第一单位，与本专业相关</div></div>
+          <span class="req-status req-pending">待参与</span>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="background:#fefce8;border:1px solid #fde68a">
+      <div style="font-size:13px;color:#92400e;line-height:1.6">
+        <strong>重要提醒:</strong> 推免申请在大四上学期9月进行（前六学期成绩），获得推免资格后仍需遵守校规校纪、按期完成学业，否则取消资格。
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- 底部导航 -->
 <div class="tab-bar">
   <div class="tab active" onclick="switchTab('overview')">概览</div>
   <div class="tab" onclick="switchTab('courses')">课程</div>
+  <div class="tab" onclick="switchTab('plan')">规划</div>
 </div>
 
 <!-- 学期编辑弹窗 -->
@@ -923,8 +1018,54 @@ function switchTab(name) {
   const tabBtns = document.querySelectorAll('.tab');
   if (name === 'overview') tabBtns[0].classList.add('active');
   else if (name === 'semesters' || name === 'courses') tabBtns[1].classList.add('active');
+  else if (name === 'plan') tabBtns[2].classList.add('active');
   if (name === 'overview') renderOverview();
   else if (name === 'courses') renderCourses();
+  else if (name === 'plan') renderPlan();
+}
+
+// ==================== 保研规划 ====================
+function renderPlan() {
+  var gpa = calcCumulativeGpa();
+  // GPA 进度条 (max 4.0, target 3.2)
+  var pct = Math.min(gpa / 3.2 * 100, 100);
+  document.getElementById('planGpaBar').style.width = pct + '%';
+  document.getElementById('planGpaText').textContent = courses.length > 0 ? '当前累计 GPA: ' + gpa.toFixed(2) : '暂无课程数据';
+  document.getElementById('planTargetLine').style.left = (3.2 / 4.0 * 100) + '%';
+
+  // 关键条件
+  var hasFailed = courses.some(function(c) { return (Number(c.score) || 0) < 60; });
+  var reqs = [
+    { name: '累计 GPA >= 3.20', desc: '前六学期主修课程总平均绩点', pass: gpa >= 3.2, pending: false },
+    { name: '无不及格课程', desc: '重修后全部课程及格', pass: !hasFailed, pending: courses.length === 0 },
+    { name: '英语六级 >= 425', desc: '或 雅思>=6.5 / 托福>=90', pass: false, pending: true },
+    { name: '综合素质 >= 60分', desc: '班级评分50% + 学堂评分50%', pass: false, pending: true }
+  ];
+
+  document.getElementById('reqList').innerHTML = reqs.map(function(r) {
+    var cls, txt;
+    if (r.pending) { cls = 'req-pending'; txt = '待定'; }
+    else if (r.pass) { cls = 'req-pass'; txt = '达标'; }
+    else { cls = 'req-fail'; txt = '未达'; }
+    return '<div class="req-item"><div><div class="req-name">' + r.name + '</div><div class="req-desc">' + r.desc + '</div></div><span class="req-status ' + cls + '">' + txt + '</span></div>';
+  }).join('');
+
+  // 学期进度 (前六学期)
+  var evalSemIds = ['sem-1', 'sem-2', 'sem-3', 'sem-4', 'sem-5', 'sem-6'];
+  var completed = 0;
+  var semHtml = evalSemIds.map(function(sid) {
+    var s = semesters.find(function(x) { return x.id === sid; });
+    var name = s ? s.name : '';
+    var hasData = courses.some(function(c) { return c.semesterId === sid; });
+    if (hasData) completed++;
+    var cls, dot;
+    if (hasData) { cls = 'done'; dot = '已修'; }
+    else if (evalSemIds.indexOf(sid) === completed) { cls = 'current'; dot = '在读'; }
+    else { cls = 'future'; dot = '待修'; }
+    return '<div class="sem-node ' + cls + '"><div class="sem-dot">' + dot + '</div>' + name + '</div>';
+  }).join('');
+  document.getElementById('semTimeline').innerHTML = semHtml;
+  document.getElementById('semProgressText').textContent = '已完成 ' + completed + '/6 评定学期（前六学期为推免考核范围）';
 }
 
 // ==================== 启动 ====================
