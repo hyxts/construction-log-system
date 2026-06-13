@@ -627,9 +627,9 @@ function updateGaokaoCountdown() {
   var lbl = document.getElementById('gaokaoLabel');
   if (el) {
     if (diff === 0) {
-      el.innerHTML = '离高考还有<span class="countdown-num" style="font-size:22px">今天</span>';
+      el.innerHTML = '离高考<span class="countdown-num" style="font-size:22px">今天</span>';
     } else {
-      el.innerHTML = '离高考还有<span class="countdown-num" style="font-size:22px">' + diff + '</span><span class="countdown-text"> 天</span>';
+      el.innerHTML = '离高考<span class="countdown-num" style="font-size:22px">' + diff + '</span><span class="countdown-text">天</span>';
     }
     if (lbl) lbl.textContent = '';
   }
