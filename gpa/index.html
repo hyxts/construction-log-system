@@ -456,11 +456,12 @@ function renderOverview() {
   const cumulative = calcCumulativeGpa();
   document.getElementById('cumulativeGpa').textContent = courses.length > 0 ? cumulative.toFixed(2) : '-';
 
-  // 最近学期GPA
-  if (semesters.length > 0) {
-    const lastSem = semesters[semesters.length - 1];
+  // 最近学期GPA（最后一个有课程数据的学期）
+  const activeSems = semesters.filter(s => courses.some(c => c.semesterId === s.id));
+  if (activeSems.length > 0) {
+    const lastSem = activeSems[activeSems.length - 1];
     const gpa = calcSemesterGpa(lastSem.id);
-    document.getElementById('latestGpa').textContent = gpa > 0 ? gpa.toFixed(2) : '-';
+    document.getElementById('latestGpa').textContent = gpa.toFixed(2);
   } else {
     document.getElementById('latestGpa').textContent = '-';
   }
