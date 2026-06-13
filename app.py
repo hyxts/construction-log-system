@@ -2478,6 +2478,7 @@ def hsgrades_save_data():
     return jsonify({'success': True})
 
 @app.route('/hsgrades')
+@app.route('/hsgrades/')
 def hsgrades_index():
     """高中成绩系统（独立子系统）"""
     return send_from_directory('hsgrades', 'index.html')
@@ -2485,11 +2486,13 @@ def hsgrades_index():
 # ==================== 前端路由 ====================
 
 @app.route('/gpa')
+@app.route('/gpa/')
 def gpa_index():
     """GPA系统（独立子系统）"""
     return send_from_directory('gpa', 'index.html')
 
 @app.route('/paiban')
+@app.route('/paiban/')
 def paiban_index():
     """排工考勤系统（独立子系统，数据不交叉）"""
     return send_from_directory('paiban', 'index.html')
