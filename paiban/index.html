@@ -18,7 +18,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue"
 header{background:#ffffff;color:#1f2937;text-align:center;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));font-size:17px;font-weight:600;position:sticky;top:0;z-index:100;letter-spacing:.3px;border-bottom:1px solid #eef0f4}
 .main{padding:12px;width:100%;max-width:100%}
 .card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04)}
-.card-sub{background:#f8fafc;border-radius:10px;padding:12px;margin:8px 0;border:1px solid #eef2f7}
+.card-sub{background:#f8fafc;border-radius:10px;padding:12px;margin:8px 0;border:1px solid #eef2f7;flex:1;display:flex;flex-direction:column;min-height:0;}
 .card-sub-title{font-size:13px;color:#475569;margin-bottom:8px;font-weight:600}
 h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacing:.2px}
 
@@ -124,20 +124,16 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
   .date-info{font-size:14px;color:#4b5563;margin-bottom:12px;padding:10px 12px;background:#f9fafb;border-radius:10px;text-align:center}
   .section-title{font-size:12px;color:#6b7280;margin:6px 0 4px;font-weight:600}
   .manage-col{display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;}
-  .card-sub{flex:1;display:flex;flex-direction:column;min-height:0;}
   .manage-list{flex:1;overflow-y:auto;min-height:100px;}
   .archive-item{background:#fff;border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid #e5e7eb}
   .archive-date{font-size:16px;font-weight:700;color:#111827;margin-bottom:6px}
   .archive-info{font-size:13px;color:#6b7280;margin-bottom:4px}
   .archive-tasks{font-size:13px;color:#4b5563;line-height:1.4}
   .status-tag{padding:4px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;}
-  .status-pending{background:#e0e7ff;color:#3730a3}
   .status-doing{background:#dcfce7;color:#166534}
   .status-done{background:#dcfce7;color:#166534}
   .status-active{background:#dcfce7;color:#166534}
   .status-inactive{background:#fee2e2;color:#991b1b}
-  .status-warning{background:#fef3c7;color:#92400e}
-  .status-info{background:#dbeafe;color:#1e40af}
   #editModalButtons{display:flex;gap:8px;margin-top:12px;}
   #shareModalButtons{display:none;gap:8px;margin-top:12px;}
   .name-text{flex-shrink:0;width:44px;text-align:left;font-size:13px}
@@ -153,8 +149,6 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
 
   .select-inline{width:auto;margin:0;min-height:36px;padding:8px 32px 8px 12px;font-size:14px;border:1px solid #d1d5db;border-radius:10px;background:#fff;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'><path d='M1 3l4 4 4-4' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");background-repeat:no-repeat;background-position:right 10px center}
   .muted{color:#64748b;font-size:13px}
-  .doc-calc{background:#ecfdf5;border:1px dashed #2f7d6b;border-radius:10px;padding:10px 12px;margin-top:8px;font-size:14px;line-height:1.5;min-height:0;display:none;white-space:pre-wrap;color:#166534;font-weight:600}
-  .doc-calc.show{display:block}
   .query-dim{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
   .qdim-btn{flex:1;min-width:calc(25% - 4.5px);padding:10px 8px;font-size:13px;font-weight:600;border:1px solid #d1d5db;border-radius:12px;background:#fff;color:#4b5563;cursor:pointer;min-height:40px;touch-action:manipulation;white-space:nowrap}
   .qdim-btn.active{background:#2f7d6b;color:#fff;border-color:#2f7d6b;box-shadow:0 2px 4px rgba(47,125,107,.2)}
@@ -166,21 +160,10 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
   .so-section{margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #e5e7eb}
   .so-section:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
   .so-label{font-size:15px;color:#1f2937;font-weight:600;margin-bottom:6px;line-height:1.4}
-  .so-big{font-size:24px;font-weight:700;color:#2f7d6b;margin-bottom:4px;letter-spacing:-.5px}
   .so-row{display:flex;justify-content:space-between;padding:3px 0;font-size:14px;color:#4b5563;line-height:1.4}
   .so-row span:last-child{color:#111827}
   .stats-actions{display:flex;gap:8px;margin-top:10px}
   .stats-actions button{width:auto;flex:1;margin:0}
-  .arc-item{display:flex;align-items:flex-start;gap:10px;padding:12px;background:#fff;border-radius:12px;margin-bottom:8px;border:1px solid #e5e7eb;font-size:14px}
-  .arc-item-content{flex:1;min-width:0;overflow:hidden}
-  .arc-title{font-weight:600;color:#111827;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-  .arc-title .badge{background:#dcfce7;color:#166534;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:500}
-  .arc-title .badge.attend{background:#e0e7ff;color:#3730a3}
-  .arc-title .badge.auto{background:#f3e8ff;color:#6b21a8}
-  .arc-body{color:#475569;line-height:1.6;white-space:pre-wrap;word-break:break-all}
-  .arc-meta{color:#94a3b8;font-size:11px;margin-top:4px}
-  .arc-actions{flex:0 0 auto;display:flex;flex-direction:column;gap:4px}
-  .arc-actions button{margin:0;width:auto;padding:5px 8px;font-size:12px;min-height:28px}
 
   /* 文档历史卡片 */
   .doc-card{padding:12px 14px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px}
@@ -193,12 +176,9 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
   #planListBox .item-content{overflow:hidden}
   #planListBox .task-name{font-size:13px;white-space:normal;word-break:break-all;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
 
-  .card-locked{position:relative}
-
   /* 移动端优化 */
   @media (max-width: 380px){
     .seg-tab{font-size:13px;padding:9px 4px}
-    .arc-actions{flex-direction:row}
   }
   body{padding-bottom:80px}
 </style>
@@ -720,25 +700,6 @@ function togglePlanWorker(uid){
 }
 function saveCurrentPlan(){let d=document.getElementById('planDate').value||getToday();if(isPlanLocked(d)||!curSelTaskId)return;let p=planData[d]||[];let t=tasks.find(x=>x.id===curSelTaskId);let e=p.find(s=>s.tid===curSelTaskId);if(e)e.uids=[...curSelWorkerIds];else p.push({tid:curSelTaskId,tname:t?.name||'',uids:[...curSelWorkerIds]});planData[d]=p;saveData()}
 
-// 排工列表：两行显示
-function renderPlanListReadOnly(date) {
-  let p = planData[date] || [];
-  if (p.length === 0) {
-    document.getElementById('planListBox').innerHTML = '<p style="text-align:center;color:#999;grid-column:1/-1;padding:20px 0">暂无安排</p>';
-    return;
-  }
-  document.getElementById('planListBox').innerHTML = p.map(s => {
-    let safeTask = escapeHtml(s.tname);
-    let safeWorkers = getWorkerNames(s.uids).map(escapeHtml).join('、');
-    return '<div class="item" style="align-items:stretch;opacity:.7">' +
-      '<div class="item-content" style="gap:2px">' +
-        '<div class="task-name">' + safeTask + '</div>' +
-        '<div style="font-size:11px;color:#666;line-height:1.3;word-break:break-all">' + (safeWorkers || '未分配') + '</div>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-}
-
 function renderPlanList(date){
   let p=planData[date]||[];
   if(p.length===0){
@@ -772,16 +733,7 @@ function delPlanItem(date,tid){
   cleanupInvalidAttendance(date);
   refreshAllPage();
 }
-function clearPlan(){
-  let d=document.getElementById('planDate').value||getToday();
-  if(isPlanLocked(d))return;
-  if(confirm('确定清空当日排班？')){
-    delete planData[d];
-    saveData();
-    cleanupInvalidAttendance(d);
-    refreshAllPage();
-  }
-}
+
 function sharePlan(){let d=document.getElementById('planDate').value||getToday();let p=planData[d]||[];if(p.length===0){alert('暂无排班计划');return}
   let txt=d+' 用工计划\n'+p.map((s,i)=>`${i+1}. ${s.tname}：${getWorkerNames(s.uids).join('、')||'未分配'}`).join('\n')+`\n共${p.length}项任务`;
   showShareModal('排班计划',txt);
