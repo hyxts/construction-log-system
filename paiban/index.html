@@ -194,15 +194,12 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
   #planListBox .task-name{font-size:13px;white-space:normal;word-break:break-all;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
 
   .card-locked{position:relative}
-  .lock-overlay{position:absolute;inset:0;background:rgba(255,255,255,.45);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;gap:8px;padding:16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-  .lock-icon{font-size:28px;color:#94a3b8;font-weight:700}
-  .lock-text{font-size:13px;color:#64748b;text-align:center}
-  .lock-code{font-size:24px;font-weight:800;color:#7c3aed;letter-spacing:6px;font-family:monospace}
-  .lock-input-wrap{display:flex;gap:6px;align-items:center}
-  .lock-input{width:80px;padding:8px 10px;border:2px solid #d1d5db;border-radius:8px;font-size:18px;text-align:center;font-family:monospace;letter-spacing:4px;min-height:40px;outline:none}
-  .lock-input:focus{border-color:#7c3aed}
-  .lock-btn{width:auto!important;margin:0!important;padding:8px 20px!important;font-size:13px!important;min-height:36px!important;background:#7c3aed;color:#fff;border-radius:8px}
-  .lock-hint{font-size:11px;color:#94a3b8;margin-top:2px}
+  .lock-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.85);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-radius:10px;z-index:10;gap:8px}
+  .lock-text{font-size:15px;font-weight:600;color:#1f2937}
+  .lock-hint{font-size:12px;color:#94a3b8}
+  .lock-toggle{width:auto!important;margin:0!important;padding:8px 14px!important;font-size:13px!important;min-height:36px!important;border-radius:8px;cursor:pointer;border:none;font-weight:600;transition:.15s}
+  .lock-toggle.locked{background:#fee2e2;color:#dc2626;border:2px solid #fecaca}
+  .lock-toggle.unlocked{background:#dcfce7;color:#16a34a;border:2px solid #bbf7d0}
   .date-past-tag{font-size:11px;color:#dc2626;margin-left:4px;font-weight:600}
 
   /* 移动端优化 */
@@ -238,6 +235,7 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
       <div class="btn-row">
         <button class="btn-green" onclick="archiveCurrent('plan')">归档</button>
         <button class="btn-red" onclick="sharePlan()">分享</button>
+        <button id="planLockBtn" class="lock-toggle locked" onclick="togglePlanLock()">锁定</button>
       </div>
     </div>
   </div>
@@ -262,6 +260,7 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
         <div style="display:flex;gap:6px">
           <button onclick="archiveCurrent('attend')" style="width:auto;margin:0;padding:8px 12px;min-height:0;font-size:13px" class="btn-sm btn-green">归档</button>
           <button onclick="shareAttendance()" style="width:auto;margin:0;padding:8px 12px;min-height:0;font-size:13px" class="btn-sm">分享</button>
+          <button id="attendLockBtn" class="lock-toggle locked" onclick="toggleAttendLock()" style="width:auto;margin:0;font-size:13px">锁定</button>
         </div>
       </div>
       <div id="attendList"></div>
@@ -398,7 +397,7 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
     <div class="share-text" id="shareContent"></div>
     <div id="editModalButtons">
       <button class="btn-gray" onclick="closeModal()">取消</button>
-      <button class="btn-red" onclick="confirmDelItem()">删除</button>
+      <button class="btn-red" onclick="confirmDelItem()">确认删除</button>
       <button onclick="saveEdit()">保存</button>
     </div>
     <div id="shareModalButtons">
@@ -414,10 +413,8 @@ let curSelTaskId='',curSelWorkerIds=[];
 let shareTxt='';
 let editType='',editId='';
 let editingDocId='';
-let _planUnlocked={};   // { '2026-06-10': true }  排工页已解锁日期
-let _attendUnlocked={}; // { '2026-06-10': true }  考勤页已解锁日期
-let _planVerifyCode='';  // 排工页当前验证码
-let _attendVerifyCode='';// 考勤页当前验证码
+let _planLockEnabled=true;   // 排工页锁定开关，默认锁定防误删
+let _attendLockEnabled=true; // 考勤页锁定开关，默认锁定防误删
 
 const defaultWorkers=[
   {id:'1',name:'谭道彦',status:1},{id:'2',name:'谭明义',status:1},
@@ -590,38 +587,41 @@ function fmtAttend(r){
 function escapeHtml(s){
   return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-// 编辑锁：当日以前的日期默认锁定，需输入随机验证码防误操作
-function genVerifyCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
+// 编辑锁：底部锁定按钮控制，锁定后历史日期只读不可编辑
 function isPastDate(d) { return d && d < getTodayCached(); }
-function isPlanLocked(d) { return isPastDate(d) && !_planUnlocked[d]; }
-function isAttendLocked(d) { return isPastDate(d) && !_attendUnlocked[d]; }
-function unlockPlan(verifyInputId) {
-  var d = document.getElementById('planDate').value || getTodayCached();
-  var realCode = _planVerifyCode;
-  var input = document.getElementById(verifyInputId || 'planVerifyInput').value.trim();
-  if (!input) return;
-  if (input === realCode) {
-    _planUnlocked[d] = true;
-    renderPlanPage();
-  } else {
-    alert('验证码错误，请重新输入');
-  }
+function isPlanLocked(d) { return _planLockEnabled && isPastDate(d); }
+function isAttendLocked(d) { return _attendLockEnabled && isPastDate(d); }
+function togglePlanLock() {
+  _planLockEnabled = !_planLockEnabled;
+  updatePlanLockBtn();
+  saveData();
+  renderPlanPage();
 }
-function unlockAttend(verifyInputId) {
-  var d = document.getElementById('attendDate').value || getTodayCached();
-  var realCode = _attendVerifyCode;
-  var input = document.getElementById(verifyInputId || 'attendVerifyInput').value.trim();
-  if (!input) return;
-  if (input === realCode) {
-    _attendUnlocked[d] = true;
-    renderAttendList();
-    renderAttendPlanList();
-  } else {
-    alert('验证码错误，请重新输入');
-  }
+function toggleAttendLock() {
+  _attendLockEnabled = !_attendLockEnabled;
+  updateAttendLockBtn();
+  saveData();
+  renderAttendPlanList();
+  renderAttendList();
+}
+function updatePlanLockBtn() {
+  var btn = document.getElementById('planLockBtn');
+  if (!btn) return;
+  btn.textContent = '锁定';
+  btn.className = _planLockEnabled ? 'lock-toggle locked' : 'lock-toggle unlocked';
+}
+function updateAttendLockBtn() {
+  var btn = document.getElementById('attendLockBtn');
+  if (!btn) return;
+  btn.textContent = '锁定';
+  btn.className = _attendLockEnabled ? 'lock-toggle locked' : 'lock-toggle unlocked';
+}
+function updateAllLockBtns() {
+  updatePlanLockBtn();
+  updateAttendLockBtn();
 }
 
-function refreshAllPage(){switchTab(Number(document.querySelector('.tab.active').dataset.tab)||1)}
+function refreshAllPage(){switchTab(Number(document.querySelector('.tab.active').dataset.tab)||1);updateAllLockBtns()}
 function switchTab(n){
   document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',i===n-1);t.dataset.tab=i+1});
   document.querySelectorAll('.tab-content').forEach((p,i)=>p.classList.toggle('show',i===n-1));
@@ -641,29 +641,7 @@ function changePlanDate(delta){saveCurrentPlan();autoArchiveIfNeeded();let d=new
 function renderPlanPage(){
   let d=document.getElementById('planDate').value||getToday();
   let p=planData[d]||[];
-  let locked = isPlanLocked(d);
 
-  // 编辑锁：过去日期 → 毛玻璃锁态 + 随机验证码
-  if (locked) {
-    _planVerifyCode = genVerifyCode();
-    document.getElementById('planTaskListBox').innerHTML = 
-      '<div class="card card-locked" style="min-height:160px">' +
-        '<div class="lock-overlay">' +
-          '<div class="lock-text">历史日期，编辑已锁定</div>' +
-          '<div style="font-size:12px;color:#94a3b8">验证码</div>' +
-          '<div class="lock-code">' + _planVerifyCode + '</div>' +
-          '<div class="lock-input-wrap">' +
-            '<input class="lock-input" id="planVerifyInput" type="text" inputmode="numeric" maxlength="4" placeholder="----" onkeyup="if(event.key===\'Enter\')unlockPlan()">' +
-            '<button class="lock-btn" onclick="unlockPlan()">解除</button>' +
-          '</div>' +
-          '<div class="lock-hint">输入上方数字，回车确认</div>' +
-        '</div>' +
-      '</div>';
-    document.getElementById('planWorkerListBox').innerHTML = '';
-    renderPlanListReadOnly(d);
-    return;
-  }
-  
   // 获取当天已安排的所有工人ID（排除当前选中任务）
   let assignedWorkerIds=[];
   p.forEach(s=>{
@@ -854,47 +832,7 @@ function shareAttendance(){
 function renderAttendList(){
   let d=document.getElementById('attendDate').value||getToday();
   let p=planData[d]||[];
-  let locked = isAttendLocked(d);
 
-  // 编辑锁：过去日期且未解锁 → 只读模式
-  if (locked) {
-    // 只读：不自动创建记录，直接渲染已有数据
-    let a = attendData[d] || {};
-    let g = {};
-    p.forEach(t => { g[t.tid] = { name: t.tname, ws: t.uids.filter(u => workers.some(x => x.id === u && x.status)) }; });
-    let h = '';
-    for (let tid in g) {
-      let t = g[tid];
-      if (t.ws.length === 0) continue;
-      h += '<div class="section-title">' + escapeHtml(t.name) + '</div>';
-      t.ws.forEach(u => {
-        let w = workers.find(x => x.id === u);
-        if (!w) return;
-        let safeName = escapeHtml(w.name);
-        let r = a[u] || { type: 'whole', remark: '', overtime: 0 };
-        h += '<div class="item" style="opacity:.7">' +
-          '<span class="name-text">' + safeName + '</span>' +
-          '<span style="font-size:12px;color:#64748b">' + fmtAttend(r) + '</span>' +
-        '</div>';
-      });
-    }
-    if (!h) {
-      _attendVerifyCode = genVerifyCode();
-      h = '<div class="card card-locked" style="min-height:160px;margin-top:8px"><div class="lock-overlay">' +
-        '<div class="lock-text">历史日期，编辑已锁定</div>' +
-        '<div style="font-size:12px;color:#94a3b8">验证码</div>' +
-        '<div class="lock-code">' + _attendVerifyCode + '</div>' +
-        '<div class="lock-input-wrap">' +
-          '<input class="lock-input" id="attendVerifyInput" type="text" inputmode="numeric" maxlength="4" placeholder="----" onkeyup="if(event.key===\'Enter\')unlockAttend()">' +
-          '<button class="lock-btn" onclick="unlockAttend()">解除</button>' +
-        '</div>' +
-        '<div class="lock-hint">输入上方数字，回车确认</div>' +
-      '</div></div>';
-    }
-    document.getElementById('attendList').innerHTML = h || '<p style="text-align:center;color:#999">无考勤人员</p>';
-    return;
-  }
-  
   // 自动为排班人员创建考勤记录（默认视为打卡有效）
   if(!attendData[d])attendData[d]={};
   p.forEach(t=>{
@@ -904,7 +842,7 @@ function renderAttendList(){
       }
     });
   });
-  saveData();
+  if(!isAttendLocked(d))saveData();
   
   let g={};
   p.forEach(t=>{g[t.tid]={name:t.tname,ws:t.uids.filter(u=>workers.some(x=>x.id===u&&x.status))}});
@@ -1249,7 +1187,7 @@ function updateSyncStatus(text){
 
 // 保存：立即写 localStorage，延迟 1 秒批量同步到服务器
 function saveData(){
-  const payload = JSON.stringify({workers,tasks,planData,attendData,docs,archives});
+  const payload = JSON.stringify({workers,tasks,planData,attendData,docs,archives,_planLockEnabled,_attendLockEnabled});
   localStorage.setItem('workData3', payload);
   // 防抖 API 保存
   clearTimeout(_paibanSaveTimer);
@@ -1278,6 +1216,9 @@ function _applyDataObject(o){
       archives[k] = rawArc[k];
     }
   });
+  // 加载锁定状态，默认锁定
+  _planLockEnabled = o._planLockEnabled !== undefined ? !!o._planLockEnabled : true;
+  _attendLockEnabled = o._attendLockEnabled !== undefined ? !!o._attendLockEnabled : true;
 }
 
 // 加载：优先服务器，回退 localStorage
@@ -1822,6 +1763,7 @@ window.onload=function(){
   renderStatsInput();
   renderStats();
   switchTab(1);
+  updateAllLockBtns();
   
   // 多端同步：窗口获得焦点时拉取最新数据（有未保存修改则跳过）
   window.addEventListener('focus', async () => {
