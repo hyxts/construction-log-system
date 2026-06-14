@@ -193,6 +193,13 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
   #planListBox .item-content{overflow:hidden}
   #planListBox .task-name{font-size:13px;white-space:normal;word-break:break-all;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
 
+  .card-locked{position:relative}
+  .lock-overlay{position:absolute;inset:0;background:rgba(255,255,255,.88);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;gap:8px;padding:16px}
+  .lock-icon{font-size:28px;color:#94a3b8;font-weight:700}
+  .lock-text{font-size:13px;color:#64748b;text-align:center}
+  .lock-btn{width:auto!important;margin:0!important;padding:8px 20px!important;font-size:13px!important;min-height:36px!important;background:#f59e0b;color:#fff;border-radius:8px}
+  .date-past-tag{font-size:11px;color:#dc2626;margin-left:4px;font-weight:600}
+
   /* 移动端优化 */
   @media (max-width: 380px){
     .seg-tab{font-size:13px;padding:9px 4px}
@@ -402,6 +409,8 @@ let curSelTaskId='',curSelWorkerIds=[];
 let shareTxt='';
 let editType='',editId='';
 let editingDocId='';
+let _planUnlocked={};   // { '2026-06-10': true }  排工页已解锁日期
+let _attendUnlocked={}; // { '2026-06-10': true }  考勤页已解锁日期
 
 const defaultWorkers=[
   {id:'1',name:'谭道彦',status:1},{id:'2',name:'谭明义',status:1},
@@ -574,14 +583,33 @@ function fmtAttend(r){
 function escapeHtml(s){
   return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
+// 编辑锁：当日以前的日期默认锁定，需输入验证码 pg/kq 解除
+function isPastDate(d) { return d && d < getTodayCached(); }
+function isPlanLocked(d) { return isPastDate(d) && !_planUnlocked[d]; }
+function isAttendLocked(d) { return isPastDate(d) && !_attendUnlocked[d]; }
+function unlockPlan(){ unlockDate('_planUnlocked', 'pg'); }
+function unlockAttend(){ unlockDate('_attendUnlocked', 'kq'); }
+function unlockDate(storageKey, code) {
+  let d = (storageKey === '_planUnlocked') ? (document.getElementById('planDate').value||getTodayCached()) : (document.getElementById('attendDate').value||getTodayCached());
+  let input = prompt('请输入编辑验证码：');
+  if (!input) return;
+  if (input.trim() === code) {
+    window[storageKey][d] = true;
+    switchTab(Number(document.querySelector('.tab.active').dataset.tab)||1);
+    alert('编辑限制已解除');
+  } else {
+    alert('验证码错误');
+  }
+}
+
 function refreshAllPage(){switchTab(Number(document.querySelector('.tab.active').dataset.tab)||1)}
 function switchTab(n){
   document.querySelectorAll('.tab').forEach((t,i)=>{t.classList.toggle('active',i===n-1);t.dataset.tab=i+1});
   document.querySelectorAll('.tab-content').forEach((p,i)=>p.classList.toggle('show',i===n-1));
   const titles=['排工','考勤','管理','文档','存档'];
   document.getElementById('pageTitle').textContent=titles[n-1];
-  if(n===1){let d=document.getElementById('planDate').value||getToday();document.getElementById('planDateDisplay').textContent=d;renderPlanPage()}
-  if(n===2){let d=document.getElementById('attendDate').value||getToday();document.getElementById('attendDateDisplay').textContent=d;renderAttendPlanList();renderAttendList()}
+  if(n===1){let d=document.getElementById('planDate').value||getToday();document.getElementById('planDateDisplay').innerHTML=d+(isPastDate(d)?'<span class="date-past-tag">历史</span>':'');renderPlanPage()}
+  if(n===2){let d=document.getElementById('attendDate').value||getToday();document.getElementById('attendDateDisplay').innerHTML=d+(isPastDate(d)?'<span class="date-past-tag">历史</span>':'');renderAttendPlanList();renderAttendList()}
   if(n===3){renderManage()}
   if(n===4){renderDocHistory();searchDoc()}
   if(n===5){renderArchiveList();renderTaskArchiveList();renderWorkerArchiveList();renderStatsInput();renderStats()}
@@ -590,10 +618,19 @@ function switchTab(n){
 // ======================
 // 排工
 // ======================
-function changePlanDate(delta){saveCurrentPlan();autoArchiveIfNeeded();let d=new Date(document.getElementById('planDate').value||getToday());d.setDate(d.getDate()+delta);let s=d.toISOString().split('T')[0];document.getElementById('planDate').value=s;document.getElementById('planDateDisplay').textContent=s;renderPlanPage()}
+function changePlanDate(delta){saveCurrentPlan();autoArchiveIfNeeded();let d=new Date(document.getElementById('planDate').value||getToday());d.setDate(d.getDate()+delta);let s=d.toISOString().split('T')[0];document.getElementById('planDate').value=s;document.getElementById('planDateDisplay').innerHTML=s+(isPastDate(s)?'<span class="date-past-tag">历史</span>':'');renderPlanPage()}
 function renderPlanPage(){
   let d=document.getElementById('planDate').value||getToday();
   let p=planData[d]||[];
+  let locked = isPlanLocked(d);
+
+  // 编辑锁：过去日期 → 显示锁态
+  if (locked) {
+    document.getElementById('planTaskListBox').innerHTML = '<div class="card card-locked" style="min-height:120px"><div class="lock-overlay"><div class="lock-icon">锁</div><div class="lock-text">历史日期，编辑已锁定</div><button class="lock-btn" onclick="unlockPlan()">解除限制（需验证码）</button></div></div>';
+    document.getElementById('planWorkerListBox').innerHTML = '';
+    renderPlanListReadOnly(d);
+    return;
+  }
   
   // 获取当天已安排的所有工人ID（排除当前选中任务）
   let assignedWorkerIds=[];
@@ -651,8 +688,9 @@ function renderPlanPage(){
   
   renderPlanList(d);
 }
-function selectPlanTask(id){if(curSelTaskId&&curSelWorkerIds.length>0)saveCurrentPlan();curSelTaskId=id;let d=document.getElementById('planDate').value||getToday();let p=planData[d]||[];let i=p.find(s=>s.tid===id);curSelWorkerIds=i?[...i.uids]:[];renderPlanPage()}
+function selectPlanTask(id){if(isPlanLocked(document.getElementById('planDate').value||getToday()))return;if(curSelTaskId&&curSelWorkerIds.length>0)saveCurrentPlan();curSelTaskId=id;let d=document.getElementById('planDate').value||getToday();let p=planData[d]||[];let i=p.find(s=>s.tid===id);curSelWorkerIds=i?[...i.uids]:[];renderPlanPage()}
 function togglePlanWorker(uid){
+  if(isPlanLocked(document.getElementById('planDate').value||getToday()))return;
   if(!curSelTaskId)return;
   let d=document.getElementById('planDate').value||getToday();
   let p=planData[d]||[];
@@ -677,9 +715,27 @@ function togglePlanWorker(uid){
   saveCurrentPlan();
   renderPlanPage();
 }
-function saveCurrentPlan(){let d=document.getElementById('planDate').value||getToday();if(!curSelTaskId)return;let p=planData[d]||[];let t=tasks.find(x=>x.id===curSelTaskId);let e=p.find(s=>s.tid===curSelTaskId);if(e)e.uids=[...curSelWorkerIds];else p.push({tid:curSelTaskId,tname:t?.name||'',uids:[...curSelWorkerIds]});planData[d]=p;saveData()}
+function saveCurrentPlan(){let d=document.getElementById('planDate').value||getToday();if(isPlanLocked(d)||!curSelTaskId)return;let p=planData[d]||[];let t=tasks.find(x=>x.id===curSelTaskId);let e=p.find(s=>s.tid===curSelTaskId);if(e)e.uids=[...curSelWorkerIds];else p.push({tid:curSelTaskId,tname:t?.name||'',uids:[...curSelWorkerIds]});planData[d]=p;saveData()}
 
 // 排工列表：两行显示
+function renderPlanListReadOnly(date) {
+  let p = planData[date] || [];
+  if (p.length === 0) {
+    document.getElementById('planListBox').innerHTML = '<p style="text-align:center;color:#999;grid-column:1/-1;padding:20px 0">暂无安排</p>';
+    return;
+  }
+  document.getElementById('planListBox').innerHTML = p.map(s => {
+    let safeTask = escapeHtml(s.tname);
+    let safeWorkers = getWorkerNames(s.uids).map(escapeHtml).join('、');
+    return '<div class="item" style="align-items:stretch;opacity:.7">' +
+      '<div class="item-content" style="gap:2px">' +
+        '<div class="task-name">' + safeTask + '</div>' +
+        '<div style="font-size:11px;color:#666;line-height:1.3;word-break:break-all">' + (safeWorkers || '未分配') + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
 function renderPlanList(date){
   let p=planData[date]||[];
   if(p.length===0){
@@ -705,6 +761,7 @@ function renderPlanList(date){
 
 function editPlanTask(tid){selectPlanTask(tid)}
 function delPlanItem(date,tid){
+  if(isPlanLocked(date))return;
   if(!planData[date])return;
   planData[date]=planData[date].filter(s=>s.tid!==tid);
   if(planData[date].length===0)delete planData[date];
@@ -714,6 +771,7 @@ function delPlanItem(date,tid){
 }
 function clearPlan(){
   let d=document.getElementById('planDate').value||getToday();
+  if(isPlanLocked(d))return;
   if(confirm('确定清空当日排班？')){
     delete planData[d];
     saveData();
@@ -729,7 +787,7 @@ function sharePlan(){let d=document.getElementById('planDate').value||getToday()
 // ======================
 // 考勤
 // ======================
-function changeAttendDate(delta){autoArchiveIfNeeded();let d=new Date(document.getElementById('attendDate').value||getToday());d.setDate(d.getDate()+delta);let s=d.toISOString().split('T')[0];document.getElementById('attendDate').value=s;document.getElementById('attendDateDisplay').textContent=s;renderAttendPlanList();renderAttendList()}
+function changeAttendDate(delta){autoArchiveIfNeeded();let d=new Date(document.getElementById('attendDate').value||getToday());d.setDate(d.getDate()+delta);let s=d.toISOString().split('T')[0];document.getElementById('attendDate').value=s;document.getElementById('attendDateDisplay').innerHTML=s+(isPastDate(s)?'<span class="date-past-tag">历史</span>':'');renderAttendPlanList();renderAttendList()}
 function cleanupInvalidAttendance(date){if(!attendData[date])return;let t=planData[date]||[];let v=[...new Set(t.flatMap(s=>s.uids))];Object.keys(attendData[date]).forEach(u=>{if(!v.includes(u))delete attendData[date][u]});if(Object.keys(attendData[date]).length===0)delete attendData[date];saveData()}
 function renderAttendPlanList(){
   let d=document.getElementById('attendDate').value||getToday();
@@ -764,6 +822,36 @@ function shareAttendance(){
 function renderAttendList(){
   let d=document.getElementById('attendDate').value||getToday();
   let p=planData[d]||[];
+  let locked = isAttendLocked(d);
+
+  // 编辑锁：过去日期且未解锁 → 只读模式
+  if (locked) {
+    // 只读：不自动创建记录，直接渲染已有数据
+    let a = attendData[d] || {};
+    let g = {};
+    p.forEach(t => { g[t.tid] = { name: t.tname, ws: t.uids.filter(u => workers.some(x => x.id === u && x.status)) }; });
+    let h = '';
+    for (let tid in g) {
+      let t = g[tid];
+      if (t.ws.length === 0) continue;
+      h += '<div class="section-title">' + escapeHtml(t.name) + '</div>';
+      t.ws.forEach(u => {
+        let w = workers.find(x => x.id === u);
+        if (!w) return;
+        let safeName = escapeHtml(w.name);
+        let r = a[u] || { type: 'whole', remark: '', overtime: 0 };
+        h += '<div class="item" style="opacity:.7">' +
+          '<span class="name-text">' + safeName + '</span>' +
+          '<span style="font-size:12px;color:#64748b">' + fmtAttend(r) + '</span>' +
+        '</div>';
+      });
+    }
+    if (!h) {
+      h = '<div class="card card-locked" style="min-height:80px;margin-top:8px"><div class="lock-overlay"><div class="lock-icon">锁</div><div class="lock-text">历史日期，编辑已锁定</div><button class="lock-btn" onclick="unlockAttend()">解除限制（需验证码）</button></div></div>';
+    }
+    document.getElementById('attendList').innerHTML = h || '<p style="text-align:center;color:#999">无考勤人员</p>';
+    return;
+  }
   
   // 自动为排班人员创建考勤记录（默认视为打卡有效）
   if(!attendData[d])attendData[d]={};
@@ -794,8 +882,9 @@ function renderAttendList(){
   }
   document.getElementById('attendList').innerHTML=h||'<p style="text-align:center;color:#999">无考勤人员</p>';
 }
-function setAttType(u,d,t){let p=planData[d]||[];if(!p.some(s=>s.uids.includes(u))){alert('该人员未排班');return}if(!attendData[d])attendData[d]={};if(!attendData[d][u])attendData[d][u]={type:'whole',remark:'',overtime:0};attendData[d][u].type=t;saveData();renderAttendList()}
+function setAttType(u,d,t){if(isAttendLocked(d))return;let p=planData[d]||[];if(!p.some(s=>s.uids.includes(u))){alert('该人员未排班');return}if(!attendData[d])attendData[d]={};if(!attendData[d][u])attendData[d][u]={type:'whole',remark:'',overtime:0};attendData[d][u].type=t;saveData();renderAttendList()}
 function setRemark(u,d,v){
+  if(isAttendLocked(d))return;
   let p=planData[d]||[];
   if(!p.some(s=>s.uids.includes(u)))return;
   if(!attendData[d])attendData[d]={};
@@ -804,6 +893,7 @@ function setRemark(u,d,v){
   saveData();
 }
 function setOvertime(u,d,v){
+  if(isAttendLocked(d))return;
   let p=planData[d]||[];
   if(!p.some(s=>s.uids.includes(u)))return;
   if(!attendData[d])attendData[d]={};
