@@ -194,10 +194,15 @@ h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacin
   #planListBox .task-name{font-size:13px;white-space:normal;word-break:break-all;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.3}
 
   .card-locked{position:relative}
-  .lock-overlay{position:absolute;inset:0;background:rgba(255,255,255,.88);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;gap:8px;padding:16px}
+  .lock-overlay{position:absolute;inset:0;background:rgba(255,255,255,.45);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;gap:8px;padding:16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
   .lock-icon{font-size:28px;color:#94a3b8;font-weight:700}
   .lock-text{font-size:13px;color:#64748b;text-align:center}
-  .lock-btn{width:auto!important;margin:0!important;padding:8px 20px!important;font-size:13px!important;min-height:36px!important;background:#f59e0b;color:#fff;border-radius:8px}
+  .lock-code{font-size:24px;font-weight:800;color:#7c3aed;letter-spacing:6px;font-family:monospace}
+  .lock-input-wrap{display:flex;gap:6px;align-items:center}
+  .lock-input{width:80px;padding:8px 10px;border:2px solid #d1d5db;border-radius:8px;font-size:18px;text-align:center;font-family:monospace;letter-spacing:4px;min-height:40px;outline:none}
+  .lock-input:focus{border-color:#7c3aed}
+  .lock-btn{width:auto!important;margin:0!important;padding:8px 20px!important;font-size:13px!important;min-height:36px!important;background:#7c3aed;color:#fff;border-radius:8px}
+  .lock-hint{font-size:11px;color:#94a3b8;margin-top:2px}
   .date-past-tag{font-size:11px;color:#dc2626;margin-left:4px;font-weight:600}
 
   /* 移动端优化 */
@@ -411,6 +416,8 @@ let editType='',editId='';
 let editingDocId='';
 let _planUnlocked={};   // { '2026-06-10': true }  排工页已解锁日期
 let _attendUnlocked={}; // { '2026-06-10': true }  考勤页已解锁日期
+let _planVerifyCode='';  // 排工页当前验证码
+let _attendVerifyCode='';// 考勤页当前验证码
 
 const defaultWorkers=[
   {id:'1',name:'谭道彦',status:1},{id:'2',name:'谭明义',status:1},
@@ -583,22 +590,34 @@ function fmtAttend(r){
 function escapeHtml(s){
   return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-// 编辑锁：当日以前的日期默认锁定，需输入验证码 pg/kq 解除
+// 编辑锁：当日以前的日期默认锁定，需输入随机验证码防误操作
+function genVerifyCode() { return String(Math.floor(1000 + Math.random() * 9000)); }
 function isPastDate(d) { return d && d < getTodayCached(); }
 function isPlanLocked(d) { return isPastDate(d) && !_planUnlocked[d]; }
 function isAttendLocked(d) { return isPastDate(d) && !_attendUnlocked[d]; }
-function unlockPlan(){ unlockDate('_planUnlocked', 'pg'); }
-function unlockAttend(){ unlockDate('_attendUnlocked', 'kq'); }
-function unlockDate(storageKey, code) {
-  let d = (storageKey === '_planUnlocked') ? (document.getElementById('planDate').value||getTodayCached()) : (document.getElementById('attendDate').value||getTodayCached());
-  let input = prompt('请输入编辑验证码：');
+function unlockPlan(verifyInputId) {
+  var d = document.getElementById('planDate').value || getTodayCached();
+  var realCode = _planVerifyCode;
+  var input = document.getElementById(verifyInputId || 'planVerifyInput').value.trim();
   if (!input) return;
-  if (input.trim() === code) {
-    window[storageKey][d] = true;
-    switchTab(Number(document.querySelector('.tab.active').dataset.tab)||1);
-    alert('编辑限制已解除');
+  if (input === realCode) {
+    _planUnlocked[d] = true;
+    renderPlanPage();
   } else {
-    alert('验证码错误');
+    alert('验证码错误，请重新输入');
+  }
+}
+function unlockAttend(verifyInputId) {
+  var d = document.getElementById('attendDate').value || getTodayCached();
+  var realCode = _attendVerifyCode;
+  var input = document.getElementById(verifyInputId || 'attendVerifyInput').value.trim();
+  if (!input) return;
+  if (input === realCode) {
+    _attendUnlocked[d] = true;
+    renderAttendList();
+    renderAttendPlanList();
+  } else {
+    alert('验证码错误，请重新输入');
   }
 }
 
@@ -624,9 +643,22 @@ function renderPlanPage(){
   let p=planData[d]||[];
   let locked = isPlanLocked(d);
 
-  // 编辑锁：过去日期 → 显示锁态
+  // 编辑锁：过去日期 → 毛玻璃锁态 + 随机验证码
   if (locked) {
-    document.getElementById('planTaskListBox').innerHTML = '<div class="card card-locked" style="min-height:120px"><div class="lock-overlay"><div class="lock-icon">锁</div><div class="lock-text">历史日期，编辑已锁定</div><button class="lock-btn" onclick="unlockPlan()">解除限制（需验证码）</button></div></div>';
+    _planVerifyCode = genVerifyCode();
+    document.getElementById('planTaskListBox').innerHTML = 
+      '<div class="card card-locked" style="min-height:160px">' +
+        '<div class="lock-overlay">' +
+          '<div class="lock-text">历史日期，编辑已锁定</div>' +
+          '<div style="font-size:12px;color:#94a3b8">验证码</div>' +
+          '<div class="lock-code">' + _planVerifyCode + '</div>' +
+          '<div class="lock-input-wrap">' +
+            '<input class="lock-input" id="planVerifyInput" type="text" inputmode="numeric" maxlength="4" placeholder="----" onkeyup="if(event.key===\'Enter\')unlockPlan()">' +
+            '<button class="lock-btn" onclick="unlockPlan()">解除</button>' +
+          '</div>' +
+          '<div class="lock-hint">输入上方数字，回车确认</div>' +
+        '</div>' +
+      '</div>';
     document.getElementById('planWorkerListBox').innerHTML = '';
     renderPlanListReadOnly(d);
     return;
@@ -847,7 +879,17 @@ function renderAttendList(){
       });
     }
     if (!h) {
-      h = '<div class="card card-locked" style="min-height:80px;margin-top:8px"><div class="lock-overlay"><div class="lock-icon">锁</div><div class="lock-text">历史日期，编辑已锁定</div><button class="lock-btn" onclick="unlockAttend()">解除限制（需验证码）</button></div></div>';
+      _attendVerifyCode = genVerifyCode();
+      h = '<div class="card card-locked" style="min-height:160px;margin-top:8px"><div class="lock-overlay">' +
+        '<div class="lock-text">历史日期，编辑已锁定</div>' +
+        '<div style="font-size:12px;color:#94a3b8">验证码</div>' +
+        '<div class="lock-code">' + _attendVerifyCode + '</div>' +
+        '<div class="lock-input-wrap">' +
+          '<input class="lock-input" id="attendVerifyInput" type="text" inputmode="numeric" maxlength="4" placeholder="----" onkeyup="if(event.key===\'Enter\')unlockAttend()">' +
+          '<button class="lock-btn" onclick="unlockAttend()">解除</button>' +
+        '</div>' +
+        '<div class="lock-hint">输入上方数字，回车确认</div>' +
+      '</div></div>';
     }
     document.getElementById('attendList').innerHTML = h || '<p style="text-align:center;color:#999">无考勤人员</p>';
     return;
