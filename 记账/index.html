@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="债务追踪">
+<meta name="theme-color" content="#F5F5F7">
+<link rel="manifest" href="/accounting/manifest.json">
+<title>债务往来追踪</title>
+<style>
+:root {
+    --primary:#2563EB; --bg:#F5F5F7; --card-bg:#fff; --text:#1D1D1F; --text-secondary:#6E6E73;
+    --border:#E5E5EA; --success:#34C759; --danger:#FF3B30;
+    --pay:#2563EB; --recv:#FF9F0A; --receivable:#8B5CF6; --positive:#34C759; --negative:#FF3B30;
+    --shadow:0 2px 12px rgba(0,0,0,.08);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--text); -webkit-text-size-adjust:100%; -webkit-font-smoothing:antialiased; }
+@media (hover:hover){
+    .account-card:hover { box-shadow:var(--shadow); }
+    .btn-primary:hover { opacity:.9; }
+    .btn-danger:hover { opacity:.9; }
+}
+header { background:var(--card-bg); box-shadow:var(--shadow); padding:10px 16px; position:sticky; top:0; z-index:100; display:flex; align-items:center; justify-content:space-between; }
+header h1 { font-size:17px; font-weight:700; }
+.desktop-nav { display:flex; gap:4px; }
+.desktop-nav button { font-size:13px; padding:6px 14px; border:1px solid var(--border); border-radius:16px; background:var(--bg); color:var(--text-secondary); cursor:pointer; min-height:auto; }
+.desktop-nav button.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+#bottomNav { display:none; }
+.container { max-width:600px; margin:0 auto; padding:12px 16px; }
+.card { background:var(--card-bg); border-radius:12px; box-shadow:var(--shadow); padding:16px; margin-bottom:12px; }
+.card h3 { font-size:15px; font-weight:600; margin-bottom:10px; }
+.form-row { display:flex; gap:8px; margin-bottom:8px; }
+.field { flex:1; }
+.field label { display:block; font-size:11px; color:var(--text-secondary); margin-bottom:2px; }
+.field select, .field input { width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:16px; background:var(--card-bg); -webkit-appearance:none; min-height:44px; }
+.field select:focus, .field input:focus { outline:none; border-color:var(--primary); }
+.form-actions { display:flex; gap:8px; margin-top:8px; }
+button { padding:10px 20px; border:none; border-radius:8px; font-size:14px; font-weight:500; cursor:pointer; min-height:44px; }
+.btn-primary { background:var(--primary); color:#fff; }
+.btn-primary:active { opacity:.8; }
+.btn-danger { background:var(--danger); color:#fff; }
+.btn-danger:active { opacity:.8; }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+.btn-outline:active { background:var(--bg); }
+.btn-sm { padding:4px 10px; font-size:12px; min-height:auto; }
+.record-item { display:flex; align-items:center; gap:10px; font-size:13px; padding:10px 0; border-bottom:1px solid var(--border); }
+.record-item:last-child { border-bottom:none; }
+.rec-dir { font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600; white-space:nowrap; }
+.rec-dir.pay { background:#DBEAFE; color:var(--pay); }
+.rec-dir.recv { background:#FEF3C7; color:#B45309; }
+.rec-dir.receivable { background:#EDE9FE; color:var(--receivable); }
+.rec-body { flex:1; min-width:0; }
+.rec-body .rec-name { font-weight:500; }
+.rec-body .rec-meta { font-size:11px; color:var(--text-secondary); }
+.rec-amt { font-weight:600; font-size:14px; white-space:nowrap; }
+.rec-actions { display:flex; gap:4px; }
+.account-card { padding:14px; border:1px solid var(--border); border-radius:10px; margin-bottom:8px; cursor:pointer; transition:box-shadow .2s; }
+.account-card .ac-name { font-size:15px; font-weight:600; }
+.account-card .ac-net { font-size:20px; font-weight:700; margin-top:4px; }
+.account-card .ac-net.positive { color:var(--positive); }
+.account-card .ac-net.negative { color:var(--negative); }
+.account-card .ac-meta { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+.stat-overview { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; margin-bottom:16px; }
+.stat-card { background:var(--card-bg); border-radius:10px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.s-label { font-size:11px; color:var(--text-secondary); margin-bottom:4px; }
+.s-value { font-size:18px; font-weight:700; }
+.s-value.positive { color:var(--positive); }
+.s-value.negative { color:var(--negative); }
+.s-value.pay { color:var(--pay); }
+.s-value.recv { color:var(--recv); }
+.s-value.receivable { color:var(--receivable); }
+.stat-bar-row { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:12px; }
+.bar-label { width:55px; flex-shrink:0; color:var(--text-secondary); }
+.bar-track { flex:1; height:6px; background:var(--bg); border-radius:3px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:3px; transition:width .3s; }
+.bar-fill.pay { background:var(--pay); }
+.bar-fill.recv { background:var(--recv); }
+.bar-fill.receivable { background:var(--receivable); }
+.bar-val { width:70px; text-align:right; font-weight:500; flex-shrink:0; }
+.filter-bar { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+.filter-bar select, .filter-bar input { padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:12px; background:var(--card-bg); }
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.show { display:flex; }
+.modal { background:var(--card-bg); border-radius:14px; padding:20px; width:100%; max-width:400px; max-height:80vh; overflow-y:auto; }
+.modal h4 { font-size:16px; font-weight:600; margin-bottom:14px; }
+.modal .form-row { flex-direction:column; }
+.event-item { padding:10px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; font-size:13px; }
+.event-item .ev-name { font-weight:500; }
+.event-item .ev-status { font-size:11px; padding:1px 6px; border-radius:4px; }
+.event-item .ev-status.active { background:#DBEAFE; color:var(--primary); }
+.event-item .ev-status.settled { background:#D1FAE5; color:var(--success); }
+.toast { position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#333; color:#FFF; padding:10px 24px; border-radius:20px; font-size:14px; z-index:300; opacity:0; transition:opacity .3s; pointer-events:none; max-width:90vw; }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+.empty { text-align:center; padding:40px 20px; color:var(--text-secondary); font-size:14px; }
+.expand-toggle { font-size:12px; color:var(--primary); cursor:pointer; user-select:none; margin-left:4px; }
+#recordFormBody.collapsed { display:none; }
+.card-header-row { display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+.card-header-row h3 { margin-bottom:0; }
+
+/* ====== 移动端 App 体验 ====== */
+@media (max-width: 768px) {
+    html,body { height:100%; overflow:hidden; }
+    body { display:flex; flex-direction:column; -webkit-tap-highlight-color:transparent; }
+    .container { flex:1; padding:8px 12px 0; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; }
+    header { padding:10px 12px; }
+    header h1 { font-size:16px; }
+    .desktop-nav { display:none; }
+    .card { padding:12px; }
+    .form-row { flex-wrap:wrap; }
+    .field select, .field input { font-size:16px; padding:10px; }
+    .field label { font-size:12px; }
+    .stat-overview { grid-template-columns:1fr 1fr; }
+    .toast { top:auto; bottom:calc(20px + env(safe-area-inset-bottom)); }
+    #bottomNav { display:flex; background:var(--card-bg); border-top:1px solid var(--border); box-shadow:0 -2px 8px rgba(0,0,0,.06); padding-bottom:env(safe-area-inset-bottom,0); position:sticky; bottom:0; z-index:100; }
+    .nav-btn { flex:1; min-height:48px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:500; color:var(--text-secondary); cursor:pointer; background:none; border:none; border-radius:0; padding:0; -webkit-tap-highlight-color:transparent; transition:color .15s; }
+    .nav-btn:active { opacity:.6; }
+    .nav-btn.active { color:var(--primary); border-top:2px solid var(--primary); margin-top:-2px; }
+    #ptrIndicator { display:none; text-align:center; padding:16px 0 8px; color:var(--text-secondary); font-size:13px; }
+    .record-row { position:relative; overflow:hidden; }
+    .record-row .swipe-bg { position:absolute; inset:0; background:var(--danger); display:flex; align-items:center; justify-content:flex-end; padding-right:20px; color:#fff; font-weight:600; font-size:13px; }
+    .record-row .swipe-inner { position:relative; background:var(--card-bg); transition:transform .2s ease; }
+    button { min-height:44px; }
+    .btn-sm { min-height:auto; }
+}
+@media (min-width: 769px) {
+    .record-row .swipe-bg { display:none; }
+    #ptrIndicator { display:none; }
+}
+</style>
+</head>
+<body>
+<header>
+    <h1>债务往来追踪</h1>
+    <nav class="desktop-nav">
+        <button class="nav-btn active" data-tab="records">记录</button>
+        <button class="nav-btn" data-tab="accounts">对象</button>
+        <button class="nav-btn" data-tab="stats">统计</button>
+    </nav>
+</header>
+<div class="container" id="mainContent">
+    <div id="ptrIndicator">松开刷新</div>
+    <!-- 记录 Tab -->
+    <div class="tab-content active" id="tab-records">
+        <div class="card">
+            <div class="card-header-row" onclick="toggleRecordForm()">
+                <h3>新增记录</h3>
+                <span class="expand-toggle" id="formToggleText">收起</span>
+            </div>
+            <div id="recordFormBody">
+            <div class="form-row">
+                <div class="field"><label>对象</label><select id="fAccount"><option value=""></option></select></div>
+                <div class="field"><label>方向</label><select id="fDir">
+                    <option value="付给">付给</option>
+                    <option value="收到">收到</option>
+                    <option value="应收">应收</option>
+                </select></div>
+                <div class="field"><label>日期</label><input type="date" id="fDate"></div>
+            </div>
+            <div class="form-row">
+                <div class="field" style="flex:2"><label>金额</label><input type="number" id="fAmt" step="0.01" min="0.01"></div>
+                <div class="field" style="flex:2"><label>事项</label><select id="fEvent"><option value=""></option></select></div>
+            </div>
+            <div class="form-row">
+                <div class="field"><label>备注</label><input type="text" id="fNote"></div>
+            </div>
+            <div class="form-actions">
+                <button class="btn-primary" onclick="saveRecord()" style="flex:2" id="btnSave">添加记录</button>
+                <button class="btn-outline" onclick="cancelEdit()" style="flex:1;display:none" id="btnCancel">取消编辑</button>
+            </div>
+            </div>
+        </div>
+        <div class="card">
+            <h3>查询筛选</h3>
+            <div class="filter-bar">
+                <select id="fltAccount" onchange="loadRecords()"><option value="">全部对象</option></select>
+                <select id="fltDir" onchange="loadRecords()">
+                    <option value="">全部方向</option><option value="付给">付给</option><option value="收到">收到</option><option value="应收">应收</option>
+                </select>
+                <input type="text" id="fltSearch" oninput="loadRecords()" style="min-width:80px" placeholder="搜索备注/事项">
+            </div>
+            <div id="recordList"><div class="empty"></div></div>
+        </div>
+    </div>
+
+    <!-- 对象 Tab -->
+    <div class="tab-content" id="tab-accounts">
+        <div class="card">
+            <h3>添加对象</h3>
+            <div class="form-row">
+                <input type="text" id="newAccName" placeholder="输入对象名称">
+                <button class="btn-primary btn-sm" onclick="addAccount()">添加</button>
+            </div>
+        </div>
+        <div class="card">
+            <h3>对象列表</h3>
+            <div id="accountList"><div class="empty"></div></div>
+        </div>
+    </div>
+
+    <!-- 统计 Tab -->
+    <div class="tab-content" id="tab-stats">
+        <div class="card">
+            <h3>时间筛选</h3>
+            <div class="filter-bar">
+                <input type="date" id="statsStart" onchange="loadStats()">
+                <input type="date" id="statsEnd" onchange="loadStats()">
+            </div>
+        </div>
+        <div id="statsContent"><div class="empty"></div></div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 对象详情弹窗 -->
+<div class="modal-overlay" id="acModal">
+    <div class="modal">
+        <h4 id="acModalTitle"></h4>
+        <div class="form-row"><input type="text" id="acEditName"></div>
+        <div class="form-actions" style="margin-bottom:12px">
+            <button class="btn-primary btn-sm" onclick="saveAccountEdit()">保存</button>
+            <button class="btn-danger btn-sm" onclick="deleteAccountEdit()">删除对象</button>
+            <button class="btn-outline btn-sm" onclick="closeAcModal()">关闭</button>
+        </div>
+        <h4 style="margin-top:8px">事项管理</h4>
+        <div class="form-row">
+            <input type="text" id="acNewEventName">
+            <button class="btn-primary btn-sm" onclick="addEventForAccount()">添加</button>
+        </div>
+        <div id="acEventList" style="margin-top:8px"><div class="empty"></div></div>
+    </div>
+</div>
+
+<script>
+const API = '/api/accounting';
+let accounts = [], events = [];
+let editingId = null, viewingAcId = null;
+
+function $(id){return document.getElementById(id);}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function formatMoney(v){return (parseFloat(v)||0).toFixed(2);}
+
+let toastTimer;
+function showToast(msg){
+    const t=$('toast'); t.textContent=msg; t.style.opacity=1;
+    clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.style.opacity=0,2000);
+}
+
+function switchTab(tab){
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll(`.nav-btn[data-tab="${tab}"]`).forEach(b=>b.classList.add('active'));
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    $('tab-'+tab).classList.add('active');
+    $('mainContent').scrollTop=0;
+    if(tab==='records') loadRecords();
+    else if(tab==='accounts') loadAccounts();
+    else if(tab==='stats') loadStats();
+}
+
+function loadAll(){
+    const at=document.querySelector('.tab-content.active');
+    if(at) switchTab(at.id.replace('tab-',''));
+}
+
+// ====== 数据加载 ======
+async function loadAccounts(){
+    const r=await fetch(API+'/accounts'); const d=await r.json();
+    if(d.success) accounts=d.data;
+    refreshAccountSelects(); renderAccounts();
+}
+
+async function loadEvents(aid){
+    let url=API+'/events'; if(aid) url+='?account_id='+aid;
+    const r=await fetch(url); const d=await r.json();
+    if(d.success) events=d.data;
+    refreshEventSelects();
+}
+async function loadBalance(aid){
+    let url=API+'/accounts';
+    if(aid) url=API+'/stats?account_id='+aid;
+    const r=await fetch(url); const d=await r.json();
+    if(!d.success) return;
+    if(aid){
+        const ov=d.data.overview;
+        renderBalance((ov.total_pay||0)+(ov.total_receivable||0)-(ov.total_recv||0), ov.total_pay||0, ov.total_recv||0, ov.total_receivable||0);
+    }else{
+        let tp=0,tr=0,tv=0;
+        (d.data||[]).forEach(a=>{ tp+=a.pay||0; tr+=a.recv||0; tv+=a.receivable||0; });
+        renderBalance(tp+tv-tr, tp, tr, tv);
+    }
+}
+function renderBalance(net, pay, recv, receivable){
+    $('netBalance').textContent=formatMoney(net);
+    $('netBalance').className='net '+(net>0?'positive':net<0?'negative':'');
+    $('balanceDetail').innerHTML=`付给 ${formatMoney(pay)} · 应收 ${formatMoney(receivable)}<br>收到 ${formatMoney(recv)}`;
+}
+async function loadRecords(){
+    const aid=$('fltAccount').value, dir=$('fltDir').value, s=$('fltSearch').value.trim();
+    let url=API+'/records?limit=200';
+    if(aid) url+='&account_id='+aid;
+    if(dir) url+='&type='+dir;
+    if(s) url+='&search='+encodeURIComponent(s);
+    const r=await fetch(url); const d=await r.json();
+    if(!d.success) return;
+    const recs=d.data||[];
+    let html='';
+    if(!recs.length) html='<div class="empty"></div>';
+    else recs.forEach(r=>{
+        const cls=r.type==='付给'?'pay':r.type==='收到'?'recv':'receivable';
+        html+=`<div class="record-item" data-id="${r.id}">
+            <span class="rec-dir ${cls}">${r.type}</span>
+            <div class="rec-body">
+                <div class="rec-name">${esc(r.account_name)}</div>
+                <div class="rec-meta">${r.date}${r.event_name?' · '+esc(r.event_name):''}${r.note?' · '+esc(r.note):''}</div>
+            </div>
+            <span class="rec-amt" style="color:var(--${cls==='recv'?'recv':cls==='receivable'?'receivable':'pay'})">${formatMoney(r.amount)}</span>
+            <div class="rec-actions">
+                <button class="btn-outline btn-sm" onclick="editRecord(${r.id})">编辑</button>
+                <button class="btn-danger btn-sm" onclick="deleteRecord(${r.id})">删除</button>
+            </div>
+        </div>`;
+    });
+    $('recordList').innerHTML=html;
+    if(recs.length) setTimeout(wrapRecordItems, 50);
+}
+
+// ====== 记录 CRUD ======
+function refreshAccountSelects(){
+    const opts=accounts.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('');
+    const selects=[
+        {id:'fAccount', emptyText:''},
+        {id:'fltAccount', emptyText:'全部对象'},
+    ];
+    selects.forEach(({id, emptyText})=>{
+        const sel=$(id); if(!sel) return;
+        const v=sel.value;
+        sel.innerHTML='<option value="">'+emptyText+'</option>'+opts;
+        if(v) sel.value=v;
+    });
+}
+function refreshEventSelects(aid){
+    let evs=events; if(aid) evs=events.filter(e=>e.account_id==parseInt(aid));
+    const opts=evs.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('');
+    const sel=$('fEvent'); if(!sel) return;
+    const v=sel.value;
+    sel.innerHTML='<option value=""></option>'+opts;
+    if(v) sel.value=v;
+}
+async function saveRecord(){
+    const body={
+        account_id: parseInt($('fAccount').value)||0,
+        type: $('fDir').value,
+
+        amount: parseFloat($('fAmt').value)||0,
+        date: $('fDate').value||'',
+        note: $('fNote').value.trim(),
+        event_id: parseInt($('fEvent').value)||null,
+    };
+    if(!body.account_id) return showToast('请选择对象');
+    if(!body.amount||body.amount<=0) return showToast('金额必须大于0');
+    const url=editingId?API+'/records/'+editingId:API+'/records';
+    const method=editingId?'PUT':'POST';
+    const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(d.success){
+        showToast(editingId?'已更新':'已添加');
+        cancelEdit(); loadRecords(); loadBalance(body.account_id); loadAccounts();
+    }else showToast(d.error||'操作失败');
+}
+async function editRecord(id){
+    const r=await fetch(API+'/records'); const d=await r.json();
+    if(!d.success) return;
+    const rec=(d.data||[]).find(x=>x.id===id);
+    if(!rec) return;
+    editingId=id;
+    // 编辑时自动展开表单
+    $('recordFormBody').classList.remove('collapsed');
+    $('formToggleText').textContent='收起';
+    localStorage.setItem('recordFormCollapsed','0');
+    $('fAccount').value=rec.account_id;
+    $('fDir').value=rec.type;
+    $('fAmt').value=rec.amount;
+    $('fDate').value=rec.date;
+    $('fNote').value=rec.note||'';
+    setTimeout(()=>{
+        if(rec.event_id){ const s=$('fEvent'); for(let i=0;i<s.options.length;i++) if(s.options[i].value==rec.event_id){s.selectedIndex=i;break;} }
+    },60);
+    $('btnSave').textContent='更新记录';
+    $('btnCancel').style.display='';
+    $('fAccount').scrollIntoView({behavior:'smooth'});
+}
+function cancelEdit(){
+    editingId=null;
+    $('fAmt').value=''; $('fNote').value='';
+    $('btnSave').textContent='添加记录';
+    $('btnCancel').style.display='none';
+}
+async function deleteRecord(id){
+    if(!confirm('确定删除？')) return;
+    const r=await fetch(API+'/records/'+id,{method:'DELETE'});
+    const d=await r.json();
+    if(d.success){ showToast('已删除'); loadRecords(); loadAccounts(); }
+    else showToast(d.error||'删除失败');
+}
+
+// ====== 对象管理 ======
+async function addAccount(){
+    const name=$('newAccName').value.trim();
+    if(!name) return showToast('请输入对象名称');
+    const r=await fetch(API+'/accounts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+    const d=await r.json();
+    if(d.success){ showToast('已添加'); $('newAccName').value=''; loadAccounts(); }
+    else showToast(d.error||'添加失败');
+}
+function renderAccounts(){
+    let html='';
+    if(!accounts.length) html='<div class="empty"></div>';
+    else accounts.forEach(a=>{
+        const net=(a.pay||0)+(a.receivable||0)-(a.recv||0);
+        const cls=net>0?'positive':net<0?'negative':'';
+        html+=`<div class="account-card" onclick="openAcModal(${a.id})">
+            <div class="ac-name">${esc(a.name)}</div>
+            <div class="ac-net ${cls}">${formatMoney(net)}</div>
+            <div class="ac-meta">付给 ${(a.pay||0).toFixed(2)} · 应收 ${(a.receivable||0).toFixed(2)} · 收到 ${(a.recv||0).toFixed(2)} · ${a.record_count||0}笔</div>
+        </div>`;
+    });
+    $('accountList').innerHTML=html;
+}
+
+// ====== 对象详情弹窗（含事项管理） ======
+async function openAcModal(aid){
+    viewingAcId=aid;
+    const a=accounts.find(x=>x.id===aid);
+    if(!a) return;
+    $('acModalTitle').textContent=a.name;
+    $('acEditName').value=a.name;
+    $('acModal').classList.add('show');
+    await loadEvents(aid);
+    renderAcEventList(aid);
+}
+function closeAcModal(){ $('acModal').classList.remove('show'); viewingAcId=null; }
+async function saveAccountEdit(){
+    const name=$('acEditName').value.trim();
+    if(!name) return showToast('请输入名称');
+    const r=await fetch(API+'/accounts/'+viewingAcId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+    const d=await r.json();
+    if(d.success){ showToast('已更新'); closeAcModal(); loadAccounts(); loadRecords(); }
+    else showToast(d.error||'更新失败');
+}
+async function deleteAccountEdit(){
+    if(!confirm('确定删除该对象及所有相关记录？')) return;
+    const r=await fetch(API+'/accounts/'+viewingAcId,{method:'DELETE'});
+    const d=await r.json();
+    if(d.success){ showToast('已删除'); closeAcModal(); loadAccounts(); loadRecords(); }
+    else showToast(d.error||'删除失败');
+}
+async function addEventForAccount(){
+    const name=$('acNewEventName').value.trim();
+    if(!name) return showToast('请输入事项名称');
+    const r=await fetch(API+'/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({account_id:viewingAcId,name})});
+    const d=await r.json();
+    if(d.success){ showToast('已添加'); $('acNewEventName').value=''; await loadEvents(viewingAcId); renderAcEventList(viewingAcId); }
+    else showToast(d.error||'添加失败');
+}
+function renderAcEventList(aid){
+    let evs=events.filter(e=>e.account_id==aid);
+    let html='';
+    if(!evs.length) html='<div class="empty"></div>';
+    else evs.forEach(e=>{
+        html+=`<div class="event-item">
+            <div><div class="ev-name">${esc(e.name)}</div><div style="font-size:11px;color:var(--text-secondary)">${e.record_count||0}笔</div></div>
+            <div><button class="btn-outline btn-sm" onclick="toggleEventSettle(${e.id})">${e.status==='进行中'?'结清':'重开'}</button></div>
+        </div>`;
+    });
+    $('acEventList').innerHTML=html;
+}
+async function toggleEventSettle(eid){
+    const r=await fetch(API+'/events/'+eid+'/settle',{method:'PUT'});
+    const d=await r.json();
+    if(d.success){
+        showToast('状态已更新');
+        await loadEvents(viewingAcId);
+        renderAcEventList(viewingAcId);
+        loadRecords(); loadAccounts();
+    }else showToast(d.error||'操作失败');
+}
+
+// ====== 统计 ======
+async function loadStats(){
+    let url=API+'/stats';
+    const p=[], s=$('statsStart').value, e=$('statsEnd').value;
+    if(s) p.push('start='+s); if(e) p.push('end='+e);
+    if(p.length) url+='?'+p.join('&');
+    const r=await fetch(url); const d=await r.json();
+    if(!d.success) return;
+    renderStats(d.data);
+}
+function renderStats(data){
+    const ov=data.overview;
+    const net=(ov.total_pay||0)+(ov.total_receivable||0)-(ov.total_recv||0);
+    let html='<div class="stat-overview">';
+    html+=`<div class="stat-card"><div class="s-label">付给总额</div><div class="s-value pay">${(ov.total_pay||0).toFixed(2)}</div></div>`;
+    html+=`<div class="stat-card"><div class="s-label">收到总额</div><div class="s-value recv">${(ov.total_recv||0).toFixed(2)}</div></div>`;
+    html+=`<div class="stat-card"><div class="s-label">应收总额</div><div class="s-value receivable">${(ov.total_receivable||0).toFixed(2)}</div></div>`;
+    html+=`<div class="stat-card"><div class="s-label">净额</div><div class="s-value ${net>0?'positive':net<0?'negative':''}">${formatMoney(net)}</div></div>`;
+    html+=`<div class="stat-card"><div class="s-label">对象/笔数</div><div class="s-value" style="font-size:16px">${ov.account_count||0} / ${ov.total_count||0}</div></div>`;
+    html+='</div>';
+
+    if(data.by_account&&data.by_account.length){
+        html+='<h3 style="margin:16px 0 8px 0;font-size:14px">各对象明细</h3>';
+        const maxAmt=Math.max(...data.by_account.map(a=>Math.max(a.pay||0,a.recv||0,a.receivable||0,1)));
+        data.by_account.forEach(a=>{
+            const anet=(a.pay||0)+(a.receivable||0)-(a.recv||0);
+            const cls=anet>0?'positive':anet<0?'negative':'';
+            html+=`<div style="padding:6px 0;border-bottom:1px solid var(--border)">
+                <div style="font-weight:600;font-size:13px">${esc(a.name)} <span style="color:var(--${cls})">${formatMoney(anet)}</span></div>
+                <div class="stat-bar-row"><span class="bar-label">付给</span><div class="bar-track"><div class="bar-fill pay" style="width:${(a.pay||0)/maxAmt*100}%"></div></div><span class="bar-val">${(a.pay||0).toFixed(2)}</span></div>
+                <div class="stat-bar-row"><span class="bar-label">应收</span><div class="bar-track"><div class="bar-fill receivable" style="width:${(a.receivable||0)/maxAmt*100}%"></div></div><span class="bar-val">${(a.receivable||0).toFixed(2)}</span></div>
+                <div class="stat-bar-row"><span class="bar-label">收到</span><div class="bar-track"><div class="bar-fill recv" style="width:${(a.recv||0)/maxAmt*100}%"></div></div><span class="bar-val">${(a.recv||0).toFixed(2)}</span></div>
+            </div>`;
+        });
+    }
+    $('statsContent').innerHTML=html;
+}
+
+// ====== 初始化 ======
+async function init(){
+    $('fAccount').addEventListener('change',async function(){
+        const aid=this.value;
+        if(aid) await loadEvents(aid);
+        else await loadEvents();
+    });
+    await Promise.all([loadAccounts(), loadEvents()]);
+    $('fDate').value=new Date().toISOString().split('T')[0];
+    loadRecords();
+}
+init();
+</script>
+
+<div id="bottomNav">
+    <button class="nav-btn active" data-tab="records">记录</button>
+    <button class="nav-btn" data-tab="accounts">对象</button>
+    <button class="nav-btn" data-tab="stats">统计</button>
+</div>
+
+<script>
+document.querySelectorAll('.nav-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>switchTab(btn.dataset.tab));
+});
+
+if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('/accounting/sw.js').catch(()=>{});
+}
+
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); deferredPrompt=e; });
+
+// 新增记录折叠/展开
+function toggleRecordForm(){
+    const body=$('recordFormBody'), txt=$('formToggleText');
+    body.classList.toggle('collapsed');
+    const collapsed=body.classList.contains('collapsed');
+    txt.textContent=collapsed?'展开':'收起';
+    localStorage.setItem('recordFormCollapsed',collapsed?'1':'0');
+}
+(function(){
+    if(localStorage.getItem('recordFormCollapsed')==='1'){
+        $('recordFormBody').classList.add('collapsed');
+        $('formToggleText').textContent='展开';
+    }
+})();
+
+// 下拉刷新
+let ptrStartY=0, ptrPulling=false;
+const mainContent=$('mainContent'), ptrIndicator=$('ptrIndicator');
+mainContent.addEventListener('touchstart',e=>{
+    if(mainContent.scrollTop===0){ ptrStartY=e.touches[0].clientY; ptrPulling=true; }
+});
+mainContent.addEventListener('touchmove',e=>{
+    if(!ptrPulling) return;
+    const dy=e.touches[0].clientY-ptrStartY;
+    if(dy>0 && mainContent.scrollTop===0){
+        ptrIndicator.style.display='block';
+        ptrIndicator.textContent=dy>80?'松开刷新':'下拉刷新';
+    }
+},{passive:true});
+mainContent.addEventListener('touchend',()=>{
+    if(!ptrPulling) return; ptrPulling=false;
+    if(ptrIndicator.textContent==='松开刷新'){
+        ptrIndicator.textContent='刷新中...';
+        loadAll(); setTimeout(()=>ptrIndicator.style.display='none',500);
+    }else ptrIndicator.style.display='none';
+});
+
+// 滑动删除
+function wrapRecordItems(){
+    document.querySelectorAll('#recordList .record-item').forEach(item=>{
+        if(item.parentElement.classList.contains('record-row')) return;
+        const row=document.createElement('div'); row.className='record-row';
+        const bg=document.createElement('div'); bg.className='swipe-bg'; bg.textContent='删除';
+        const inner=document.createElement('div'); inner.className='swipe-inner';
+        item.parentNode.insertBefore(row,item);
+        inner.appendChild(item); row.appendChild(bg); row.appendChild(inner);
+        let startX=0, curX=0;
+        inner.addEventListener('touchstart',e=>{startX=e.touches[0].clientX; curX=0;});
+        inner.addEventListener('touchmove',e=>{
+            const dx=e.touches[0].clientX-startX;
+            if(dx<-10){ inner.style.transform=`translateX(${Math.max(dx,-80)}px)`; curX=dx; }
+        });
+        inner.addEventListener('touchend',()=>{
+            inner.style.transform=curX<-50?'translateX(-80px)':'translateX(0)';
+        });
+        bg.addEventListener('click',()=>{
+            const recId=item.dataset.id;
+            if(recId) doDeleteRecord(recId);
+        });
+    });
+}
+async function doDeleteRecord(id){
+    const r=await fetch(API+'/records/'+id,{method:'DELETE'});
+    const d=await r.json();
+    if(d.success){ loadRecords(); showToast('已删除'); }
+    else showToast('删除失败: '+(d.error||'未知错误'));
+}
+</script>
+</body>
+</html>

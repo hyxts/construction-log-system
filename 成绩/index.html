@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#6b21a8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%237c3aed'/%3E%3Crect x='6' y='9' width='16' height='3' rx='1.5' fill='%23fff'/%3E%3Crect x='6' y='14' width='12' height='3' rx='1.5' fill='%23fff'/%3E%3Crect x='6' y='19' width='8' height='3' rx='1.5' fill='%23fff'/%3E%3Ccircle cx='24' cy='22' r='5.5' fill='%23f59e0b'/%3E%3Ctext x='24' y='24' text-anchor='middle' font-size='7' font-weight='700' fill='%23fff' font-family='system-ui,sans-serif'%3EA%3C/text%3E%3C/svg%3E">
+<title>高中成绩</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+html,body{min-height:100vh;width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Arial,sans-serif;background:#f5f7fa;color:#1f2937;overscroll-behavior:none;-webkit-user-select:none;user-select:none;font-size:15px;line-height:1.5}
+header{background:#ffffff;color:#1f2937;text-align:center;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));font-size:17px;font-weight:600;position:sticky;top:0;z-index:100;letter-spacing:.3px;border-bottom:1px solid #eef0f4;display:flex;align-items:center;justify-content:center;gap:8px}
+.main{padding:12px;width:100%;max-width:100%}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04)}
+h3{font-size:16px;margin-bottom:10px;color:#0f172a;font-weight:600;letter-spacing:.2px}
+
+/* Tab bar */
+.tab-bar{display:flex;gap:0;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;z-index:100;padding-bottom:env(safe-area-inset-bottom);padding-top:6px}
+.tab-item{flex:1;text-align:center;padding:8px 4px 10px;font-size:11px;color:#9ca3af;cursor:pointer;transition:.15s;user-select:none}
+.tab-item.active{color:#7c3aed;font-weight:600}
+.tab-icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#e9d5ff;color:#7c3aed;font-size:18px;font-weight:700;margin-bottom:2px;line-height:1;transition:all .2s}
+.tab-item.active .tab-icon{background:#7c3aed;color:#fff}
+
+/* Tab content */
+.tab-content{display:none;animation:fadeIn .2s ease}
+.tab-content.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+input, select, textarea{
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size:15px;
+  background: #fff;
+  min-height:44px;
+  width:100%;
+  color:#1f2937;
+}
+input:focus, select:focus, textarea:focus{
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 3px rgba(124,58,237,.15);
+}
+textarea{min-height:60px;resize:none}
+
+button{
+  border:none;
+  border-radius:10px;
+  padding:10px 12px;
+  cursor:pointer;
+  background:#7c3aed;
+  color:#fff;
+  font-size:14px;
+  font-weight:600;
+  min-height:40px;
+  width:100%;
+  margin-bottom:6px;
+  touch-action:manipulation;
+}
+button:active{filter:brightness(.92);transform:scale(.98)}
+.btn-gray{background:#e5e7eb;color:#374151}
+.btn-red{background:#fee2e2;color:#dc2626}
+.btn-sm{width:auto;display:inline-block;padding:8px 14px;font-size:13px}
+.btn-xs{width:auto;padding:4px 8px;font-size:11px;border-radius:6px}
+
+label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:500}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.stat-card{background:#f8fafc;border-radius:10px;padding:12px 8px;text-align:center;border:1px solid #eef2f7}
+.stat-val{font-size:20px;font-weight:700;color:#7c3aed}
+.stat-lbl{font-size:11px;color:#6b7280;margin-top:2px}
+.stat-card .countdown-num{color:#dc2626;font-weight:800}
+.stat-card .countdown-text{font-size:13px;color:#1f2937}
+#gaokaoCountdown{min-height:48px;display:flex;align-items:center;justify-content:center}
+
+/* Exam table */
+.exam-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px}
+.exam-table{min-width:1100px;width:100%;border-collapse:collapse;font-size:12px}
+.exam-table th{background:#f1f5f9;color:#475569;font-weight:600;padding:6px 4px;text-align:center;white-space:nowrap;border-bottom:2px solid #e2e8f0;position:sticky;top:0;z-index:2;font-size:11px}
+.exam-table td{padding:5px 4px;text-align:center;border-bottom:1px solid #f1f5f9;white-space:nowrap;color:#334155}
+.exam-table tr:hover td{background:#fafafa}
+.exam-table .col-period{text-align:left;font-weight:600;color:#1e293b;white-space:nowrap;position:sticky;left:0;background:#fff;z-index:1}
+.exam-table tr:hover td.col-period{background:#fafafa}
+.score-good{color:#059669;font-weight:600}
+.score-mid{color:#d97706;font-weight:600}
+.score-low{color:#dc2626;font-weight:600}
+.rank-cell{color:#94a3b8;font-size:11px}
+.total-row td{font-weight:600;background:#faf5ff;border-top:2px solid #c084fc}
+
+/* Trend chart */
+.chart-container{position:relative;width:100%;height:220px}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:#fff;border-radius:18px 18px 0 0;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;padding:20px 18px 28px;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-box h4{font-size:17px;margin-bottom:14px;text-align:center}
+.form-group{margin-bottom:12px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.form-row-4{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:6px}
+.form-row-3{display:grid;grid-template-columns:2fr 2fr 1fr 1fr 1fr;gap:6px}
+.form-actions{display:flex;gap:8px;margin-top:14px}
+.form-actions button{margin-bottom:0}
+.form-section-title{font-size:13px;font-weight:600;color:#1e293b;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px dashed #e5e7eb}
+.auto-score{background:#f8fafc;color:#6b7280;font-weight:500}
+.confirm-danger{background:#dc2626}
+.empty-state{text-align:center;padding:30px 16px;color:#94a3b8;font-size:14px}
+
+/* Subject badges */
+.subj-badge{display:inline-block;font-size:10px;padding:1px 5px;border-radius:4px;font-weight:600;margin-right:2px}
+.badge-chinese{background:#fef3c7;color:#b45309}
+.badge-math{background:#dbeafe;color:#1d4ed8}
+.badge-english{background:#ede9fe;color:#6d28d9}
+.badge-history{background:#fecaca;color:#b91c1c}
+.badge-politics{background:#d1fae5;color:#047857}
+.badge-geo{background:#e0e7ff;color:#3730a3}
+.badge-main{background:#f3e8ff;color:#7c3aed}
+.badge-three{background:#fce7f3;color:#be185d}
+
+.th-sub{font-size:9px;font-weight:400;color:#94a3b8}
+/* PC顶部导航 */
+.pc-nav{display:flex;gap:4px;padding:6px 12px;border-bottom:1px solid #e5e7eb;background:#fff;overflow-x:auto}
+.pc-nav-btn{padding:8px 16px;border:none;background:none;font-size:14px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;min-height:36px;width:auto;margin:0;border-radius:0;transition:color .15s,border-color .15s}
+.pc-nav-btn.active{color:#7c3aed;border-bottom-color:#7c3aed}
+.pc-nav-btn:hover{color:#7c3aed}
+/* 移动端 */
+@media (max-width:768px){
+  body{padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  .pc-nav{display:none}
+  .main{padding:8px}
+  .card{padding:10px;margin-bottom:8px}
+  .stats-grid{grid-template-columns:1fr 1fr;gap:6px}
+  .stat-card{padding:10px 6px}
+  .stat-val{font-size:17px}
+  .stat-lbl{font-size:10px}
+  .form-row-4{grid-template-columns:1fr 1fr;gap:4px}
+  .form-row-3{grid-template-columns:1fr 1fr;gap:4px}
+  .form-row{gap:4px}
+  .exam-table{min-width:750px;font-size:11px}
+  .exam-table th{font-size:10px;padding:4px 2px}
+  .exam-table td{padding:4px 2px}
+  .modal-box{max-width:100%;border-radius:16px 16px 0 0;padding:16px 14px calc(16px + env(safe-area-inset-bottom))}
+  .chart-container{height:180px}
+  .tab-bar{height:64px}
+  .tab-item{font-size:10px;padding:6px 4px 8px}
+  .exam-table{min-width:600px;font-size:10px}
+  .modal-box{padding:12px 10px calc(12px + env(safe-area-inset-bottom));border-radius:14px 14px 0 0}
+  .chart-container{height:150px}
+}
+/* PC端 */
+@media (min-width:769px){
+  .tab-bar{display:none}
+  .main{max-width:1300px;margin:0 auto;padding:16px 24px}
+  body{background:#eef1f5}
+  .tab-content{min-height:auto}
+}
+</style>
+</head>
+
+<body>
+<header><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><rect x="2" y="2" width="20" height="20" rx="5" fill="#7c3aed"/><path d="M6 8h12M6 12h8M6 16h5" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="17.5" cy="15.5" r="3.5" fill="#f59e0b"/><text x="17.5" y="17" text-anchor="middle" font-size="5.5" font-weight="700" fill="#fff">A</text></svg>高中成绩</header>
+<div class="pc-nav" id="pcNav">
+  <button class="pc-nav-btn active" data-page="overview">概览</button>
+  <button class="pc-nav-btn" data-page="exams">成绩</button>
+</div>
+<div class="main">
+
+<!-- Overview -->
+<div class="tab-content active" id="tab-overview">
+  <div style="display:flex;justify-content:flex-end;align-items:center;margin-bottom:10px">
+    <button class="btn-sm btn-gray" onclick="switchTab('exams')" style="background:#7c3aed;color:#fff">成绩录入</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-val" id="gaokaoCountdown" style="font-size:15px;color:#1f2937;line-height:1.4">-</div></div>
+    <div class="stat-card"><div class="stat-val" id="avgTotal">-</div><div class="stat-lbl">平均总分</div></div>
+    <div class="stat-card"><div class="stat-val" id="maxTotal">-</div><div class="stat-lbl">最高总分</div></div>
+    <div class="stat-card"><div class="stat-val" id="latestTotal">-</div><div class="stat-lbl">最近总分</div></div>
+  </div>
+
+  <div class="card">
+    <h3>总分趋势</h3>
+    <div class="chart-container"><canvas id="totalChart"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h3>各科位次趋势</h3>
+    <div class="chart-container" style="height:220px"><canvas id="subjectRankChart"></canvas></div>
+    <div style="margin-top:10px" id="subjRankBtns"></div>
+  </div>
+
+  <div class="card">
+    <h3>最近考试详情</h3>
+    <div id="recentDetail"></div>
+  </div>
+</div>
+
+<!-- Exams list -->
+<div class="tab-content" id="tab-exams">
+  <div style="display:flex;gap:8px;margin-bottom:10px">
+    <button onclick="showExamModal()">添加考试</button>
+    <button class="btn-gray btn-sm" onclick="switchTab('overview')">返回</button>
+  </div>
+
+  <div class="card" style="padding:8px 14px">
+    <h3>成绩列表</h3>
+    <div class="exam-table-wrap">
+      <table class="exam-table">
+        <thead>
+          <tr>
+            <th class="col-period">考试</th>
+            <th>总分</th>
+            <th>区排</th>
+            <th>校排</th>
+            <th>班排</th>
+            <th>主科</th>
+            <th>三科</th>
+            <th>语文</th>
+            <th>数学</th>
+            <th>英语</th>
+            <th>历史</th>
+            <th>政治<br><span class="th-sub">赋分 / 原始</span></th>
+            <th>地理<br><span class="th-sub">赋分 / 原始</span></th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="examTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- Tab bar -->
+<div class="tab-bar">
+  <div class="tab-item active" data-tab="overview" onclick="switchTab('overview')">
+    <span class="tab-icon">~</span>
+    概览
+  </div>
+  <div class="tab-item" data-tab="exams" onclick="switchTab('exams')">
+    <span class="tab-icon">*</span>
+    成绩
+  </div>
+</div>
+
+<!-- Exam modal -->
+<div class="modal-overlay" id="examModal">
+  <div class="modal-box">
+    <h4 id="examModalTitle">添加考试成绩</h4>
+    <input type="hidden" id="examEditId">
+    <div class="form-group">
+      <label>考试类型</label>
+      <input type="text" id="examName" required>
+    </div>
+    <div class="form-group">
+      <label>班级</label>
+      <input type="text" id="examClass">
+    </div>
+
+    <!-- 总分总排名 -->
+    <div class="form-section-title">总分排名</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label style="color:#7c3aed">总分</label>
+        <input type="number" step="0.1" id="totalScore" readonly class="auto-score">
+      </div>
+      <div class="form-group">
+        <label style="color:#7c3aed">主科总分</label>
+        <input type="number" step="0.1" id="mainScore" readonly class="auto-score">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>区排名</label>
+        <input type="number" id="examDistRank" >
+      </div>
+      <div class="form-group">
+        <label>校排名</label>
+        <input type="number" id="examSchoolRank" >
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>班排名</label>
+        <input type="number" id="examClassRank" >
+      </div>
+      <div class="form-group">
+        <label style="color:#be185d">三科总分</label>
+        <input type="number" step="0.1" id="threeScore" readonly class="auto-score">
+      </div>
+    </div>
+
+    <!-- 语文 -->
+    <div class="form-section-title">语文</div>
+    <div class="form-row-4">
+      <div class="form-group">
+        <label style="color:#b45309">分数</label>
+        <input type="number" step="0.1" id="s_chinese" onchange="autoCalc()">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_chinese" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_chinese" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_chinese" >
+      </div>
+    </div>
+
+    <!-- 数学 -->
+    <div class="form-section-title">数学</div>
+    <div class="form-row-4">
+      <div class="form-group">
+        <label style="color:#1d4ed8">分数</label>
+        <input type="number" step="0.1" id="s_math" onchange="autoCalc()">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_math" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_math" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_math" >
+      </div>
+    </div>
+
+    <!-- 英语 -->
+    <div class="form-section-title">英语</div>
+    <div class="form-row-4">
+      <div class="form-group">
+        <label style="color:#6d28d9">分数</label>
+        <input type="number" step="0.1" id="s_english" onchange="autoCalc()">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_english" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_english" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_english" >
+      </div>
+    </div>
+
+    <!-- 历史 -->
+    <div class="form-section-title">历史</div>
+    <div class="form-row-4">
+      <div class="form-group">
+        <label style="color:#b91c1c">分数</label>
+        <input type="number" step="0.1" id="s_history" onchange="autoCalc()">
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_history" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_history" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_history" >
+      </div>
+    </div>
+
+    <!-- 政治 -->
+    <div class="form-section-title">政治（总分按赋分计算）</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label style="color:#047857">原始分</label>
+        <input type="number" step="0.1" id="s_politics" onchange="autoCalc()">
+      </div>
+      <div class="form-group">
+        <label style="color:#047857;font-weight:700">赋分</label>
+        <input type="number" step="0.1" id="a_politics" onchange="autoCalc()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_politics" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_politics" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_politics" >
+      </div>
+    </div>
+
+    <!-- 地理 -->
+    <div class="form-section-title">地理（总分按赋分计算）</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label style="color:#3730a3">原始分</label>
+        <input type="number" step="0.1" id="s_geography" onchange="autoCalc()">
+      </div>
+      <div class="form-group">
+        <label style="color:#3730a3;font-weight:700">赋分</label>
+        <input type="number" step="0.1" id="a_geography" onchange="autoCalc()">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">区排名</label>
+        <input type="number" id="rd_geography" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">校排名</label>
+        <input type="number" id="rs_geography" >
+      </div>
+      <div class="form-group">
+        <label style="font-size:11px;color:#94a3b8">班排名</label>
+        <input type="number" id="rc_geography" >
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-gray" onclick="closeExamModal()" style="flex:1">取消</button>
+      <button onclick="saveExam()" style="flex:1">保存</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+// ==================== 数据层 ====================
+let exams = [];
+const SUBJECTS = [
+  { key: 'chinese', label: '语文', color: '#f59e0b', assigned: false },
+  { key: 'math', label: '数学', color: '#3b82f6', assigned: false },
+  { key: 'english', label: '英语', color: '#8b5cf6', assigned: false },
+  { key: 'history', label: '历史', color: '#ef4444', assigned: false },
+  { key: 'politics', label: '政治', color: '#10b981', assigned: true },
+  { key: 'geography', label: '地理', color: '#6366f1', assigned: true }
+];
+
+function showToast(msg, type) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:10px;color:#fff;font-size:14px;z-index:9999;box-shadow:0 4px 12px rgba(0,0,0,.15);background:' + (type === 'error' ? '#dc2626' : '#16a34a');
+  document.body.appendChild(t);
+  setTimeout(function() { t.remove(); }, 3000);
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtNum(v, decimals) {
+  if (v === null || v === undefined || v === '') return '-';
+  var n = Number(v);
+  if (isNaN(n)) return '-';
+  if (decimals !== undefined && decimals !== null) return n.toFixed(decimals);
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+// ==================== 计算 ====================
+function getSubjectScore(exam, key) {
+  if (!exam || !exam.scores) return 0;
+  return Number(exam.scores[key]) || 0;
+}
+
+function getSubjectAssigned(exam, key) {
+  if (!exam || !exam.assignedScores) return 0;
+  return Number(exam.assignedScores[key]) || 0;
+}
+
+function getEffectiveScore(exam, key) {
+  var subj = SUBJECTS.find(function(s) { return s.key === key; });
+  var raw = getSubjectScore(exam, key);
+  if (subj && subj.assigned) {
+    var av = getSubjectAssigned(exam, key);
+    return av > 0 ? av : raw;
+  }
+  return raw;
+}
+
+function calcMainScore(exam) {
+  var c = getSubjectScore(exam, 'chinese');
+  var m = getSubjectScore(exam, 'math');
+  var e = getSubjectScore(exam, 'english');
+  return (c + m + e) || 0;
+}
+
+function calcThreeScore(exam) {
+  var h = getSubjectScore(exam, 'history');
+  var p = getEffectiveScore(exam, 'politics');
+  var g = getEffectiveScore(exam, 'geography');
+  return (h + p + g) || 0;
+}
+
+function calcTotal(exam) {
+  return calcMainScore(exam) + calcThreeScore(exam);
+}
+
+// 获取单科排名（兼容旧数据格式）
+function getSubjectRank(exam, key, level) {
+  if (!exam || !exam.ranks) return null;
+  var r = exam.ranks[key];
+  if (r === null || r === undefined) return null;
+  if (typeof r === 'object') return r[level] || null;
+  if (typeof r === 'number') return level === 'district' ? r : null;
+  return null;
+}
+
+function getScoreColor(val) {
+  val = Number(val) || 0;
+  if (val >= 90) return 'score-good';
+  if (val >= 70) return 'score-mid';
+  if (val > 0 && val < 60) return 'score-low';
+  return '';
+}
+
+// 自动计算总分
+function autoCalc() {
+  var scores = {};
+  var assignedScores = {};
+  SUBJECTS.forEach(function(s) {
+    var sv = document.getElementById('s_' + s.key).value;
+    scores[s.key] = sv !== '' ? Number(sv) : null;
+    if (s.assigned) {
+      var av = document.getElementById('a_' + s.key).value;
+      assignedScores[s.key] = av !== '' ? Number(av) : null;
+    }
+  });
+  var tmp = { scores: scores, assignedScores: assignedScores };
+
+  var mainVal = calcMainScore(tmp);
+  var threeVal = calcThreeScore(tmp);
+  var totalVal = calcTotal(tmp);
+
+  document.getElementById('totalScore').value = totalVal > 0 ? totalVal.toFixed(1) : '';
+  document.getElementById('mainScore').value = mainVal > 0 ? mainVal.toFixed(1) : '';
+  document.getElementById('threeScore').value = threeVal > 0 ? threeVal.toFixed(1) : '';
+}
+
+// ==================== 持久化 ====================
+async function loadData() {
+  var serverLoaded = false;
+  try {
+    var resp = await fetch('/api/hsgrades/data');
+    var json = await resp.json();
+    if (json.success && json.data) {
+      exams = json.data.exams || [];
+      localStorage.setItem('hsgradesData', JSON.stringify(exams));
+      serverLoaded = true;
+    }
+  } catch(e) {}
+
+  if (!serverLoaded) {
+    var d = localStorage.getItem('hsgradesData');
+    if (d) {
+      try { exams = JSON.parse(d); } catch(e) { exams = []; }
+    }
+  }
+
+  if (!exams || exams.length === 0) {
+    exams = DEFAULT_EXAMS;
+  }
+
+  refreshAll();
+}
+
+function saveData() {
+  localStorage.setItem('hsgradesData', JSON.stringify(exams));
+  try {
+    fetch('/api/hsgrades/data', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'include',
+      body: JSON.stringify({ exams })
+    }).then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    }).catch(function(e) {
+      showToast('保存失败: ' + e.message, 'error');
+    });
+  } catch(e) {}
+}
+
+async function pullFromServer() {
+  try {
+    var resp = await fetch('/api/hsgrades/data');
+    var json = await resp.json();
+    if (json.success && json.data) {
+      exams = json.data.exams || [];
+      localStorage.setItem('hsgradesData', JSON.stringify(exams));
+      refreshAll();
+    }
+  } catch(e) {}
+}
+
+var DEFAULT_EXAMS = [
+  {
+    id: 'ex-1',
+    name: '高一上期末',
+    className: '',
+    scores: { chinese: 492.5, math: null, english: null, history: null, politics: null, geography: null },
+    assignedScores: { politics: null, geography: null },
+    ranks: { chinese: 594 },
+    distRank: 230,
+    schoolRank: null,
+    classRank: null,
+    note: ''
+  },
+  {
+    id: 'ex-2',
+    name: '高一下期中',
+    className: '',
+    scores: { chinese: 490.5, math: 594, english: 252, history: 60, politics: 280, geography: 100 },
+    assignedScores: { politics: null, geography: null },
+    ranks: { chinese: 1191, math: 53, english: 60, politics: 113, history: 395, geography: 103 },
+    distRank: 388,
+    schoolRank: null,
+    classRank: null,
+    note: ''
+  },
+  {
+    id: 'ex-3',
+    name: '高二下期中',
+    className: '',
+    scores: { chinese: 0, math: 0, english: 0, history: 0, politics: 0, geography: 0 },
+    assignedScores: { politics: null, geography: null },
+    ranks: {},
+    distRank: null,
+    schoolRank: null,
+    classRank: null,
+    note: ''
+  }
+];
+
+function refreshAll() {
+  renderOverview();
+  renderExams();
+}
+
+// ==================== Tab 切换 ====================
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.tab-item').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.pc-nav-btn').forEach(function(b) { b.classList.toggle('active',b.dataset.page===tabId); });
+  var tabEl = document.getElementById('tab-' + tabId);
+  if (tabEl) tabEl.classList.add('active');
+  var navItem = document.querySelector('.tab-item[data-tab="' + tabId + '"]');
+  if (navItem) navItem.classList.add('active');
+
+  if (tabId === 'overview') renderOverview();
+  if (tabId === 'exams') renderExams();
+}
+
+// ==================== 高考倒计时 ====================
+function updateGaokaoCountdown() {
+  var now = new Date();
+  var y = now.getFullYear();
+  var gk = new Date(y, 5, 7);
+  if (now > gk) {
+    gk = new Date(y + 1, 5, 7);
+  }
+  var diff = Math.ceil((gk - now) / (1000 * 60 * 60 * 24));
+  var el = document.getElementById('gaokaoCountdown');
+  var lbl = document.getElementById('gaokaoLabel');
+  if (el) {
+    if (diff === 0) {
+      el.innerHTML = '离高考<span class="countdown-num" style="font-size:22px">今天</span>';
+    } else {
+      el.innerHTML = '离高考<span class="countdown-num" style="font-size:22px">' + diff + '</span><span class="countdown-text">天</span>';
+    }
+    if (lbl) lbl.textContent = '';
+  }
+}
+
+// ==================== 概览页 ====================
+var _totalChart = null;
+var _subjectRankChart = null;
+var _currentRankGroup = 'main3'; // 'main3' | 'three'
+var _currentRankType = 'school'; // 'school' | 'class'
+var RANK_GROUPS = {
+  main3: { label: '语数英', keys: ['chinese', 'math', 'english'] },
+  three:  { label: '史政地', keys: ['history', 'politics', 'geography'] }
+};
+
+function renderOverview() {
+  var activeExams = exams.filter(function(e) {
+    return e.scores && Object.values(e.scores).some(function(v) { return Number(v) > 0; });
+  });
+
+  // 高考倒计时
+  updateGaokaoCountdown();
+
+  if (activeExams.length > 0) {
+    // 平均总分 & 最高总分
+    var totals = activeExams.map(function(e) { return calcTotal(e); }).filter(function(t) { return t > 0; });
+    if (totals.length > 0) {
+      var sum = totals.reduce(function(a, b) { return a + b; }, 0);
+      document.getElementById('avgTotal').textContent = (sum / totals.length).toFixed(1);
+      document.getElementById('maxTotal').textContent = Math.max.apply(null, totals).toFixed(1);
+    } else {
+      document.getElementById('avgTotal').textContent = '-';
+      document.getElementById('maxTotal').textContent = '-';
+    }
+    var last = activeExams[activeExams.length - 1];
+    var total = calcTotal(last);
+    document.getElementById('latestTotal').textContent = total > 0 ? total.toFixed(1) : '-';
+  } else {
+    document.getElementById('avgTotal').textContent = '-';
+    document.getElementById('maxTotal').textContent = '-';
+    document.getElementById('latestTotal').textContent = '-';
+  }
+
+  // 最近考试详情
+  var detailEl = document.getElementById('recentDetail');
+  if (activeExams.length === 0) {
+    detailEl.innerHTML = '<div class="empty-state">暂无成绩数据，点击"成绩录入"添加</div>';
+  } else {
+    var lastExam = activeExams[activeExams.length - 1];
+    var totalVal = calcTotal(lastExam);
+    var mainVal = calcMainScore(lastExam);
+    var threeVal = calcThreeScore(lastExam);
+    detailEl.innerHTML =
+      '<div style="font-size:14px;font-weight:600;color:#1e293b;margin-bottom:8px">' + escapeHtml(lastExam.name) +
+      (lastExam.className ? ' · ' + escapeHtml(lastExam.className) : '') + '</div>' +
+      '<table style="width:100%;font-size:13px">' +
+      '<tr><td style="color:#6b7280;padding:3px 0;width:45%">总成绩</td><td style="font-weight:600;color:#7c3aed">' + (totalVal > 0 ? totalVal.toFixed(1) : '-') + '</td></tr>' +
+      '<tr><td style="color:#6b7280;padding:3px 0">主科总分</td><td style="font-weight:600;color:#7c3aed">' + (mainVal > 0 ? mainVal.toFixed(1) : '-') + '</td></tr>' +
+      '<tr><td style="color:#6b7280;padding:3px 0">三科总分</td><td style="font-weight:600;color:#be185d">' + (threeVal > 0 ? threeVal.toFixed(1) : '-') + '</td></tr>' +
+      '<tr><td style="color:#6b7280;padding:3px 0">区排名</td><td style="font-weight:600;color:#7c3aed">' + (lastExam.distRank ? lastExam.distRank : '-') + '</td></tr>' +
+      '<tr><td style="color:#6b7280;padding:3px 0">校排名</td><td style="font-weight:600;color:#0891b2">' + (lastExam.schoolRank ? lastExam.schoolRank : '-') + '</td></tr>' +
+      '<tr><td style="color:#6b7280;padding:3px 0">班排名</td><td style="font-weight:600;color:#d946ef">' + (lastExam.classRank ? lastExam.classRank : '-') + '</td></tr>' +
+      SUBJECTS.map(function(s) {
+        var rawVal = lastExam.scores[s.key];
+        var v = (rawVal !== null && rawVal !== undefined && rawVal !== '') ? Number(rawVal) : null;
+        var a = s.assigned ? getSubjectAssigned(lastExam, s.key) : 0;
+        var rd = getSubjectRank(lastExam, s.key, 'district');
+        var rs = getSubjectRank(lastExam, s.key, 'school');
+        var rc = getSubjectRank(lastExam, s.key, 'class');
+        var desc;
+        if (s.assigned) {
+          desc = (v !== null && !isNaN(v) ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(1) + '</span>' : '-');
+          desc += ' <span style="font-size:10px;color:#94a3b8">/</span> ';
+          desc += (a > 0 ? '<span style="font-weight:700;color:' + s.color + '">' + a.toFixed(0) + '</span>' : '<span style="color:#94a3b8">-</span>');
+          desc += '<span style="font-size:10px;color:#94a3b8">赋</span>';
+        } else {
+          desc = (v !== null && !isNaN(v) ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(1) + '</span>' : '-');
+        }
+        var rankStr = '';
+        if (rd) rankStr += '区' + rd + ' ';
+        if (rs) rankStr += '校' + rs + ' ';
+        if (rc) rankStr += '班' + rc;
+        return '<tr><td style="color:#6b7280;padding:3px 0">' +
+          '<span class="subj-badge" style="background:' + s.color + '22;color:' + s.color + '">' + s.label + '</span></td>' +
+          '<td>' + desc +
+          (rankStr ? ' <span class="rank-cell">(' + rankStr.trim() + ')</span>' : '') + '</td></tr>';
+      }).join('') +
+      '</table>';
+  }
+
+  renderTotalChart();
+  renderSubjectRankChart();
+}
+
+function renderTotalChart() {
+  var canvas = document.getElementById('totalChart');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  if (_totalChart) _totalChart.destroy();
+
+  var items = exams.filter(function(e) {
+    return e.scores && Object.values(e.scores).some(function(v) { return Number(v) > 0; });
+  });
+
+  if (items.length === 0) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '13px sans-serif';
+    ctx.fillText('暂无数据', canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
+  _totalChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: items.map(function(i) { return i.name; }),
+      datasets: [
+        {
+          label: '总分',
+          data: items.map(function(i) { return calcTotal(i); }),
+          borderColor: '#7c3aed',
+          tension: .35,
+          pointRadius: 5,
+          pointBackgroundColor: '#7c3aed',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointHoverRadius: 7
+        },
+        {
+          label: '主科',
+          data: items.map(function(i) { return calcMainScore(i); }),
+          borderColor: '#f59e0b',
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: .35,
+          pointRadius: 3,
+          pointBackgroundColor: '#f59e0b',
+          borderWidth: 2,
+          borderDash: [5, 3]
+        },
+        {
+          label: '三科',
+          data: items.map(function(i) { return calcThreeScore(i); }),
+          borderColor: '#be185d',
+          backgroundColor: 'transparent',
+          fill: false,
+          tension: .35,
+          pointRadius: 3,
+          pointBackgroundColor: '#be185d',
+          borderWidth: 2,
+          borderDash: [5, 3]
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, font: { size: 11 } } },
+        tooltip: { mode: 'index' }
+      },
+      scales: {
+        y: { beginAtZero: false, grid: { color: '#f1f5f9' }, ticks: { font: { size: 11 } } },
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 45 } }
+      }
+    }
+  });
+}
+
+function renderSubjectRankBtns() {
+  var container = document.getElementById('subjRankBtns');
+  if (!container) return;
+
+  // 第一行：科目组切换
+  var btnStyle='width:80px;border-radius:8px;padding:8px 0;font-size:13px;margin:0;flex-shrink:0;border:2px solid ';
+  var html = '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:6px">';
+  html += Object.keys(RANK_GROUPS).map(function(gk) {
+    var g = RANK_GROUPS[gk];
+    var active = _currentRankGroup === gk;
+    return '<button class="btn-xs" style="' + btnStyle +
+      (active ? '#7c3aed;background:#7c3aed;color:#fff;font-weight:700' : '#e2e8f0;background:#f1f5f9;color:#64748b') +
+      '" onclick="switchRankGroup(\'' + gk + '\')">' + g.label + '</button>';
+  }).join('');
+  html += '</div>';
+
+  // 第二行：排名类型切换
+  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">';
+  var rankTypes = [
+    { key: 'school', label: '校排名' },
+    { key: 'class', label: '班排名' }
+  ];
+  html += rankTypes.map(function(rt) {
+    var active = _currentRankType === rt.key;
+    return '<button class="btn-xs" style="' + btnStyle +
+      (active ? '#f59e0b;background:#f59e0b;color:#fff;font-weight:700' : '#e2e8f0;background:#f1f5f9;color:#64748b') +
+      '" onclick="switchRankType(\'' + rt.key + '\')">' + rt.label + '</button>';
+  }).join('');
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function switchRankGroup(key) {
+  _currentRankGroup = key;
+  renderSubjectRankBtns();
+  renderSubjectRankChart();
+}
+
+function switchRankType(key) {
+  _currentRankType = key;
+  renderSubjectRankBtns();
+  renderSubjectRankChart();
+}
+
+function renderSubjectRankChart() {
+  var canvas = document.getElementById('subjectRankChart');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  if (_subjectRankChart) { _subjectRankChart.destroy(); _subjectRankChart = null; }
+
+  var items = exams.filter(function(e) {
+    return e.scores && Object.values(e.scores).some(function(v) { return Number(v) > 0; });
+  });
+
+  if (items.length === 0) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '13px sans-serif';
+    ctx.fillText('暂无数据', canvas.width / 2, canvas.height / 2);
+    renderSubjectRankBtns();
+    return;
+  }
+
+  var group = RANK_GROUPS[_currentRankGroup];
+  var labels = items.map(function(e) { return e.name; });
+
+  // 根据当前排名类型收集数据
+  var isSchool = _currentRankType === 'school';
+  var rankLabel = isSchool ? '校排' : '班排';
+  var datasets = [];
+  var allVals = [];
+  var hasAnyRank = false;
+
+  group.keys.forEach(function(key) {
+    var subj = SUBJECTS.find(function(s) { return s.key === key; });
+    if (!subj) return;
+    var rankData = [];
+    items.forEach(function(e) {
+      var r = getSubjectRank(e, key, _currentRankType);
+      var rv = (r !== null && r !== undefined && r > 0) ? Number(r) : null;
+      rankData.push(rv);
+      if (rv) { allVals.push(rv); hasAnyRank = true; }
+    });
+
+    datasets.push({
+      label: subj.label,
+      data: rankData,
+      borderColor: subj.color,
+      fill: false,
+      tension: .3,
+      pointRadius: 4,
+      pointBackgroundColor: subj.color,
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      borderWidth: 2.5,
+      spanGaps: true
+    });
+  });
+
+  if (!hasAnyRank) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '13px sans-serif';
+    ctx.fillText('该组暂无排名数据', canvas.width / 2, canvas.height / 2);
+    renderSubjectRankBtns();
+    return;
+  }
+
+  var yMax = allVals.length > 0 ? Math.ceil(Math.max.apply(null, allVals) * 1.05) : 100;
+
+  _subjectRankChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 10, font: { size: 10 }, boxWidth: 20 } },
+        tooltip: {
+          mode: 'index',
+          callbacks: {
+            label: function(ctx) {
+              if (ctx.raw === null) return ctx.dataset.label + ': 无数据';
+              return ctx.dataset.label + ': 第 ' + ctx.raw + ' 名';
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          reverse: true,
+          min: 1,
+          max: yMax,
+          grid: { color: '#f1f5f9' },
+          ticks: {
+            font: { size: 11 },
+            stepSize: Math.max(1, Math.floor(yMax / 8)),
+            callback: function(v) { return v % 1 === 0 ? v : ''; }
+          },
+          title: { display: true, text: rankLabel + ' (越往上越靠前)', font: { size: 10 }, color: '#94a3b8' }
+        },
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 45 } }
+      }
+    }
+  });
+
+  renderSubjectRankBtns();
+}
+
+// ==================== 考试列表 ====================
+function renderExams() {
+  var tbody = document.getElementById('examTableBody');
+  if (!tbody) return;
+
+  if (exams.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="14" class="empty-state">暂无考试记录，点击上方按钮添加</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = exams.map(function(e) {
+    var total = calcTotal(e);
+    var main = calcMainScore(e);
+    var three = calcThreeScore(e);
+
+    function buildScoreStr(sKey) {
+      var rawVal = e.scores[sKey];
+      var v = (rawVal !== null && rawVal !== undefined && rawVal !== '') ? Number(rawVal) : null;
+      var a = getSubjectAssigned(e, sKey);
+      var subj = SUBJECTS.find(function(x) { return x.key === sKey; });
+      if (subj && subj.assigned) {
+        var s = (v !== null && !isNaN(v) ? '<span class="' + getScoreColor(v) + '">' + v.toFixed(0) + '</span>' : '-');
+        s += '<br><span style="font-size:10px;color:#94a3b8">赋' + (a > 0 ? '<span style="color:' + subj.color + ';font-weight:700">' + a.toFixed(0) + '</span>' : '-') + '</span>';
+        return s;
+      }
+      return '<span class="cell-score">' + fmtNum(v, 0) + '</span>';
+    }
+
+    return '<tr>' +
+      '<td class="col-period">' + escapeHtml(e.name) + (e.className ? ' <span style="font-weight:400;font-size:10px;color:#94a3b8">' + escapeHtml(e.className) + '</span>' : '') + '</td>' +
+      '<td class="cell-score" style="font-weight:700;color:#7c3aed">' + fmtNum(total, 1) + '</td>' +
+      '<td class="rank-cell">' + fmtNum(e.distRank) + '</td>' +
+      '<td class="rank-cell">' + fmtNum(e.schoolRank) + '</td>' +
+      '<td class="rank-cell">' + fmtNum(e.classRank) + '</td>' +
+      '<td class="cell-score" style="color:#f59e0b">' + fmtNum(main, 1) + '</td>' +
+      '<td class="cell-score" style="color:#be185d">' + fmtNum(three, 1) + '</td>' +
+      '<td class="cell-score ' + getScoreColor(e.scores.chinese) + '">' + fmtNum(e.scores.chinese, 0) + '</td>' +
+      '<td class="cell-score ' + getScoreColor(e.scores.math) + '">' + fmtNum(e.scores.math, 0) + '</td>' +
+      '<td class="cell-score ' + getScoreColor(e.scores.english) + '">' + fmtNum(e.scores.english, 0) + '</td>' +
+      '<td class="cell-score ' + getScoreColor(e.scores.history) + '">' + fmtNum(e.scores.history, 0) + '</td>' +
+      '<td>' + buildScoreStr('politics') + '</td>' +
+      '<td>' + buildScoreStr('geography') + '</td>' +
+      '<td style="white-space:nowrap">' +
+      '<button class="btn-xs btn-gray" onclick="editExam(\'' + e.id + '\')" style="margin:0 2px">编辑</button>' +
+      '<button class="btn-xs btn-red" onclick="confirmDelExam(\'' + e.id + '\')" style="margin:0">删除</button>' +
+      '</td></tr>';
+  }).join('');
+}
+
+// ==================== 考试 CRUD ====================
+function showExamModal(id) {
+  document.getElementById('examEditId').value = id || '';
+  document.getElementById('examModalTitle').textContent = id ? '编辑考试成绩' : '添加考试成绩';
+
+  if (id) {
+    var ex = exams.find(function(x) { return x.id === id; });
+    if (ex) {
+      document.getElementById('examName').value = ex.name || '';
+      document.getElementById('examClass').value = ex.className || '';
+      document.getElementById('examDistRank').value = ex.distRank || '';
+      document.getElementById('examSchoolRank').value = ex.schoolRank || '';
+      document.getElementById('examClassRank').value = ex.classRank || '';
+
+      SUBJECTS.forEach(function(s) {
+        var sv = document.getElementById('s_' + s.key);
+        if (sv) sv.value = (ex.scores && ex.scores[s.key] !== undefined && ex.scores[s.key] !== null) ? ex.scores[s.key] : '';
+
+        // 三级排名
+        var rd = getSubjectRank(ex, s.key, 'district');
+        var rs = getSubjectRank(ex, s.key, 'school');
+        var rc = getSubjectRank(ex, s.key, 'class');
+        var rdEl = document.getElementById('rd_' + s.key);
+        var rsEl = document.getElementById('rs_' + s.key);
+        var rcEl = document.getElementById('rc_' + s.key);
+        if (rdEl) rdEl.value = rd || '';
+        if (rsEl) rsEl.value = rs || '';
+        if (rcEl) rcEl.value = rc || '';
+
+        if (s.assigned) {
+          var av = document.getElementById('a_' + s.key);
+          if (av) av.value = (ex.assignedScores && ex.assignedScores[s.key] !== undefined && ex.assignedScores[s.key] !== null) ? ex.assignedScores[s.key] : '';
+        }
+      });
+
+      // 自动计算显示
+      autoCalc();
+    }
+  } else {
+    document.getElementById('examName').value = '';
+    document.getElementById('examClass').value = '';
+    document.getElementById('examDistRank').value = '';
+    document.getElementById('examSchoolRank').value = '';
+    document.getElementById('examClassRank').value = '';
+    document.getElementById('totalScore').value = '';
+    document.getElementById('mainScore').value = '';
+    document.getElementById('threeScore').value = '';
+
+    SUBJECTS.forEach(function(s) {
+      var sv = document.getElementById('s_' + s.key);
+      if (sv) sv.value = '';
+      var rdEl = document.getElementById('rd_' + s.key);
+      var rsEl = document.getElementById('rs_' + s.key);
+      var rcEl = document.getElementById('rc_' + s.key);
+      if (rdEl) rdEl.value = '';
+      if (rsEl) rsEl.value = '';
+      if (rcEl) rcEl.value = '';
+      if (s.assigned) {
+        var av = document.getElementById('a_' + s.key);
+        if (av) av.value = '';
+      }
+    });
+  }
+
+  document.getElementById('examModal').classList.add('show');
+}
+
+function closeExamModal() {
+  document.getElementById('examModal').classList.remove('show');
+}
+
+function saveExam() {
+  var name = document.getElementById('examName').value.trim();
+  if (!name) { alert('请输入考试名称'); return; }
+
+  var editId = document.getElementById('examEditId').value;
+  var className = document.getElementById('examClass').value.trim();
+  var distRank = document.getElementById('examDistRank').value;
+  var schoolRank = document.getElementById('examSchoolRank').value;
+  var classRank = document.getElementById('examClassRank').value;
+
+  var scores = {};
+  var assignedScores = {};
+  var ranks = {};
+
+  SUBJECTS.forEach(function(s) {
+    var sv = document.getElementById('s_' + s.key).value;
+    scores[s.key] = sv !== '' ? Number(sv) : null;
+
+    // 三级排名
+    var rd = document.getElementById('rd_' + s.key).value;
+    var rs = document.getElementById('rs_' + s.key).value;
+    var rc = document.getElementById('rc_' + s.key).value;
+    var hasRank = (rd !== '' || rs !== '' || rc !== '');
+    if (hasRank) {
+      ranks[s.key] = {
+        district: rd !== '' ? Number(rd) : null,
+        school: rs !== '' ? Number(rs) : null,
+        class: rc !== '' ? Number(rc) : null
+      };
+    } else {
+      ranks[s.key] = null;
+    }
+
+    if (s.assigned) {
+      var av = document.getElementById('a_' + s.key).value;
+      assignedScores[s.key] = av !== '' ? Number(av) : null;
+    }
+  });
+
+  if (editId) {
+    var ex = exams.find(function(x) { return x.id === editId; });
+    if (ex) {
+      ex.name = name;
+      ex.className = className;
+      ex.scores = scores;
+      ex.assignedScores = assignedScores;
+      ex.ranks = ranks;
+      ex.distRank = distRank ? Number(distRank) : null;
+      ex.schoolRank = schoolRank ? Number(schoolRank) : null;
+      ex.classRank = classRank ? Number(classRank) : null;
+      ex.totalScore = calcTotal(ex);
+    }
+  } else {
+    exams.push({
+      id: 'ex-' + Date.now(),
+      name: name,
+      className: className,
+      scores: scores,
+      assignedScores: assignedScores,
+      ranks: ranks,
+      distRank: distRank ? Number(distRank) : null,
+      schoolRank: schoolRank ? Number(schoolRank) : null,
+      classRank: classRank ? Number(classRank) : null,
+      totalScore: calcTotal({scores: scores, assignedScores: assignedScores}),
+      note: ''
+    });
+  }
+
+  closeExamModal();
+  saveData();
+  refreshAll();
+}
+
+function editExam(id) { showExamModal(id); }
+
+function confirmDelExam(id) {
+  var ex = exams.find(function(x) { return x.id === id; });
+  if (!ex) return;
+  if (confirm('确定删除「' + ex.name + '」的考试成绩吗？此操作不可撤销。')) {
+    exams = exams.filter(function(x) { return x.id !== id; });
+    saveData();
+    refreshAll();
+  }
+}
+
+// ==================== 初始化 ====================
+document.getElementById('pcNav').addEventListener('click',e=>{
+  const btn=e.target.closest('.pc-nav-btn');
+  if(btn) switchTab(btn.dataset.page);
+});
+loadData();
+</script>
+</body>
+</html>

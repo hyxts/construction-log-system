@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>倒计时</title>
+<link rel="manifest" id="pwaManifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="倒计时">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f0f1a">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%25' stop-color='%230f0f1a'/><stop offset='50%25' stop-color='%238b5cf6'/><stop offset='100%25' stop-color='%23c084fc'/></linearGradient></defs><rect width='192' height='192' rx='40' fill='url(%23g)'/><text x='96' y='130' text-anchor='middle' font-size='110' fill='white' font-weight='bold'>倒</text></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%25' stop-color='%230f0f1a'/><stop offset='50%25' stop-color='%238b5cf6'/><stop offset='100%25' stop-color='%23c084fc'/></linearGradient></defs><rect width='512' height='512' rx='80' fill='url(%23g)'/><text x='256' y='355' text-anchor='middle' font-size='300' fill='white' font-weight='bold'>倒</text></svg>">
+<link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%25' stop-color='%230f0f1a'/><stop offset='50%25' stop-color='%238b5cf6'/><stop offset='100%25' stop-color='%23c084fc'/></linearGradient></defs><rect width='192' height='192' rx='40' fill='url(%23g)'/><text x='96' y='130' text-anchor='middle' font-size='110' fill='white' font-weight='bold'>倒</text></svg>">
+<script>
+(function(){var m={name:'倒计时',short_name:'倒计时',description:'事件倒计时',start_url:'/countdown',display:'standalone',orientation:'portrait',background_color:'#0f0f1a',theme_color:'#0f0f1a',icons:[{src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%230f0f1a'/><stop offset='50%' stop-color='%238b5cf6'/><stop offset='100%' stop-color='%23c084fc'/></linearGradient></defs><rect width='192' height='192' rx='40' fill='url(%23g)'/><text x='96' y='130' text-anchor='middle' font-size='110' fill='white' font-weight='bold'>倒</text></svg>",sizes:'192x192',type:'image/svg+xml'},{src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='1'><stop offset='0%' stop-color='%230f0f1a'/><stop offset='50%' stop-color='%238b5cf6'/><stop offset='100%' stop-color='%23c084fc'/></linearGradient></defs><rect width='512' height='512' rx='80' fill='url(%23g)'/><text x='256' y='355' text-anchor='middle' font-size='300' fill='white' font-weight='bold'>倒</text></svg>",sizes:'512x512',type:'image/svg+xml'}]};
+document.getElementById('pwaManifest').href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/json'}))})();
+</script>
+<style>
+:root{
+  --bg:#0f0f1a;--bg-card:rgba(255,255,255,.04);--bg-card-hover:rgba(255,255,255,.07);
+  --bg-modal:#1a1a2e;--bg-input:rgba(255,255,255,.05);--bg-input-focus:rgba(255,255,255,.08);
+  --bg-chip:rgba(255,255,255,.06);--bg-chip-active:rgba(129,140,248,.2);
+  --border:rgba(255,255,255,.06);--border-focus:rgba(255,255,255,.1);
+  --text:#e0e0e0;--text-primary:#f1f5f9;--text-dim:rgba(255,255,255,.35);
+  --text-sub:rgba(255,255,255,.25);--text-muted:rgba(255,255,255,.15);
+  --text-hint:rgba(255,255,255,.1);--text-chip:#a5b4fc;--text-chip-dim:rgba(255,255,255,.4);
+  --primary:#818cf8;--primary-light:#a5b4fc;--accent:#c084fc;
+  --header-bg:rgba(15,15,26,.95);--summary-bg:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%);
+  --today-glow:rgba(251,191,36,.08);--today-border:rgba(251,191,36,.3);
+  --progress-bg:rgba(255,255,255,.08);--skeleton-bg:rgba(255,255,255,.04);
+  --option-bg:#1a1a2e;--toast-ok:rgba(34,197,94,.9);--toast-err:rgba(239,68,68,.9);
+}
+body.light{
+  --bg:#f5f5f7;--bg-card:#fff;--bg-card-hover:#f0f0f5;
+  --bg-modal:#fff;--bg-input:#f0f0f5;--bg-input-focus:#e8e8f0;
+  --bg-chip:#eee;--bg-chip-active:#e0e7ff;
+  --border:rgba(0,0,0,.06);--border-focus:rgba(0,0,0,.12);
+  --text:#333;--text-primary:#1a1a2e;--text-dim:rgba(0,0,0,.4);
+  --text-sub:rgba(0,0,0,.3);--text-muted:rgba(0,0,0,.15);
+  --text-hint:rgba(0,0,0,.08);--text-chip:#6366f1;--text-chip-dim:rgba(0,0,0,.4);
+  --primary:#6366f1;--primary-light:#818cf8;--accent:#a855f7;
+  --header-bg:rgba(255,255,255,.9);--summary-bg:linear-gradient(135deg,#e0e7ff,#ede9fe);
+  --today-glow:rgba(245,158,11,.1);--today-border:rgba(245,158,11,.4);
+  --progress-bg:rgba(0,0,0,.06);--skeleton-bg:#eee;
+  --option-bg:#fff;--toast-ok:rgba(34,197,94,.9);--toast-err:rgba(239,68,68,.9);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:calc(80px + env(safe-area-inset-bottom));transition:background .3s,color .3s}
+
+.hdr{background:var(--header-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border)}
+.hdr h1{font-size:18px;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr-actions{display:flex;gap:8px;align-items:center}
+.btn-theme{background:var(--bg-chip);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:20px;font-size:12px;cursor:pointer;transition:all .2s;min-height:28px}
+.btn-theme:active{background:var(--bg-input)}
+
+.ctn{max-width:600px;margin:0 auto;padding:16px}
+
+.summary{background:var(--summary-bg);border-radius:20px;padding:24px 20px;margin-bottom:20px;text-align:center;position:relative;overflow:hidden}
+.summary::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle at 30% 30%,rgba(139,92,246,.15) 0%,transparent 60%),radial-gradient(circle at 70% 70%,rgba(99,102,241,.1) 0%,transparent 60%);animation:summaryGlow 6s ease-in-out infinite}
+@keyframes summaryGlow{0%,100%{opacity:.6}50%{opacity:1}}
+.summary>*{position:relative;z-index:1}
+.summary .today{font-size:13px;opacity:.7;letter-spacing:.5px}
+.summary .lunar{font-size:12px;opacity:.5;margin:2px 0 10px}
+.summary .next-label{font-size:11px;opacity:.5;text-transform:uppercase;letter-spacing:2px;margin-bottom:4px}
+.summary .next-name{font-size:15px;font-weight:600;margin-bottom:8px}
+.summary .next-timer{display:flex;justify-content:center;gap:6px}
+.summary .time-unit{display:flex;align-items:baseline;gap:2px}
+.summary .time-num{font-size:36px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.summary .time-label{font-size:11px;opacity:.5;margin-left:2px}
+
+/* 筛选和排序工具栏 */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.cat-chips{display:flex;gap:6px;flex:1;flex-wrap:wrap}
+.cat-chip{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--border);background:var(--bg-chip);color:var(--text-chip-dim);cursor:pointer;white-space:nowrap;transition:all .2s}
+.cat-chip.active{background:var(--bg-chip-active);color:var(--text-chip);border-color:var(--primary)}
+.sort-select{border:1px solid var(--border);background:var(--bg-input);color:var(--text);border-radius:20px;padding:6px 28px 6px 12px;font-size:12px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(128,128,128,.5)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer}
+.sort-select:focus{outline:none}
+
+.today-badge{display:inline-block;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.06);opacity:.8}}
+
+/* 即将到来标记 */
+.urgent-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;margin-left:4px;animation:glowPulse 1.5s ease-in-out infinite}
+.urgent-1{background:rgba(239,68,68,.15);color:#f87171}
+.urgent-3{background:rgba(251,191,36,.15);color:#fbbf24}
+.urgent-7{background:rgba(129,140,248,.15);color:var(--primary-light)}
+@keyframes glowPulse{0%,100%{opacity:.7}50%{opacity:1}}
+
+.event-list{display:flex;flex-direction:column;gap:12px}
+
+.event-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:16px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s;animation:cardIn .4s ease-out both}
+.event-card:active{transform:scale(.985)}
+.event-card:nth-child(1){animation-delay:.05s}
+.event-card:nth-child(2){animation-delay:.1s}
+.event-card:nth-child(3){animation-delay:.15s}
+.event-card:nth-child(4){animation-delay:.2s}
+.event-card:nth-child(5){animation-delay:.25s}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.event-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.event-name-row{flex:1;min-width:0}
+.event-name{font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:3px;word-break:break-all}
+.event-date-sub{font-size:12px;color:var(--text-dim);display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.cat-tag{padding:1px 8px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap}
+.cat-birthday{background:rgba(236,72,153,.15);color:#ec4899}
+.cat-anniversary{background:rgba(239,68,68,.15);color:#ef4444}
+.cat-exam{background:rgba(34,197,94,.15);color:#22c55e}
+.cat-holiday{background:rgba(245,158,11,.15);color:#f59e0b}
+.cat-custom{background:rgba(129,140,248,.15);color:var(--primary-light)}
+
+.event-actions{display:flex;gap:6px;flex-shrink:0;margin-left:10px}
+.event-actions button{padding:5px 10px;border:none;border-radius:20px;font-size:11px;cursor:pointer;min-height:28px;transition:all .2s}
+.btn-edit{background:rgba(129,140,248,.2);color:var(--text-chip)}
+.btn-edit:active{background:rgba(129,140,248,.35)}
+.btn-del{background:rgba(248,113,113,.15);color:#fca5a5}
+.btn-del:active{background:rgba(248,113,113,.3)}
+
+.countdown-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.countdown-digits{display:flex;align-items:baseline;gap:4px;flex:1;min-width:0}
+.digit-block{display:flex;align-items:baseline;gap:1px}
+.digit-val{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--text-primary);line-height:1;transition:transform .15s}
+.digit-val.flip{animation:flipUp .25s ease-out}
+@keyframes flipUp{0%{transform:rotateX(90deg);opacity:.3}100%{transform:rotateX(0);opacity:1}}
+.digit-unit{font-size:11px;color:var(--text-sub);margin-left:2px;flex-shrink:0}
+.digit-sep{font-size:20px;color:var(--text-muted);margin:0 2px;line-height:1}
+
+.progress-wrap{flex-shrink:0;position:relative;width:52px;height:52px}
+.progress-ring{transform:rotate(-90deg)}
+.progress-ring circle{fill:none;stroke-width:4}
+.progress-bg{stroke:var(--progress-bg)}
+.progress-fill{stroke:var(--primary);stroke-linecap:round;transition:stroke-dashoffset .8s}
+.progress-pct{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:11px;font-weight:700;color:var(--text-chip)}
+.event-card.today .progress-fill{stroke:#fbbf24}
+.event-card.today .progress-pct{color:#fbbf24}
+
+.event-bottom{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
+.event-age{font-size:12px;color:var(--primary);font-weight:600}
+.event-date-full{font-size:11px;color:var(--text-sub)}
+.event-note{font-size:11px;color:var(--text-dim);font-style:italic;max-width:100%;word-break:break-all}
+
+/* 已过事件区域 */
+.past-section{margin-top:16px}
+.past-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;cursor:pointer;font-size:13px;color:var(--text-dim);margin-bottom:4px;user-select:none}
+.past-header .past-toggle{font-size:11px;color:var(--text-muted);transition:transform .3s}
+.past-header .past-toggle.open{transform:rotate(180deg)}
+.past-body{display:none;flex-direction:column;gap:10px;padding-top:8px}
+.past-body.show{display:flex}
+.past-body .event-card{opacity:.7}
+.past-body .event-card:active{opacity:1}
+
+.event-card.today{border-color:var(--today-border);box-shadow:0 0 30px var(--today-glow),inset 0 0 30px rgba(251,191,36,.02)}
+.event-card.today .digit-val{color:#fbbf24}
+.event-card.today .event-name{color:#fcd34d}
+
+.skeleton{background:var(--skeleton-bg);border-radius:16px;height:120px;position:relative;overflow:hidden}
+.skeleton::after{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(128,128,128,.05),transparent);animation:shimmer 1.5s infinite}
+@keyframes shimmer{100%{left:100%}}
+
+.empty-state{text-align:center;padding:60px 20px}
+.empty-state .big{font-size:48px;opacity:.15;margin-bottom:12px}
+.empty-state p{font-size:14px;color:var(--text-muted)}
+.empty-state .sub{font-size:12px;color:var(--text-hint);margin-top:4px}
+
+.pull-hint{text-align:center;padding:12px;font-size:12px;color:var(--text-muted);cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+/* 离线提示 */
+.offline-badge{display:none;text-align:center;padding:6px;font-size:11px;background:rgba(251,191,36,.1);color:#fbbf24;border-radius:8px;margin-bottom:8px}
+.offline-badge.show{display:block}
+
+.fab{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff;border:none;font-size:26px;cursor:pointer;box-shadow:0 8px 25px rgba(99,102,241,.35);z-index:99;transition:transform .2s,box-shadow .2s;display:flex;align-items:center;justify-content:center}
+.fab:hover{transform:scale(1.05);box-shadow:0 12px 30px rgba(99,102,241,.45)}
+.fab:active{transform:scale(.9)}
+
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg-modal);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:24px 20px calc(20px + env(safe-area-inset-bottom));width:100%;max-width:500px;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease-out}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal h2{font-size:17px;margin-bottom:18px;color:var(--text-primary);text-align:center}
+.modal .close-handle{width:32px;height:4px;background:var(--text-muted);border-radius:2px;margin:0 auto 16px}
+
+.fg{margin-bottom:14px}
+.fl{display:block;font-size:12px;color:var(--text-chip-dim);margin-bottom:5px;font-weight:500}
+.fg input,.fg select{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:12px;font-size:14px;background:var(--bg-input);color:var(--text);transition:border-color .2s}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--primary);background:var(--bg-input-focus)}
+.fg input::placeholder{color:var(--text-muted)}
+.fg select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(128,128,128,.5)' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'%3E%3C/path%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.fg select option{background:var(--option-bg);color:var(--text)}
+
+.date-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+
+.btn-row{display:flex;gap:10px;margin-top:20px}
+.btn{padding:12px 20px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;min-height:48px;flex:1;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,var(--primary),var(--accent));color:#fff}
+.btn-primary:active{opacity:.85}
+.btn-cancel{background:var(--bg-input);color:var(--text-chip-dim)}
+.btn-cancel:active{background:var(--bg-input-focus)}
+
+.lunar-hint{padding:10px 14px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:10px;font-size:12px;color:#4ade80;margin-bottom:14px;display:none}
+.lunar-hint.show{display:block}
+.lunar-hint.error{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.2);color:#f87171}
+.date-only-hint{font-size:12px;color:var(--text-muted);margin-top:4px;padding:0 2px}
+
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:24px;color:#fff;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(4px)}
+.toast-ok{background:var(--toast-ok);backdrop-filter:blur(8px)}
+.toast-err{background:var(--toast-err);backdrop-filter:blur(8px)}
+
+@media (min-width:768px){
+  .modal{border-radius:20px;margin-bottom:20px}
+  .modal-overlay{align-items:center}
+}
+
+@media (max-width:768px){
+  .ctn{padding:10px}
+  .summary{padding:20px 16px;border-radius:16px}
+  .summary .time-num{font-size:28px}
+  .event-card{padding:14px;border-radius:14px}
+  .digit-val{font-size:24px}
+  .progress-wrap{width:44px;height:44px}
+  .fab{bottom:calc(16px + env(safe-area-inset-bottom));right:16px;width:48px;height:48px;font-size:22px}
+  .toolbar{gap:6px}
+  .cat-chip{padding:5px 10px;font-size:11px}
+}
+@media (min-width:769px){
+  .ctn{max-width:800px}
+  body{background:#eef1f5}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>倒计时</h1>
+  <div class="hdr-actions">
+    <button class="btn-theme" onclick="toggleTheme()" id="themeBtn">暗色模式</button>
+  </div>
+</div>
+
+<div class="ctn" id="app">
+  <div class="summary" id="summaryCard">
+    <div class="today" id="todayText">--</div>
+    <div class="lunar" id="lunarText"></div>
+    <div id="summaryNext"></div>
+  </div>
+
+  <div class="toolbar" id="toolbar" style="display:none">
+    <div class="cat-chips" id="catChips"></div>
+    <select class="sort-select" id="sortSelect" onchange="applyCurrentSort()">
+      <option value="time">按时间</option>
+      <option value="name">按名称</option>
+      <option value="created">按添加</option>
+    </select>
+  </div>
+
+  <div class="offline-badge" id="offlineBadge">已离线，显示缓存数据</div>
+
+  <div class="pull-hint" id="pullHint" style="display:none" onclick="loadEvents()">已离线，点击刷新</div>
+
+  <div class="event-list" id="eventList">
+    <div class="skeleton"></div><div class="skeleton"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="close-handle"></div>
+    <h2 id="modalTitle">添加事件</h2>
+    <div class="fg">
+      <label class="fl">名称</label>
+      <input id="evtName" maxlength="50">
+    </div>
+    <div class="fg">
+      <label class="fl">分类</label>
+      <select id="evtCategory">
+        <option value="custom">自定义</option>
+        <option value="birthday">生日</option>
+        <option value="anniversary">纪念日</option>
+        <option value="exam">考试</option>
+        <option value="holiday">节日</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">历法</label>
+      <select id="evtCalType" onchange="onCalTypeChange()">
+        <option value="solar">公历（阳历）</option>
+        <option value="lunar">农历（阴历）</option>
+      </select>
+    </div>
+        <div class="lunar-hint" id="lunarHint"></div>
+        <div class="fg">
+          <label class="fl">重复</label>
+          <select id="evtRepeatType" onchange="onRepeatTypeChange()">
+            <option value="once">单次事件</option>
+            <option value="annual">每年重复</option>
+          </select>
+        </div>
+        <div class="fg" id="fgYear">
+          <label class="fl">日期</label>
+          <div class="date-row">
+            <select id="evtYear"><option value="">年</option></select>
+            <select id="evtMonth"><option value="">月</option></select>
+            <select id="evtDay"><option value="">日</option></select>
+          </div>
+        </div>
+        <div class="fg" id="fgDate" style="display:none">
+          <label class="fl">日期</label>
+          <div class="date-row">
+            <select id="evtMonth2"><option value="">月</option></select>
+            <select id="evtDay2"><option value="">日</option></select>
+          </div>
+          <div class="date-only-hint">每年固定日期重复</div>
+        </div>
+    <div class="fg" id="leapGroup" style="display:none">
+      <label class="fl">闰月</label>
+      <select id="evtLeap">
+        <option value="0">非闰月</option>
+        <option value="1">闰月</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">显示方式</label>
+      <select id="evtDisplayMode">
+        <option value="full">天:时:分:秒（精确到秒）</option>
+        <option value="day">仅显示天数</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">备注（可选）</label>
+      <input id="evtNote" maxlength="100">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" id="btnSave" onclick="saveEvent()">保存</button>
+    </div>
+  </div>
+</div>
+
+<button class="fab" onclick="openAdd()" title="添加事件">+</button>
+
+<div id="T" class="toast"></div>
+
+<script>
+var editingId = null;
+var hasLunar = false;
+var eventsData = [];
+var timerId = null;
+var currentFilter = 'all';
+var currentSort = 'time';
+
+/* ====== 分类配置 ====== */
+var CAT_CONFIG = {
+  birthday:{label:'生日', cls:'cat-birthday'},
+  anniversary:{label:'纪念日', cls:'cat-anniversary'},
+  exam:{label:'考试', cls:'cat-exam'},
+  holiday:{label:'节日', cls:'cat-holiday'},
+  custom:{label:'自定义', cls:'cat-custom'}
+};
+
+/* ====== 主题 ====== */
+function initTheme(){
+  if(localStorage.getItem('cd_theme')==='light'){
+    document.body.classList.add('light');
+    document.getElementById('themeBtn').textContent = '亮色模式';
+  }
+}
+function toggleTheme(){
+  var isLight = document.body.classList.toggle('light');
+  localStorage.setItem('cd_theme', isLight?'light':'dark');
+  document.getElementById('themeBtn').textContent = isLight?'亮色模式':'暗色模式';
+}
+
+/* ====== 本地缓存 ====== */
+function cacheData(data){
+  try{localStorage.setItem('cd_cache',JSON.stringify({time:Date.now(),data:data}))}catch(e){}
+}
+function getCache(){try{return JSON.parse(localStorage.getItem('cd_cache'))}catch(e){return null}}
+function showOfflineBadge(show){document.getElementById('offlineBadge').classList.toggle('show',show)}
+
+/* ====== 初始化 ====== */
+function init(){
+  initTheme();
+  var ySel = document.getElementById('evtYear');
+  var nowY = new Date().getFullYear();
+  for(var y=nowY-80;y<=nowY+10;y++){
+    var o=document.createElement('option');o.value=y;o.textContent=y;ySel.appendChild(o);
+  }
+  var mSel = document.getElementById('evtMonth');
+  for(var m=1;m<=12;m++){
+    var o=document.createElement('option');o.value=m;o.textContent=m+'月';mSel.appendChild(o);
+  }
+  var dSel = document.getElementById('evtDay');
+  for(var d=1;d<=31;d++){
+    var o=document.createElement('option');o.value=d;o.textContent=d+'日';dSel.appendChild(o);
+  }
+  // 同步填充每年重复的月日选择器
+  var mSel2 = document.getElementById('evtMonth2');
+  for(var m=1;m<=12;m++){
+    var o=document.createElement('option');o.value=m;o.textContent=m+'月';mSel2.appendChild(o);
+  }
+  var dSel2 = document.getElementById('evtDay2');
+  for(var d=1;d<=31;d++){
+    var o=document.createElement('option');o.value=d;o.textContent=d+'日';dSel2.appendChild(o);
+  }
+  document.getElementById('evtMonth').addEventListener('change',checkLunarDate);
+  document.getElementById('evtDay').addEventListener('change',checkLunarDate);
+  document.getElementById('evtLeap').addEventListener('change',checkLunarDate);
+  document.getElementById('evtMonth2').addEventListener('change',checkLunarDate);
+  document.getElementById('evtDay2').addEventListener('change',checkLunarDate);
+  document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeModal()});
+
+  // 先显示缓存
+  var cache = getCache();
+  if(cache && cache.data && cache.data.events){
+    eventsData = cache.data.events;
+    hasLunar = cache.data.has_lunar;
+    buildCatChips();
+    renderEvents(eventsData);
+    showOfflineBadge(true);
+  }
+  loadEvents();
+  startLiveTimer();
+}
+
+/* ====== 分类筛选 ====== */
+function buildCatChips(){
+  var el = document.getElementById('catChips');
+  var cats = {'all':'全部'};
+  for(var i=0;i<eventsData.length;i++){
+    var c = eventsData[i].category||'custom';
+    if(CAT_CONFIG[c]) cats[c] = CAT_CONFIG[c].label;
+  }
+  var hasAll = cats.hasOwnProperty('all');
+  var keys = Object.keys(cats);
+  var html = '';
+  for(var i=0;i<keys.length;i++){
+    var k = keys[i];
+    var act = currentFilter===k?' active':'';
+    html += '<span class="cat-chip'+act+'" onclick="setFilter(\''+k+'\')">'+cats[k]+'</span>';
+  }
+  el.innerHTML = html;
+  if(keys.length>1||eventsData.length>0){
+    document.getElementById('toolbar').style.display = 'flex';
+  }
+}
+
+function setFilter(f){
+  currentFilter = f;
+  buildCatChips();
+  applyCurrentSort();
+}
+
+function applyCurrentSort(){
+  var filtered = eventsData.slice();
+  if(currentFilter!=='all'){
+    filtered = filtered.filter(function(e){return (e.category||'custom')===currentFilter});
+  }
+  sortEvents(filtered);
+  renderEvents(filtered);
+}
+
+function sortEvents(arr){
+  if(currentSort==='name'){
+    arr.sort(function(a,b){return (a.name||'').localeCompare(b.name||'','zh')});
+  }else if(currentSort==='created'){
+    arr.sort(function(a,b){return (b.id||0)-(a.id||0)});
+  }else{
+    arr.sort(function(a,b){
+      if(a.status==='today'&&b.status!=='today') return -1;
+      if(b.status==='today'&&a.status!=='today') return 1;
+      if(a.status==='upcoming'&&b.status!=='upcoming') return -1;
+      if(b.status==='upcoming'&&a.status!=='upcoming') return 1;
+      return (a.days_left||0) - (b.days_left||0);
+    });
+  }
+}
+
+/* ====== Toast ====== */
+function toast(m,t){
+  var e=document.getElementById("T");
+  e.textContent=m;e.className="toast show toast-"+t;
+  setTimeout(function(){e.className="toast"},2500);
+}
+
+/* ====== 实时倒计时 ====== */
+function startLiveTimer(){
+  if(timerId) clearInterval(timerId);
+  timerId = setInterval(updateAllCountdowns, 1000);
+}
+
+function updateAllCountdowns(){
+  updateSummaryCountdown();
+  updateCardCountdowns();
+}
+
+function updateSummaryCountdown(){
+  var upcoming = [];
+  for(var i=0;i<eventsData.length;i++){
+    if(eventsData[i].status==='upcoming'||eventsData[i].status==='today'){upcoming.push(eventsData[i])}
+  }
+  var el = document.getElementById('summaryNext');
+  if(!upcoming.length){el.innerHTML='';return}
+
+  var e = upcoming[0];
+  if(e.status==='today'){
+    el.innerHTML = '<div class="next-label">今天</div><div class="today-badge" style="font-size:22px;font-weight:800">'+esc(e.name)+'</div>';
+    return;
+  }
+
+  var target = new Date(e.this_year_date+'T00:00:00');
+  var now = new Date();
+  var diff = target - now;
+  if(diff<0){diff=0}
+
+  var d = Math.floor(diff/86400000);
+  var h = Math.floor((diff%86400000)/3600000);
+  var m = Math.floor((diff%3600000)/60000);
+  var s = Math.floor((diff%60000)/1000);
+
+  el.innerHTML = '<div class="next-label">距离 '+esc(e.name)+' 还有</div>'+
+    '<div class="next-timer">'+
+    '<div class="time-unit"><span class="time-num" id="sumD">'+d+'</span><span class="time-label">天</span></div>'+
+    '<div class="time-unit"><span class="time-num" id="sumH">'+pad2(h)+'</span><span class="time-label">时</span></div>'+
+    '<div class="time-unit"><span class="time-num" id="sumM">'+pad2(m)+'</span><span class="time-label">分</span></div>'+
+    '<div class="time-unit"><span class="time-num" id="sumS">'+pad2(s)+'</span><span class="time-label">秒</span></div>'+
+    '</div>';
+}
+
+function pad2(n){return(n<10?'0':'')+n}
+
+function updateCardCountdowns(){
+  var cards = document.querySelectorAll('.event-card');
+  var ci = 0;
+  for(var i=0;i<eventsData.length;i++){
+    var e = eventsData[i];
+    if(currentFilter!=='all'&&(e.category||'custom')!==currentFilter) continue;
+    if(e.status==='past') continue;
+    var card = cards[ci]; ci++; if(!card) continue;
+    var displayMode = e.display_mode || 'full';
+
+    if(e.status==='today') continue;
+
+    var target = new Date(e.this_year_date+'T00:00:00');
+    var now = new Date();
+    var diff = Math.max(0, target - now);
+
+    var d = Math.floor(diff/86400000);
+    var h = Math.floor((diff%86400000)/3600000);
+    var mm = Math.floor((diff%3600000)/60000);
+    var s = Math.floor((diff%60000)/1000);
+
+    var dVal = card.querySelector('.cd-day');
+    if(!dVal) continue;
+    flipIfChanged(dVal, pad2(d));
+
+    if(displayMode==='full'){
+      var hVal = card.querySelector('.cd-hour');
+      var mVal = card.querySelector('.cd-min');
+      var sVal = card.querySelector('.cd-sec');
+      if(hVal) flipIfChanged(hVal, pad2(h));
+      if(mVal) flipIfChanged(mVal, pad2(mm));
+      if(sVal) flipIfChanged(sVal, pad2(s));
+    }
+    updateProgress(card, e);
+  }
+}
+
+function flipIfChanged(el, val){
+  if(!el) return;
+  var old = el.textContent;
+  if(old !== val){
+    el.textContent = val;
+    el.classList.remove('flip');
+    void el.offsetWidth;
+    el.classList.add('flip');
+  }
+}
+
+function updateProgress(card, e){
+  var svg = card.querySelector('.progress-fill');
+  var pct = card.querySelector('.progress-pct');
+  if(!svg || !pct) return;
+
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var targetThisYear = new Date(e.this_year_date+'T00:00:00');
+  var thisYear = targetThisYear.getFullYear();
+  var totalDays;
+  if(e.status==='upcoming'){
+    var lastYear = new Date((thisYear-1)+'-'+pad2((e.month||1))+'-'+pad2((e.day||1))+'T00:00:00');
+    totalDays = Math.round((targetThisYear - lastYear) / 86400000);
+  }else{totalDays = 365}
+  if(totalDays<=0) totalDays=365;
+
+  var elapsed;
+  if(e.status==='upcoming'){elapsed = totalDays - e.days_left}else{elapsed = totalDays}
+
+  var pctVal = Math.max(0,Math.min(100,Math.round(elapsed/totalDays*100)));
+  var r = 20;
+  var circ = 2*Math.PI*r;
+  var offset = circ - (pctVal/100)*circ;
+  svg.setAttribute('stroke-dasharray', circ);
+  svg.setAttribute('stroke-dashoffset', offset);
+  pct.textContent = pctVal+'%';
+}
+
+/* ====== 加载事件 ====== */
+async function loadEvents(){
+  var fromCache = false;
+  try{
+    var r = await fetch('/api/countdown/events');
+    var d = await r.json();
+    if(!d.success){showError('加载失败');return}
+
+    hasLunar = d.has_lunar;
+    eventsData = d.events;
+    cacheData(d);
+    showOfflineBadge(false);
+    document.getElementById('pullHint').style.display='none';
+  }catch(e){
+    // 网络失败，使用缓存
+    var cache = getCache();
+    if(cache && cache.data){
+      eventsData = cache.data.events;
+      hasLunar = cache.data.has_lunar;
+      fromCache = true;
+      showOfflineBadge(true);
+      document.getElementById('pullHint').style.display='block';
+    }else{
+      showError('网络错误，请刷新重试');
+      document.getElementById('pullHint').style.display='block';
+      return;
+    }
+  }
+
+  sortEvents(eventsData);
+  buildCatChips();
+
+  var now = new Date();
+  var weekDays = ['日','一','二','三','四','五','六'];
+  document.getElementById('todayText').textContent =
+    now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 星期'+weekDays[now.getDay()];
+
+  if(!fromCache) loadTodayLunar();
+  applyCurrentSort();
+  updateAllCountdowns();
+}
+
+async function loadTodayLunar(){
+  if(!hasLunar) return;
+  var now = new Date();
+  try{
+    var r = await fetch('/api/countdown/solar-to-lunar',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({year:now.getFullYear(),month:now.getMonth()+1,day:now.getDate()})
+    });
+    var d = await r.json();
+    if(d.success) document.getElementById('lunarText').textContent = '农历 '+d.lunar_str;
+  }catch(e){}
+}
+
+/* ====== 即将到来标记 ====== */
+function getUrgentBadge(daysLeft){
+  if(daysLeft===null||daysLeft===undefined) return '';
+  if(daysLeft<=1) return '<span class="urgent-badge urgent-1">即将到来</span>';
+  if(daysLeft<=3) return '<span class="urgent-badge urgent-3">即将到来</span>';
+  if(daysLeft<=7) return '<span class="urgent-badge urgent-7">即将到来</span>';
+  return '';
+}
+
+/* ====== 分类标签 ====== */
+function catTagHTML(cat){
+  var c = CAT_CONFIG[cat]||CAT_CONFIG.custom;
+  return '<span class="cat-tag '+c.cls+'">'+c.label+'</span>';
+}
+
+function renderEvents(events){
+  var el = document.getElementById('eventList');
+
+  if(!events.length){
+    el.innerHTML = '<div class="empty-state"><div class="big">+</div><p>还没有事件</p><p class="sub">点击右下角按钮添加一个倒计时</p></div>';
+    document.getElementById('summaryNext').innerHTML = '';
+    return;
+  }
+
+  // 检出已过事件
+  var activeEvents = [], pastEvents = [];
+  for(var i=0;i<events.length;i++){
+    if(events[i].status==='past'){pastEvents.push(events[i])}else{activeEvents.push(events[i])}
+  }
+
+  var html = buildCardListHTML(activeEvents);
+
+  // 已过事件折叠区
+  if(pastEvents.length>0){
+    html += '<div class="past-section">'+
+      '<div class="past-header" onclick="togglePast(this)">'+
+        '<span>已过事件（'+pastEvents.length+'）</span>'+
+        '<span class="past-toggle">v</span>'+
+      '</div>'+
+      '<div class="past-body">'+buildCardListHTML(pastEvents)+'</div>'+
+    '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function calcProgressData(e){
+  if(e.status==='past'||e.status==='today') return {pct:100, offset:'0.00', circ:'125.66'};
+  if(!e.this_year_date||!e.days_left&&e.days_left!==0) return {pct:0, offset:'125.66', circ:'125.66'};
+  try{
+    var targetDate = new Date(e.this_year_date+'T00:00:00');
+    var targetYear = targetDate.getFullYear();
+    var prevDate = new Date((targetYear-1)+'-'+pad2(e.month||1)+'-'+pad2(e.day||1)+'T00:00:00');
+    if(isNaN(prevDate.getTime())) prevDate = new Date((targetYear-1)+'-02-28T00:00:00');
+    var totalDays = Math.round((targetDate - prevDate) / 86400000);
+    if(totalDays<=0) totalDays = 365;
+    var elapsed = totalDays - (e.days_left||0);
+    var pctVal = Math.max(0, Math.min(100, Math.round(elapsed/totalDays*100)));
+    var circ = 2*Math.PI*20;
+    var offset = circ - (pctVal/100)*circ;
+    return {pct:pctVal, offset:offset.toFixed(2), circ:circ.toFixed(2)};
+  }catch(ex){return {pct:0, offset:'125.66', circ:'125.66'}}
+}
+
+function buildCardListHTML(events){
+  var html = '';
+  for(var i=0;i<events.length;i++){
+    var e = events[i];
+    var isToday = e.status==='today';
+    var isPast = e.status==='past';
+    var cardClass = isToday ? 'event-card today' : 'event-card';
+
+    var countdownHtml = '';
+    var displayMode = e.display_mode || 'full';
+    if(isToday){
+      countdownHtml = '<div class="today-badge" style="font-size:26px;font-weight:800">今天</div>';
+    }else if(isPast){
+      var sinceText = e.days_since ? '距今已过 '+e.days_since+' 天' : '已过';
+      countdownHtml = '<div class="digit-val" style="font-size:18px;color:var(--text-muted)">'+sinceText+'</div>';
+    }else if(displayMode==='day'){
+      countdownHtml =
+        '<div class="digit-block"><span class="digit-val cd-day">'+pad2(e.days_left||0)+'</span><span class="digit-unit">天</span></div>';
+    }else{
+      countdownHtml =
+        '<div class="digit-block"><span class="digit-val cd-day">'+pad2(e.days_left||0)+'</span><span class="digit-unit">天</span></div>'+
+        '<span class="digit-sep">:</span>'+
+        '<div class="digit-block"><span class="digit-val cd-hour">00</span><span class="digit-unit">时</span></div>'+
+        '<span class="digit-sep">:</span>'+
+        '<div class="digit-block"><span class="digit-val cd-min">00</span><span class="digit-unit">分</span></div>'+
+        '<span class="digit-sep">:</span>'+
+        '<div class="digit-block"><span class="digit-val cd-sec">00</span><span class="digit-unit">秒</span></div>';
+    }
+
+    // 紧急标记
+    if(!isPast && !isToday){
+      countdownHtml += getUrgentBadge(e.days_left);
+    }
+
+    var progressHtml = '';
+    if(!isPast){
+      var prog = calcProgressData(e);
+      progressHtml = '<div class="progress-wrap">'+
+        '<svg class="progress-ring" width="52" height="52" viewBox="0 0 52 52">'+
+        '<circle class="progress-bg" cx="26" cy="26" r="20"/>'+
+        '<circle class="progress-fill" cx="26" cy="26" r="20" stroke-dasharray="'+prog.circ+'" stroke-dashoffset="'+prog.offset+'"/>'+
+        '</svg>'+
+        '<span class="progress-pct" data-event-id="'+e.id+'">'+prog.pct+'%</span></div>';
+    }
+
+    var ageHtml = '';
+    if(e.exact_age!==null&&e.exact_age!==undefined){
+      ageHtml = '<span class="event-age">'+e.int_age+'岁</span>';
+    }
+
+    var noteHtml = '';
+    if(e.note) noteHtml = '<span class="event-note">'+esc(e.note)+'</span>';
+
+    var dateFullHtml = '<span class="event-date-full">'+esc(e.date_desc)+'</span>';
+
+    var cat = e.category||'custom';
+    var catHtml = catTagHTML(cat);
+
+    // 内联事件数据用于编辑
+    var evtData = JSON.stringify({
+      id:e.id,name:e.name,cal_type:e.cal_type,year:e.year,month:e.month,day:e.day,
+      is_leap:e.is_leap,note:e.note||'',display_mode:e.display_mode||'full',category:cat,
+      repeat_annual:e.repeat_annual||false
+    }).replace(/'/g,"\\x27").replace(/"/g,'&quot;');
+
+    html += '<div class="'+cardClass+'" data-event=\''+evtData+'\'>'+
+      '<div class="event-top">'+
+        '<div class="event-name-row"><div class="event-name">'+esc(e.name)+'</div><div class="event-date-sub">'+catHtml+esc(e.date_desc.substring(0,30))+'</div></div>'+
+        '<div class="event-actions">'+
+          '<button class="btn-edit" onclick="openEditCard(this)">编辑</button>'+
+          '<button class="btn-del" onclick="delEvent('+e.id+')">删除</button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="countdown-row">'+
+        '<div class="countdown-digits">'+countdownHtml+'</div>'+
+        progressHtml+
+      '</div>'+
+      '<div class="event-bottom">'+ageHtml+dateFullHtml+noteHtml+'</div>'+
+      '</div>';
+  }
+  return html;
+}
+
+function togglePast(header){
+  var body = header.nextElementSibling;
+  var toggle = header.querySelector('.past-toggle');
+  body.classList.toggle('show');
+  toggle.classList.toggle('open');
+}
+
+function openEditCard(btn){
+  var card = btn.closest('.event-card');
+  var raw = card.getAttribute('data-event');
+  if(!raw) return;
+  try{
+    var ed = JSON.parse(raw.replace(/&quot;/g,'"').replace(/\\x27/g,"'"));
+    openEdit(ed.id,ed.name,ed.cal_type,ed.year,ed.month,ed.day,ed.is_leap,ed.note,ed.display_mode,ed.category,ed.repeat_annual);
+  }catch(e){}
+}
+
+/* ====== 弹窗 ====== */
+function openAdd(){
+  editingId = null;
+  document.getElementById('modalTitle').textContent = '添加事件';
+  document.getElementById('evtName').value = '';
+  document.getElementById('evtCalType').value = 'solar';
+  document.getElementById('evtLeap').value = '0';
+  document.getElementById('evtDisplayMode').value = 'full';
+  document.getElementById('evtCategory').value = 'custom';
+  document.getElementById('evtNote').value = '';
+  document.getElementById('lunarHint').classList.remove('show','error');
+  document.getElementById('leapGroup').style.display = 'none';
+  document.getElementById('evtRepeatType').value = 'once';
+  onRepeatTypeChange();
+  document.getElementById('modalOverlay').classList.add('show');
+  setTimeout(function(){document.getElementById('evtName').focus()},350);
+}
+
+function openEdit(id,name,calType,year,month,day,isLeap,note,displayMode,category,repeatAnnual){
+  editingId = id;
+  var isAnnual = repeatAnnual || year==0;
+  document.getElementById('modalTitle').textContent = '编辑事件';
+  document.getElementById('evtName').value = name;
+  document.getElementById('evtCalType').value = calType;
+  document.getElementById('evtYear').value = year||'';
+  document.getElementById('evtMonth').value = month;
+  document.getElementById('evtDay').value = day;
+  document.getElementById('evtMonth2').value = month;
+  document.getElementById('evtDay2').value = day;
+  document.getElementById('evtLeap').value = isLeap;
+  document.getElementById('evtDisplayMode').value = displayMode || 'full';
+  document.getElementById('evtCategory').value = category || 'custom';
+  document.getElementById('evtNote').value = note;
+  document.getElementById('evtRepeatType').value = isAnnual?'annual':'once';
+  onRepeatTypeChange();
+  onCalTypeChange();
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('show');
+  editingId = null;
+}
+
+function onCalTypeChange(){
+  var ct = document.getElementById('evtCalType').value;
+  document.getElementById('leapGroup').style.display = ct==='lunar'?'block':'none';
+  checkLunarDate();
+}
+
+function onRepeatTypeChange(){
+  var isAnnual = document.getElementById('evtRepeatType').value === 'annual';
+  document.getElementById('fgYear').style.display = isAnnual?'none':'block';
+  document.getElementById('fgDate').style.display = isAnnual?'block':'none';
+  // 同步月日值
+  if(isAnnual){
+    var mVal = document.getElementById('evtMonth').value;
+    var dVal = document.getElementById('evtDay').value;
+    document.getElementById('evtMonth2').value = mVal;
+    document.getElementById('evtDay2').value = dVal;
+  }else{
+    document.getElementById('evtYear').value = document.getElementById('evtYear').value || '';
+  }
+  checkLunarDate();
+}
+
+async function checkLunarDate(){
+  var ct = document.getElementById('evtCalType').value;
+  var hint = document.getElementById('lunarHint');
+  hint.classList.remove('show','error');
+
+  if(ct!=='lunar'||!hasLunar) return;
+
+  var isAnnual = document.getElementById('evtRepeatType').value === 'annual';
+  var y, m, d;
+  if(isAnnual){
+    y = 2000; // 测试年份
+    m = parseInt(document.getElementById('evtMonth2').value);
+    d = parseInt(document.getElementById('evtDay2').value);
+  }else{
+    y = parseInt(document.getElementById('evtYear').value);
+    m = parseInt(document.getElementById('evtMonth').value);
+    d = parseInt(document.getElementById('evtDay').value);
+  }
+  var lp = parseInt(document.getElementById('evtLeap').value);
+
+  if(!y||!m||!d) return;
+  if(isAnnual){hint.classList.add('show');hint.textContent='每年重复事件';return}
+
+  try{
+    var r = await fetch('/api/countdown/lunar-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({year:y,month:m,day:d,is_leap:lp})});
+    var res = await r.json();
+    if(res.success){
+      hint.textContent = '农历 '+res.lunar_str+' = 公历 '+res.solar_date;
+      hint.classList.add('show');
+    }else{
+      hint.textContent = res.error;
+      hint.classList.add('show','error');
+    }
+  }catch(e){}
+}
+
+async function saveEvent(){
+  var name = document.getElementById('evtName').value.trim();
+  var calType = document.getElementById('evtCalType').value;
+  var isAnnual = document.getElementById('evtRepeatType').value === 'annual';
+  var year, month, day;
+  if(isAnnual){
+    year = 0;
+    month = parseInt(document.getElementById('evtMonth2').value);
+    day = parseInt(document.getElementById('evtDay2').value);
+  }else{
+    year = parseInt(document.getElementById('evtYear').value);
+    month = parseInt(document.getElementById('evtMonth').value);
+    day = parseInt(document.getElementById('evtDay').value);
+  }
+  var isLeap = parseInt(document.getElementById('evtLeap').value)||0;
+  var note = document.getElementById('evtNote').value.trim();
+  var displayMode = document.getElementById('evtDisplayMode').value;
+  var category = document.getElementById('evtCategory').value;
+
+  if(!name){toast('请输入事件名称','err');return}
+  if(!month||!day){toast('请选择完整日期','err');return}
+  if(!isAnnual && !year){toast('请选择年份','err');return}
+
+  var body = {name:name,cal_type:calType,year:year,month:month,day:day,is_leap:isLeap,note:note,display_mode:displayMode,category:category,repeat_annual:isAnnual};
+
+  try{
+    var url = editingId?'/api/countdown/events/'+editingId:'/api/countdown/events';
+    var method = editingId?'PUT':'POST';
+    var r = await fetch(url,{method:method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    var d = await r.json();
+    if(d.success){toast(editingId?'已更新':'已添加','ok');closeModal();loadEvents()}
+    else toast(d.error||'操作失败','err');
+  }catch(e){toast('网络错误','err')}
+}
+
+async function delEvent(id){
+  if(!confirm('确定删除？')) return;
+  try{
+    var r = await fetch('/api/countdown/events/'+id,{method:'DELETE'});
+    var d = await r.json();
+    if(d.success){toast('已删除','ok');loadEvents()}
+    else toast(d.error||'删除失败','err');
+  }catch(e){toast('网络错误','err')}
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function showError(msg){
+  document.getElementById('eventList').innerHTML = '<div class="empty-state"><div class="big">!</div><p>'+esc(msg)+'</p><p class="sub">点击刷新</p></div>';
+}
+
+var touchStartY = 0;
+document.addEventListener('touchstart',function(e){touchStartY=e.touches[0].clientY},{passive:true});
+document.addEventListener('touchend',function(e){
+  var diff = e.changedTouches[0].clientY - touchStartY;
+  if(diff>80 && window.scrollY<10) loadEvents();
+},{passive:true});
+
+init();
+</script>
+</body>
+</html>

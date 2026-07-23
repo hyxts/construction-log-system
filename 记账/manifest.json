@@ -1,0 +1,11 @@
+{
+    "name": "债务往来追踪",
+    "short_name": "债务追踪",
+    "description": "记录与特定人的债务往来关系",
+    "start_url": "/accounting",
+    "display": "standalone",
+    "orientation": "portrait",
+    "theme_color": "#F5F5F7",
+    "background_color": "#F5F5F7",
+    "icons": []
+}

@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Py平台管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#333}
+.app-layout{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;flex-shrink:0;background:linear-gradient(180deg,#667eea 0%,#5a4fa8 40%,#3d3380 100%);color:#fff;display:flex;flex-direction:column;overflow-y:auto}
+.hdr{padding:24px 20px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:8px}
+.hdr h1{font-size:17px;font-weight:600;color:#fff}
+.hdr svg{flex-shrink:0}
+.nav{display:flex;flex-direction:column;gap:2px;padding:8px 12px}
+.nb{flex:none;padding:11px 14px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;text-align:left;color:rgba(255,255,255,.8);background:0;transition:all .15s;border-left:3px solid transparent}
+.nb.on{background:rgba(255,255,255,.18);color:#fff;font-weight:600;border-left-color:#fff}
+.nb:hover{background:rgba(255,255,255,.12);color:#fff}
+.ctn{flex:1;overflow-y:auto;padding:20px 28px;max-width:none;margin:0}
+.pg{display:none}.pg.on{display:block}
+
+/* 通用卡片 */
+.card{background:#fff;border-radius:12px;padding:20px 24px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #f0f0f0}
+.card h3{font-size:16px;margin-bottom:14px;color:#1f2937;font-weight:600}
+
+/* 按钮 */
+.btn{padding:10px 20px;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;display:block;width:100%;min-height:44px;margin-bottom:8px;transition:all .15s;-webkit-appearance:none;appearance:none}
+.btn:active{opacity:.9;transform:scale(.99)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.bp{background:#667eea;color:#fff}
+.bp:hover{background:#5a6fd6}
+.bs{background:#22c55e;color:#fff}
+.bs:hover{background:#16a34a}
+.bo{background:transparent;border:1.5px solid #d1d5db;color:#6b7280}
+.bo:hover{border-color:#667eea;color:#667eea}
+.bw{background:#f59e0b;color:#fff}
+.bw:hover{background:#d97706}
+.br{background:#ef4444;color:#fff}
+.br:hover{background:#dc2626}
+.bsm{padding:6px 12px;font-size:12px;width:auto;min-height:unset;margin-bottom:0;display:inline-block}
+
+/* 输出区 */
+.output{background:#1e1e2e;color:#a6e3a1;border-radius:8px;padding:14px;font-family:Consolas,monospace;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-all;min-height:40px;max-height:240px;overflow-y:auto;margin-top:12px}
+.output.error{color:#f38ba8}
+.output.info{color:#89b4fa}
+
+/* 提交列表 */
+.commit-list{background:#f8f9fc;border-radius:8px;padding:4px 0;max-height:280px;overflow-y:auto}
+.commit-item{display:flex;align-items:flex-start;padding:6px 12px;font-size:12px;border-bottom:1px solid #eee;gap:8px}
+.commit-item:last-child{border-bottom:none}
+.commit-hash{font-family:Consolas,monospace;color:#667eea;font-size:11px;flex-shrink:0;min-width:52px}
+.commit-date{color:#999;font-size:11px;flex-shrink:0;min-width:68px;text-align:right}
+.commit-message{color:#374151;word-break:break-all;flex:1}
+.loading{text-align:center;padding:12px;color:#999;font-size:13px}
+.empty{text-align:center;padding:35px;color:#888}
+
+/* 列表项 */
+.list-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f8f9fc;border-radius:8px;margin-bottom:6px;font-size:13px}
+.list-info{flex:1;min-width:0}
+.list-name{font-weight:600;color:#374151;margin-bottom:2px;word-break:break-all}
+.list-meta{color:#999;font-size:11px}
+.list-actions{display:flex;gap:6px;flex-shrink:0}
+
+/* Toast */
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:10px;color:#fff;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none}
+.toast.show{opacity:1}
+.toast-ok{background:#28a745}
+.toast-err{background:#dc3545}
+
+/* 概览 - 指标卡 4列 */
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.metric-card{background:#fff;border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:1px solid #f0f0f0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.metric-card.actions{align-items:stretch;justify-content:center;gap:8px}
+.metric-card.actions .btn{width:100%;margin-bottom:0;font-size:13px;min-height:38px}
+.metric-label{font-size:12px;color:#888;font-weight:500;margin-bottom:6px;text-align:center}
+.metric-value{font-size:22px;font-weight:800;color:#1f2937;text-align:center}
+.metric-sub{font-size:11px;color:#999;margin-top:4px;text-align:center}
+
+/* 磁盘环形图 */
+.gauge-wrap{position:relative;width:90px;height:90px}
+.gauge-wrap svg{transform:rotate(-90deg)}
+.gauge-bg{fill:none;stroke:#e9ecef;stroke-width:8}
+.gauge-fg{fill:none;stroke:#667eea;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .8s ease,stroke .8s}
+.gauge-fg.warn{stroke:#f59e0b}
+.gauge-fg.danger{stroke:#ef4444}
+.gauge-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:20px;font-weight:800;color:#374151}
+
+/* PA状态摘要状态字 */
+.pa-summary-status{font-size:12px;font-weight:600;padding:3px 10px;border-radius:12px;display:inline-block;margin-top:4px}
+.pa-summary-status.ok{background:#dcfce7;color:#16a34a}
+.pa-summary-status.warn{background:#fef3c7;color:#d97706}
+.pa-summary-status.err{background:#fee2e2;color:#dc2626}
+.pa-summary-status.none{background:#f3f4f6;color:#6b7280}
+
+/* 数据库卡片 */
+.db-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:10px}
+.db-card{background:#f8fafc;border-radius:10px;padding:14px;text-align:center;border:2px solid transparent;transition:all .2s;cursor:default}
+.db-card:hover{border-color:#667eea;background:#eef2ff;transform:translateY(-2px);box-shadow:0 4px 12px rgba(102,126,234,.12)}
+.db-card-name{font-size:12px;color:#667eea;font-weight:600;margin-bottom:6px}
+.db-card-rows{font-size:20px;font-weight:800;color:#1f2937}
+.db-card-size{font-size:11px;color:#999;margin-top:3px}
+
+/* 程序网格 */
+.app-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:10px}
+.app-item{padding:20px 16px;background:#f8fafc;border-radius:14px;text-align:center;cursor:pointer;transition:all .2s;border:2px solid transparent}
+.app-item:hover{background:#eef2ff;border-color:#667eea;transform:translateY(-2px);box-shadow:0 6px 16px rgba(102,126,234,.18)}
+.app-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.app-name{font-size:15px;font-weight:700;color:#1f2937;margin-bottom:4px}
+.app-desc{font-size:12px;color:#6b7280}
+
+/* 双栏布局 */
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.twocol-13{display:grid;grid-template-columns:1fr 2fr;gap:14px}
+
+/* 概览 log-summary */
+.log-summary-item{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid #f3f4f6}
+.log-summary-item:last-child{border-bottom:none}
+.log-summary-name{color:#666}
+.log-summary-count{font-weight:600}
+.log-summary-count.err{color:#ef4444}
+
+/* 自动刷新倒计时 */
+.auto-refresh{text-align:right;font-size:11px;color:#999;padding:4px 0;margin-top:-10px;margin-bottom:10px}
+.auto-refresh span{font-weight:600;color:#667eea}
+
+/* PA 续期 - 状态卡 */
+.pa-status-card{background:linear-gradient(135deg,#667eea,#7c3aed);color:#fff;border-radius:14px;padding:24px;margin-bottom:16px;box-shadow:0 4px 16px rgba(102,126,234,.25)}
+.pa-st-label{font-size:13px;opacity:.85;margin-bottom:4px}
+.pa-st-value{font-size:26px;font-weight:800;letter-spacing:.5px}
+.pa-st-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}
+.pa-st-item{background:rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center;backdrop-filter:blur(4px)}
+.pa-st-item .l{font-size:12px;opacity:.85;margin-bottom:4px}
+.pa-st-item .v{font-size:14px;font-weight:700;word-break:break-all}
+
+/* PA - 表单 */
+.fg{margin-bottom:12px}
+.fl{display:block;font-size:13px;color:#666;margin-bottom:4px;font-weight:500}
+.finp{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px}
+.ig{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.io{padding:9px 4px;border:1.5px solid #ddd;border-radius:10px;text-align:center;cursor:pointer;font-size:13px;font-weight:500;color:#666;background:#fafafa}
+.io:active{transform:scale(.96)}
+.io.sel{border-color:#667eea;background:rgba(102,126,234,.08);color:#667eea;font-weight:600}
+
+/* PA - 日志 */
+.pa-log-box{background:#1a1a2e;border-radius:10px;padding:10px;max-height:300px;overflow-y:auto;font-family:Consolas,monospace;font-size:12px;line-height:1.8;color:#e0e0e0}
+.pa-log-box .log-ok{color:#4ade80}
+.pa-log-box .log-err{color:#f87171}
+.pa-log-box .log-warn{color:#fbbf24}
+.pa-log-box .log-info{color:#60a5fa}
+.log-stats{display:flex;gap:12px;padding:8px 0;margin-bottom:8px;border-bottom:1px solid #333;font-size:11px}
+.log-stat-ok{color:#4ade80}.log-stat-err{color:#f87171}.log-stat-warn{color:#fbbf24}.log-stat-info{color:#60a5fa}
+.log-tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:10px;margin-right:6px;font-weight:600}
+.log-tag-ok{background:#166534;color:#4ade80}
+.log-tag-err{background:#7f1d1d;color:#f87171}
+.log-tag-warn{background:#78350f;color:#fbbf24}
+.log-tag-info{background:#1e3a5f;color:#60a5fa}
+.log-filter.active{background:#667eea!important;color:#fff!important;border-color:#667eea!important}
+.log-mod-head{border-bottom:1px solid #30363d;padding:8px 0;margin-bottom:6px;font-weight:600;color:#8899aa;font-size:13px}
+
+/* PA - 历史 */
+.hi-item{padding:8px 10px;background:#f8f9fc;border-radius:8px;margin-bottom:6px;border-left:3px solid #667eea;font-size:12px}
+.hi-item.ok{border-left-color:#22c55e}
+.hi-item.er{border-left-color:#ef4444}
+.hi-time{color:#999;font-size:11px}
+
+/* 网速测试 */
+.speed-meter{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0}
+.speed-item{background:#f8fafc;border-radius:14px;padding:24px 16px;text-align:center;border:2px solid transparent;transition:all .3s}
+.speed-item.testing{border-color:#667eea;background:#eef2ff}
+.speed-item.done{border-color:#22c55e;background:#f0fdf4}
+.speed-label{font-size:13px;color:#666;font-weight:500;margin-bottom:8px}
+.speed-value{font-size:28px;font-weight:800;color:#1f2937;min-height:38px}
+.speed-unit{font-size:13px;color:#888;font-weight:500}
+.speed-sub{font-size:11px;color:#999;margin-top:6px;min-height:16px}
+.speed-progress{text-align:center;font-size:14px;color:#667eea;font-weight:600;margin:12px 0;min-height:20px}
+.speed-start{display:flex;justify-content:center;margin:12px 0}
+.speed-start .btn{width:200px}
+
+/* 底部链接 */
+.btm-links{display:flex;gap:16px;margin-top:20px;padding:14px 0;border-top:1px solid #eee;flex-wrap:wrap}
+.btm-links a{font-size:12px;color:#999;text-decoration:none}
+.btm-links a:hover{color:#667eea}
+
+/* 响应式 */
+@media (max-width:900px){
+  .metrics-row{grid-template-columns:repeat(2,1fr)}
+  .db-cards{grid-template-columns:repeat(3,1fr)}
+  .twocol,.twocol-13{grid-template-columns:1fr}
+  .speed-meter{grid-template-columns:repeat(3,1fr);gap:8px}
+  .speed-item{padding:16px 8px}
+  .speed-value{font-size:22px}
+}
+@media (max-width:768px){
+  .app-layout{display:block;height:auto;overflow:visible}
+  .sidebar{width:100%;background:linear-gradient(135deg,#667eea,#764ba2);display:block}
+  .hdr{padding:16px;padding-top:calc(16px + env(safe-area-inset-top));text-align:center;justify-content:center;border-bottom:none;margin-bottom:0}
+  .hdr h1{font-size:20px}
+  .nav{flex-direction:row;background:#fff;border-radius:12px;padding:5px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin:10px 8px;gap:2px}
+  .nb{flex:1;padding:10px 6px;font-size:13px;text-align:center;color:#666;font-weight:500;border-left:none;min-height:44px}
+  .nb.on{background:#667eea;color:#fff;font-weight:500;border-left-color:transparent}
+  .nb:hover{background:#667eea;color:#fff}
+  .ctn{padding:12px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+  .card{padding:16px;margin-bottom:12px;border:none}.card h3{font-size:15px;margin-bottom:10px}
+  .btn{padding:10px 14px;font-size:14px;min-height:48px}
+  .metrics-row{grid-template-columns:repeat(2,1fr);gap:8px}
+  .metric-card{padding:14px}
+  .metric-value{font-size:18px}
+  .db-cards{grid-template-columns:repeat(2,1fr)}
+  .app-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .app-item{padding:16px 12px}
+  .app-icon{width:44px;height:44px;border-radius:12px;margin-bottom:8px}
+  .app-icon svg{width:24px;height:24px}
+  .app-name{font-size:14px}
+  .app-desc{font-size:11px}
+  .pa-st-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .pa-st-value{font-size:20px}
+  .pa-status-card{padding:18px}
+  .ig{grid-template-columns:repeat(3,1fr);gap:6px}
+  .btm-links{justify-content:center;padding:12px 0;padding-bottom:calc(12px + env(safe-area-inset-bottom));gap:12px}
+  .output{max-height:180px;font-size:11px}
+  .twocol,.twocol-13{grid-template-columns:1fr}
+}
+@media (min-width:768px){
+  .ctn{padding:24px 32px}
+  .card{padding:24px 28px;margin-bottom:20px}
+  .card h3{font-size:17px;margin-bottom:16px}
+  .app-grid{grid-template-columns:repeat(3,1fr);gap:16px}
+  .app-item{padding:22px 18px}
+  .app-icon{width:56px;height:56px}
+  .app-icon svg{width:30px;height:30px}
+}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <div class="sidebar">
+    <div class="hdr"><svg width="36" height="36" viewBox="0 0 64 64"><defs><linearGradient id="hg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#fff"/><stop offset="100%" stop-color="#e0d4f5"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="rgba(255,255,255,.15)"/><rect x="16" y="28" width="32" height="26" rx="3" fill="url(#hg)"/><rect x="28" y="28" width="8" height="26" fill="#667eea"/><rect x="16" y="37" width="32" height="5" fill="#667eea"/><circle cx="32" cy="24" r="5" fill="url(#hg)"/><circle cx="32" cy="24" r="3" fill="#667eea"/></svg><h1>Py平台管理</h1></div>
+    <div class="nav">
+      <button class="nb on" onclick="go('overview')">概览</button>
+      <button class="nb" onclick="go('pa')">PA续期</button>
+      <button class="nb" onclick="go('backup')">数据备份</button>
+      <button class="nb" onclick="go('speed')">网速测试</button>
+    </div>
+  </div>
+
+  <div class="ctn">
+    <div id="T" class="toast"></div>
+
+    <!-- ====== 概览 ====== -->
+    <div class="pg on" id="pg-overview">
+      <div class="auto-refresh" id="refreshTimer">-- 秒后自动刷新</div>
+
+      <!-- 指标卡片行 -->
+      <div class="metrics-row">
+        <!-- 磁盘 -->
+        <div class="metric-card" id="cardDisk">
+          <div class="metric-label">磁盘使用</div>
+          <div class="gauge-wrap">
+            <svg width="90" height="90" viewBox="0 0 90 90">
+              <circle class="gauge-bg" cx="45" cy="45" r="38"/>
+              <circle class="gauge-fg" id="gaugeCircle" cx="45" cy="45" r="38" stroke-dasharray="238.76" stroke-dashoffset="0"/>
+            </svg>
+            <div class="gauge-center" id="gaugePct">0%</div>
+          </div>
+          <div class="metric-sub" id="gaugeDetail">-- / --</div>
+        </div>
+        <!-- 运行信息 -->
+        <div class="metric-card">
+          <div class="metric-label">运行信息</div>
+          <div class="metric-value" id="ovUptime">--</div>
+          <div class="metric-sub">Python <span id="ovPython">--</span></div>
+          <div class="metric-sub" style="margin-top:8px;color:#667eea">PythonAnywhere</div>
+        </div>
+        <!-- PA续期摘要 -->
+        <div class="metric-card" id="paSummaryCard" style="cursor:pointer" onclick="go('pa')">
+          <div class="metric-label">PA续期状态</div>
+          <div class="metric-value" id="paSumExpiry">--</div>
+          <span class="pa-summary-status none" id="paSumStatus">--</span>
+          <div class="metric-sub" id="paSumDetail" style="margin-top:6px">点击查看详情</div>
+        </div>
+        <!-- 快速操作 -->
+        <div class="metric-card actions">
+          <button class="btn bp" onclick="quickPull()">代码更新</button>
+          <button class="btn bs" onclick="go('backup');setTimeout(function(){document.getElementById('btnBackup').click()},300)">创建备份</button>
+          <button class="btn bo" onclick="doCleanup()">执行清理</button>
+        </div>
+      </div>
+
+      <!-- 平台程序 -->
+      <div class="card">
+        <h3>平台程序</h3>
+        <div class="app-grid">
+          <div class="app-item" onclick="location.href='/'"><div class="app-icon" style="background:linear-gradient(135deg,#667eea,#764ba2)"><svg width="28" height="28" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="rgba(255,255,255,.15)"/><rect x="16" y="26" width="32" height="24" rx="3" fill="#fff"/><rect x="28" y="26" width="8" height="24" fill="#667eea"/><circle cx="32" cy="22" r="5" fill="#fff"/></svg></div><div class="app-name">礼金记录</div><div class="app-desc">人情往来管理与分析</div></div>
+          <div class="app-item" onclick="location.href='/paiban'"><div class="app-icon" style="background:linear-gradient(135deg,#11998e,#38ef7d)"><svg width="28" height="28" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="rgba(255,255,255,.15)"/><rect x="16" y="12" width="32" height="8" rx="3" fill="#fff"/><rect x="16" y="22" width="15" height="18" rx="3" fill="#fff"/><rect x="33" y="22" width="15" height="12" rx="3" fill="#fff"/><rect x="33" y="36" width="15" height="12" rx="3" fill="#fff"/><line x1="22" y1="12" x2="28" y2="22" stroke="#fff" stroke-width="2"/></svg></div><div class="app-name">排工考勤</div><div class="app-desc">排班管理与考勤统计</div></div>
+          <div class="app-item" onclick="location.href='/gpa'"><div class="app-icon" style="background:linear-gradient(135deg,#fc4a1a,#f7b733)"><svg width="28" height="28" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="rgba(255,255,255,.15)"/><rect x="14" y="12" width="36" height="6" rx="2" fill="#fff"/><rect x="14" y="22" width="36" height="6" rx="2" fill="rgba(255,255,255,.7)"/><rect x="14" y="32" width="36" height="6" rx="2" fill="rgba(255,255,255,.5)"/><rect x="14" y="42" width="36" height="6" rx="2" fill="rgba(255,255,255,.3)"/><circle cx="32" cy="24" r="8" fill="#fff" opacity=".6"/></svg></div><div class="app-name">GPA计算</div><div class="app-desc">学分绩点计算工具</div></div>
+          <div class="app-item" onclick="location.href='/hsgrades'"><div class="app-icon" style="background:linear-gradient(135deg,#4facfe,#00f2fe)"><svg width="28" height="28" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="rgba(255,255,255,.15)"/><rect x="18" y="10" width="28" height="36" rx="3" fill="#fff"/><line x1="22" y1="18" x2="42" y2="18" stroke="#4facfe" stroke-width="2"/><line x1="22" y1="24" x2="42" y2="24" stroke="#4facfe" stroke-width="2"/><line x1="22" y1="30" x2="36" y2="30" stroke="#4facfe" stroke-width="2"/><line x1="22" y1="36" x2="39" y2="36" stroke="#4facfe" stroke-width="2"/></svg></div><div class="app-name">成绩查询</div><div class="app-desc">高中成绩录入查询</div></div>
+          <div class="app-item" onclick="location.href='/countdown'"><div class="app-icon" style="background:linear-gradient(135deg,#fa709a,#fee140)"><svg width="28" height="28" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="rgba(255,255,255,.15)"/><circle cx="32" cy="32" r="18" fill="none" stroke="#fff" stroke-width="4"/><line x1="32" y1="32" x2="32" y2="20" stroke="#fff" stroke-width="3" stroke-linecap="round"/><line x1="32" y1="32" x2="40" y2="38" stroke="#fff" stroke-width="3" stroke-linecap="round"/></svg></div><div class="app-name">倒计时</div><div class="app-desc">重要日期倒计时提醒</div></div>
+          <div class="app-item" onclick="location.href='/deploy'"><div class="app-icon" style="background:linear-gradient(135deg,#8e9eab,#eef2f3)"><svg width="28" height="28" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="rgba(255,255,255,.15)"/><rect x="14" y="22" width="16" height="24" rx="3" fill="#fff"/><rect x="34" y="22" width="16" height="24" rx="3" fill="#fff"/><rect x="20" y="32" width="4" height="4" rx="1" fill="#8e9eab"/><rect x="40" y="32" width="4" height="4" rx="1" fill="#8e9eab"/></svg></div><div class="app-name">平台管理</div><div class="app-desc">部署/备份/PA续期</div></div>
+          <div class="app-item" onclick="location.href='/accounting'"><div class="app-icon" style="background:linear-gradient(135deg,#6d28d9,#a78bfa)"><svg width="28" height="28" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="rgba(255,255,255,.15)"/><rect x="10" y="14" width="44" height="36" rx="6" fill="#fff"/><line x1="30" y1="22" x2="30" y2="42" stroke="#6d28d9" stroke-width="3" stroke-linecap="round"/><line x1="22" y1="32" x2="38" y2="32" stroke="#6d28d9" stroke-width="3" stroke-linecap="round"/></svg></div><div class="app-name">个人记账</div><div class="app-desc">收支与借贷管理</div></div>
+        </div>
+      </div>
+
+      <!-- 数据库卡片 -->
+      <div class="card">
+        <h3>数据库</h3>
+        <div class="db-cards" id="dbCards">
+          <div class="loading" style="grid-column:1/-1">加载中...</div>
+        </div>
+      </div>
+
+      <!-- Git提交 + 日志摘要 -->
+      <div class="twocol">
+        <div class="card">
+          <h3 style="display:flex;justify-content:space-between;align-items:center">
+            最近提交
+            <button class="btn bsm bp" onclick="quickPull()" style="margin-bottom:0">更新代码</button>
+          </h3>
+          <div class="commit-list" id="commitList"><div class="loading">加载中...</div></div>
+        </div>
+        <div class="card">
+          <h3>日志简报</h3>
+          <div id="logBrief"><div class="loading">加载中...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== PA续期 ====== -->
+    <div class="pg" id="pg-pa">
+      <div class="pa-status-card">
+        <div class="pa-st-label">运行状态</div>
+        <div class="pa-st-value" id="paRS">就绪</div>
+        <div class="pa-st-grid">
+          <div class="pa-st-item"><div class="l">到期时间</div><div class="v" id="paEX">--</div></div>
+          <div class="pa-st-item"><div class="l">下次执行</div><div class="v" id="paNR">--</div></div>
+          <div class="pa-st-item"><div class="l">上次执行</div><div class="v" id="paLR">--</div></div>
+          <div class="pa-st-item"><div class="l">执行周期</div><div class="v" id="paIV">每7天续期一次</div></div>
+        </div>
+      </div>
+
+      <div class="twocol-13">
+        <div class="card">
+          <h3>账号设置</h3>
+          <div class="fg"><div class="fl">用户名</div><input id="paU" class="finp"></div>
+          <div class="fg"><div class="fl">密码</div><input type="password" id="paP" class="finp"></div>
+          <div class="fg"><div class="fl">API Token <span style="font-size:11px;color:#999">(PA自动重载用)</span></div><input id="paToken" class="finp"></div>
+          <div class="fg"><div class="fl">执行周期</div>
+            <div class="ig" id="paIG">
+              <div class="io" data-v="1">1天</div><div class="io" data-v="3">3天</div><div class="io" data-v="5">5天</div>
+              <div class="io sel" data-v="7">7天</div><div class="io" data-v="14">14天</div><div class="io" data-v="30">30天</div>
+            </div>
+          </div>
+          <button class="btn bp" onclick="paSaveCfg()">保存设置</button>
+        </div>
+        <div class="card">
+          <h3>运行日志</h3>
+          <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+            <button class="btn bsm bo log-filter active" data-log="all">全部</button>
+            <button class="btn bsm bo log-filter" data-log="pa">PA续期</button>
+            <button class="btn bsm bo log-filter" data-log="reload">重载</button>
+            <button class="btn bsm bo log-filter" data-log="backup">备份</button>
+          </div>
+          <div id="paLB" class="pa-log-box"><div class="empty">暂无日志</div></div>
+        </div>
+      </div>
+
+      <div class="card"><h3 style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="toggleHistory()">执行历史 <span id="histToggle" style="font-size:13px;color:#999;font-weight:400">收起</span></h3><div id="paHB"><div class="empty">暂无记录</div></div></div>
+    </div>
+
+    <!-- ====== 数据备份 ====== -->
+    <div class="pg" id="pg-backup">
+      <div class="twocol-13">
+        <div class="card">
+          <h3>操作</h3>
+          <button class="btn bs" id="btnBackup" onclick="doBackup()">立即创建备份</button>
+          <div class="output" id="backupOutput" style="display:none"></div>
+          <div style="margin-top:24px">
+            <h3>系统清理</h3>
+            <p style="font-size:12px;color:#999;margin-bottom:8px">清理PA日志缓存、__pycache__临时文件和过旧日志</p>
+            <button class="btn bw" id="btnCleanup" onclick="doCleanup()">执行清理</button>
+            <div class="output" id="cleanupOutput" style="display:none"></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>备份列表</h3>
+          <div id="backupList"><div class="loading">加载中...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 网速测试 ====== -->
+    <div class="pg" id="pg-speed">
+      <div class="card">
+        <h3>网速测试</h3>
+        <p style="font-size:12px;color:#888;margin-bottom:4px">下载多源竞速（jsDelivr/BootCDN 国内 + Cloudflare 国际），取最优带宽</p>
+        <div class="speed-start">
+          <button class="btn bs" id="btnSpeed" onclick="runSpeedTest()">开始测试</button>
+        </div>
+        <div class="speed-progress" id="speedStatus"></div>
+        <div class="speed-meter" id="speedMeter">
+          <div class="speed-item" id="spPing">
+            <div class="speed-label">延迟 (Ping)</div>
+            <div class="speed-value">--</div>
+            <div class="speed-unit">ms</div>
+            <div class="speed-sub"></div>
+          </div>
+          <div class="speed-item" id="spDownload">
+            <div class="speed-label">下载速度</div>
+            <div class="speed-value">--</div>
+            <div class="speed-unit">Mbps</div>
+            <div class="speed-sub"></div>
+          </div>
+          <div class="speed-item" id="spUpload">
+            <div class="speed-label">上传速度</div>
+            <div class="speed-value">--</div>
+            <div class="speed-unit">Mbps</div>
+            <div class="speed-sub"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btm-links">
+      <a href="/">礼金记录</a>
+      <a href="/paiban">排工考勤</a>
+      <a href="/gpa">GPA计算</a>
+      <a href="/hsgrades">成绩查询</a>
+      <a href="/countdown">倒计时</a>
+      <a href="/accounting">个人记账</a>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====== 导航 ====== */
+function go(p){
+  document.querySelectorAll('.pg').forEach(function(x){x.classList.remove('on')});
+  document.getElementById('pg-'+p).classList.add('on');
+  var tabs={overview:0,pa:1,backup:2,speed:3};
+  document.querySelectorAll('.nb').forEach(function(b,i){b.classList.toggle('on',i===tabs[p])});
+  if(p==='pa'){paLoadData();loadLogs(currentLogModule)}
+  if(p==='backup')loadBackups();
+}
+
+/* ====== Toast ====== */
+function toast(m,t){
+  var e=document.getElementById("T");
+  e.textContent=m;e.className="toast show toast-"+t;
+  setTimeout(function(){e.className="toast"},2500);
+}
+function sizeStr(bytes){
+  if(bytes<1024)return bytes+" B";
+  if(bytes<1048576)return(bytes/1024).toFixed(1)+" KB";
+  return(bytes/1048576).toFixed(1)+" MB";
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtDate(s){
+  if(!s)return '';
+  return s.substring(0,10);
+}
+
+/* ====== 环形进度条 ====== */
+var gaugeCirc = 2 * Math.PI * 38; // 238.76
+function updateGauge(pct){
+  var circle = document.getElementById('gaugeCircle');
+  var pctEl = document.getElementById('gaugePct');
+  var offset = gaugeCirc * (1 - pct/100);
+  circle.setAttribute('stroke-dashoffset', offset);
+  pctEl.textContent = Math.round(pct) + '%';
+  circle.classList.remove('warn','danger');
+  if(pct>80) circle.classList.add('danger');
+  else if(pct>60) circle.classList.add('warn');
+}
+
+/* ====== 概览 - 加载服务器状态 ====== */
+async function loadServerStatus(){
+  try{
+    var res = await fetch("/api/status");
+    var d = await res.json();
+    // 磁盘指标卡
+    var pct = parseFloat(d.disk.pct) || 0;
+    updateGauge(pct);
+    document.getElementById('gaugeDetail').textContent = d.disk.used + ' / ' + d.disk.total;
+
+    // 运行信息
+    document.getElementById('ovUptime').textContent = d.uptime;
+    document.getElementById('ovPython').textContent = d.python;
+
+    // 数据库卡片
+    var dbHtml = '';
+    if(d.dbs && d.dbs.length){
+      d.dbs.forEach(function(db){
+        dbHtml += '<div class="db-card"><div class="db-card-name">' + esc(db.name) + '</div><div class="db-card-rows">' + (db.rows||'--') + '</div><div class="db-card-size">' + (db.size||'--') + '</div></div>';
+      });
+    } else {
+      dbHtml = '<div class="loading" style="grid-column:1/-1">暂无数据</div>';
+    }
+    document.getElementById('dbCards').innerHTML = dbHtml;
+
+    // 日志简报 - 只显示异常
+    var logHtml = '';
+    if(d.logs && d.logs.length){
+      var hasAny = false;
+      d.logs.forEach(function(lg){
+        var cls = '';
+        if(parseInt(lg.lines) > 100) cls = 'err';
+        hasAny = true;
+        logHtml += '<div class="log-summary-item"><span class="log-summary-name">' + esc(lg.name) + '</span><span class="log-summary-count ' + cls + '">' + (lg.size||'--') + ' / ' + (lg.lines||'0') + '行</span></div>';
+      });
+      if(!hasAny) logHtml = '<div class="loading">暂无日志文件</div>';
+    } else {
+      logHtml = '<div class="loading">暂无数据</div>';
+    }
+    document.getElementById('logBrief').innerHTML = logHtml;
+
+    // 遗留目录提示
+    if(d.old_dirs && d.old_dirs.length){
+      document.getElementById('logBrief').innerHTML += '<div style="margin-top:12px;font-size:11px;color:#999">遗留目录: ' + d.old_dirs.join(', ') + '</div>';
+    }
+  }catch(e){}
+}
+
+/* ====== 概览 - 加载PA摘要 ====== */
+async function loadPaSummary(){
+  try{
+    var res = await fetch('/api/pa-summary');
+    var d = await res.json();
+    var statusEl = document.getElementById('paSumStatus');
+    var expiryEl = document.getElementById('paSumExpiry');
+    var detailEl = document.getElementById('paSumDetail');
+    if(!d.configured){
+      expiryEl.textContent = '未配置';
+      statusEl.textContent = '未设置';
+      statusEl.className = 'pa-summary-status none';
+      detailEl.textContent = '点击配置PA自动续期';
+    } else if(d.urgent){
+      var expDate = d.expiry ? fmtDate(d.expiry) : '--';
+      expiryEl.textContent = expDate;
+      statusEl.textContent = '即将到期';
+      statusEl.className = 'pa-summary-status warn';
+      detailEl.textContent = '距到期不足3天';
+    } else if(d.has_error){
+      var expDate2 = d.expiry ? fmtDate(d.expiry) : '--';
+      expiryEl.textContent = expDate2;
+      statusEl.textContent = '上次失败';
+      statusEl.className = 'pa-summary-status err';
+      detailEl.textContent = d.last_run ? '上次: '+d.last_run.substring(0,10) : '';
+    } else {
+      var expDate3 = d.expiry ? fmtDate(d.expiry) : '--';
+      expiryEl.textContent = expDate3 || '--';
+      statusEl.textContent = '运行正常';
+      statusEl.className = 'pa-summary-status ok';
+      detailEl.textContent = '每' + (d.interval||7) + '天续期';
+    }
+  }catch(e){}
+}
+
+/* ====== 快速Git Pull ====== */
+async function quickPull(){
+  toast('正在拉取代码...','ok');
+  try{
+    var res = await fetch('/api/git-pull',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({force:false})});
+    var d = await res.json();
+    if(d.success){
+      toast('代码更新成功','ok');
+      loadCommits();
+      setTimeout(loadServerStatus, 2000);
+    } else {
+      toast('更新失败: ' + (d.error||d.stderr||'未知错误'), 'err');
+    }
+  }catch(e){toast('请求失败: '+e.message,'err')}
+}
+
+/* ====== Git 提交记录 ====== */
+async function loadCommits(){
+  var el = document.getElementById("commitList");
+  el.innerHTML = '<div class="loading">加载中...</div>';
+  try{
+    var res = await fetch('/api/git-log');
+    var data = await res.json();
+    if(data.success && data.commits && data.commits.length){
+      var html = '';
+      data.commits.forEach(function(c){
+        html += '<div class="commit-item"><span class="commit-hash">' + (c.hash||'').substring(0,7) + '</span><span class="commit-message">' + esc(''+(c.message||'')) + '</span><span class="commit-date">' + (c.date||'') + '</span></div>';
+      });
+      el.innerHTML = html;
+    } else {
+      el.innerHTML = '<div class="loading">暂无提交记录</div>';
+    }
+  }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
+}
+
+/* ====== PA 续期 ====== */
+var paIV = 7;
+
+function paHtmlLog(logText){
+  if(!logText) return '<div class="empty">暂无日志</div>';
+  var lines = logText.split('\n'), html = '', stats = {ok:0,err:0,warn:0,info:0};
+  for(var i=0;i<lines.length;i++){
+    var l=lines[i].trim(); if(!l) continue;
+    var cls='', tag='';
+    if(l.indexOf('[错误]')>=0||l.indexOf('失败')>=0||l.indexOf('异常')>=0){cls='log-err';tag='错误';stats.err++}
+    else if(l.indexOf('[警告]')>=0){cls='log-warn';tag='警告';stats.warn++}
+    else if(l.indexOf('成功')>=0||l.indexOf('完成')>=0){cls='log-ok';tag='成功';stats.ok++}
+    else if(l.indexOf('[1]')>=0||l.indexOf('[2]')>=0||l.indexOf('[3]')>=0||l.indexOf('[4]')>=0||l.indexOf('[5]')>=0){cls='log-info';tag='步骤';stats.info++}
+    else{cls='log-info';tag='信息';stats.info++}
+    var tagHtml = tag ? '<span class="log-tag log-tag-'+cls.replace('log-','')+'">'+tag+'</span>' : '';
+    html += '<div class="'+cls+'">'+tagHtml+esc(l)+'</div>';
+  }
+  var statsHtml = '<div class="log-stats"><span class="log-stat-ok">'+stats.ok+' 成功</span><span class="log-stat-err">'+stats.err+' 错误</span><span class="log-stat-warn">'+stats.warn+' 警告</span><span class="log-stat-info">'+stats.info+' 信息</span></div>';
+  return statsHtml + (html || '<div class="empty">暂无日志</div>');
+}
+
+function paHtmlHistory(history){
+  if(!history||!history.length) return '<div class="empty">暂无记录</div>';
+  var html='';
+  for(var i=0;i<history.length;i++){
+    var h=history[i];
+    var cls = h.success ? 'ok' : 'er';
+    var label = h.success ? '续期成功' : '续期失败';
+    var exp = h.expiry ? ' / '+h.expiry : '';
+    html += '<div class="hi-item '+cls+'"><div class="hi-time">'+esc(h.time)+'</div><div>'+label+exp+'</div></div>';
+  }
+  return html;
+}
+
+function toggleHistory(){
+  var el = document.getElementById('paHB');
+  var btn = document.getElementById('histToggle');
+  var collapsed = !(el.style.display === 'none');
+  if(collapsed){
+    el.style.display = 'none';
+    btn.textContent = '展开';
+  } else {
+    el.style.display = 'block';
+    btn.textContent = '收起';
+  }
+  localStorage.setItem('paHistCollapsed', collapsed ? '1' : '0');
+}
+function applyHistState(){
+  var collapsed = localStorage.getItem('paHistCollapsed') === '1';
+  var el = document.getElementById('paHB');
+  var btn = document.getElementById('histToggle');
+  if(el && btn){
+    if(collapsed){
+      el.style.display = 'none';
+      btn.textContent = '展开';
+    } else {
+      el.style.display = 'block';
+      btn.textContent = '收起';
+    }
+  }
+}
+
+function paUpdateUI(data){
+  if(!data) return;
+  document.getElementById("paRS").textContent = data.running ? "执行中..." : "就绪";
+  document.getElementById("paEX").textContent = data.expiry || "--";
+  document.getElementById("paLR").textContent = data.last_run || "--";
+  document.getElementById("paNR").textContent = data.next_run || "--";
+  if(data.interval){
+    paIV = data.interval;
+    document.getElementById("paIV").textContent = "每"+paIV+"天续期一次";
+    document.querySelectorAll("#paIG .io").forEach(function(o){o.classList.toggle("sel", parseInt(o.dataset.v)===paIV)});
+  }
+  if(data.username) document.getElementById("paU").value = data.username;
+  if(data.api_token) document.getElementById("paToken").placeholder = "";
+  if(data.log!==undefined) document.getElementById("paLB").innerHTML = paHtmlLog(data.log);
+  if(data.history) { document.getElementById("paHB").innerHTML = paHtmlHistory(data.history); applyHistState(); }
+}
+
+async function paLoadData(){
+  try{
+    var r = await fetch("/api/pa/data");
+    var d = await r.json();
+    if(d.success && d.data) paUpdateUI(d.data);
+  }catch(e){}
+}
+
+async function paSaveCfg(){
+  var body = {username: document.getElementById("paU").value.trim(), interval: paIV};
+  var p = document.getElementById("paP").value;
+  if(p) body.password = p;
+  var token = document.getElementById("paToken").value.trim();
+  if(token) body.api_token = token;
+  if(!body.username){toast("请输入用户名","err");return}
+  try{
+    var r = await fetch("/api/pa/data",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    var d = await r.json();
+    if(d.success){toast("已保存","ok");document.getElementById("paP").value="";document.getElementById("paToken").value="";paLoadData()}
+    else toast("保存失败","err");
+  }catch(e){toast("保存失败","err")}
+}
+
+document.getElementById("paIG").onclick = function(e){
+  var o = e.target.closest(".io"); if(!o) return;
+  document.querySelectorAll("#paIG .io").forEach(function(x){x.classList.remove("sel")});
+  o.classList.add("sel");
+  paIV = parseInt(o.dataset.v);
+  document.getElementById("paIV").textContent = "每"+paIV+"天";
+};
+
+/* ====== PA 日志展示 ====== */
+var logModNames = {pa:'PA续期',reload:'重载',backup:'备份'};
+var currentLogModule = 'all';
+async function loadLogs(module){
+  currentLogModule = module || 'all';
+  var el = document.getElementById("paLB");
+  el.innerHTML = '<div class="loading">加载中...</div>';
+  try{
+    var res = await fetch("/api/pa/logs?module="+currentLogModule);
+    var d = await res.json();
+    if(d.success && d.logs){
+      var html = '';
+      if(currentLogModule === 'all'){
+        Object.keys(logModNames).forEach(function(k){
+          html += '<div class="log-mod-head">'+logModNames[k]+'</div>';
+          if(d.logs[k]){
+            html += paHtmlLog(d.logs[k]);
+          } else {
+            html += '<div class="empty">暂无日志</div>';
+          }
+        });
+      } else {
+        html += '<div class="log-mod-head">'+logModNames[currentLogModule]+'</div>';
+        if(d.logs[currentLogModule]){
+          html += paHtmlLog(d.logs[currentLogModule]);
+        } else {
+          html += '<div class="empty">暂无日志</div>';
+        }
+      }
+      el.innerHTML = html;
+    } else {
+      el.innerHTML = '<div class="empty">暂无日志</div>';
+    }
+  }catch(e){
+    el.innerHTML = '<div class="empty">加载失败</div>';
+  }
+}
+function initLogFilters(){
+  document.querySelectorAll(".log-filter").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.querySelectorAll(".log-filter").forEach(function(b){b.classList.remove("active")});
+      this.classList.add("active");
+      loadLogs(this.dataset.log);
+    });
+  });
+}
+
+/* ====== 数据备份 ====== */
+async function doBackup(){
+  var btn = document.getElementById("btnBackup");
+  var out = document.getElementById("backupOutput");
+  btn.disabled = true; out.style.display = 'block';
+  out.className = 'output info'; out.textContent = '正在创建备份...';
+  try{
+    var res = await fetch('/api/backup/create', {method:'POST'});
+    var d = await res.json();
+    if(d.success){
+      out.className = 'output'; out.textContent = '备份成功: ' + d.file + ' (' + d.size + ')';
+      toast('备份已创建','ok'); loadBackups();
+    } else {
+      out.className = 'output error'; out.textContent = '备份失败: ' + (d.error||'未知错误');
+      toast('备份失败','err');
+    }
+  }catch(e){
+    out.className = 'output error'; out.textContent = '请求失败: ' + e.message;
+    toast('请求失败','err');
+  }finally{btn.disabled = false}
+}
+
+async function loadBackups(){
+  var el = document.getElementById("backupList");
+  el.innerHTML = '<div class="loading">加载中...</div>';
+  try{
+    var res = await fetch('/api/backup/list');
+    var d = await res.json();
+    if(d.success && d.backups.length){
+      var html = '';
+      d.backups.forEach(function(b){
+        html += '<div class="list-item">'+
+          '<div class="list-info"><div class="list-name">'+esc(b.name)+'</div><div class="list-meta">'+b.size+'</div></div>'+
+          '<div class="list-actions">'+
+            '<button class="btn bsm bp" onclick="doRestore(\''+b.name+'\')">恢复</button>'+
+            '<a class="btn bsm bo" style="text-decoration:none;display:inline-block" href="/api/backup/download/'+b.name+'" download>下载</a>'+
+          '</div>'+
+        '</div>';
+      });
+      el.innerHTML = html;
+    } else {
+      el.innerHTML = '<div class="empty">暂无备份文件</div>';
+    }
+  }catch(e){el.innerHTML='<div class="loading">加载失败</div>'}
+}
+
+async function doRestore(filename){
+  if(!confirm('确定要从 '+filename+' 恢复所有数据库吗？当前数据将被覆盖！')) return;
+  var el = document.getElementById("backupList");
+  var oldHtml = el.innerHTML;
+  el.innerHTML = '<div class="loading">正在恢复...</div>';
+  try{
+    var res = await fetch('/api/backup/restore/'+encodeURIComponent(filename));
+    var d = await res.json();
+    if(d.success){
+      toast('恢复成功','ok');
+      el.innerHTML = '<div class="empty">恢复完成，共 '+d.restored.length+' 个数据库</div>';
+      setTimeout(loadBackups, 1500);
+    } else {
+      toast('恢复失败: '+(d.error||'未知错误'),'err');
+      el.innerHTML = oldHtml;
+    }
+  }catch(e){
+    toast('请求失败','err');
+    el.innerHTML = oldHtml;
+  }
+}
+
+async function doCleanup(){
+  var btn = document.getElementById("btnCleanup");
+  var out = document.getElementById("cleanupOutput");
+  btn.disabled = true; out.style.display = 'block';
+  out.className = 'output info'; out.textContent = '正在清理...';
+  try{
+    var res = await fetch('/api/cleanup', {method:'POST'});
+    var d = await res.json();
+    if(d.success){
+      out.className = 'output'; out.textContent = '清理完成! 释放 '+d.freed+'\n'+d.results.join('\n');
+      toast('清理完成','ok');
+      setTimeout(loadServerStatus, 1000);
+    } else {
+      out.className = 'output error'; out.textContent = '清理失败: '+(d.error||'未知错误');
+    }
+  }catch(e){
+    out.className = 'output error'; out.textContent = '请求失败: '+e.message;
+  }finally{btn.disabled = false}
+}
+
+/* ====== 自动刷新 ====== */
+var REFRESH_INTERVAL = 45;
+var refreshCountdown = REFRESH_INTERVAL;
+var refreshTimerEl = document.getElementById('refreshTimer');
+
+function updateRefreshTimer(){
+  refreshCountdown--;
+  if(refreshCountdown <= 0){
+    refreshCountdown = REFRESH_INTERVAL;
+    loadServerStatus();
+    loadPaSummary();
+    loadCommits();
+  }
+  refreshTimerEl.innerHTML = '<span>' + refreshCountdown + '</span> 秒后自动刷新';
+}
+
+setInterval(updateRefreshTimer, 1000);
+
+/* ====== 初始化 ====== */
+initLogFilters();
+paLoadData();
+loadServerStatus();
+loadPaSummary();
+loadCommits();
+
+/* ====== 网速测试 ====== */
+function setSpeedResult(id, value, unit, sub){
+  var el = document.getElementById(id);
+  el.querySelector('.speed-value').textContent = value;
+  el.querySelector('.speed-unit').textContent = unit;
+  el.querySelector('.speed-sub').textContent = sub;
+}
+function resetSpeedUI(){
+  ['spPing','spDownload','spUpload'].forEach(function(id){
+    var el = document.getElementById(id);
+    el.classList.remove('testing','done');
+    el.querySelector('.speed-value').textContent = '--';
+    el.querySelector('.speed-sub').textContent = '';
+  });
+  document.getElementById('spPing').querySelector('.speed-unit').textContent = 'ms';
+  document.getElementById('spDownload').querySelector('.speed-unit').textContent = 'Mbps';
+  document.getElementById('spUpload').querySelector('.speed-unit').textContent = 'Mbps';
+}
+
+async function runSpeedTest(){
+  var btn = document.getElementById('btnSpeed');
+  var statusEl = document.getElementById('speedStatus');
+  btn.disabled = true;
+  btn.textContent = '测试中...';
+  resetSpeedUI();
+
+  /* 1. Ping - 6 次并行 */
+  statusEl.textContent = '正在测试延迟...';
+  document.getElementById('spPing').classList.add('testing');
+  try{
+    var pTimes = [];
+    var pingFns = [];
+    for(var pi = 0; pi < 6; pi++){
+      pingFns.push((async function(){
+        var s = performance.now();
+        await fetch('/api/speedtest/ping');
+        pTimes.push(performance.now() - s);
+      })());
+    }
+    await Promise.all(pingFns);
+    var avgPing = pTimes.reduce(function(a,b){return a+b},0) / pTimes.length;
+    var minPing = Math.min.apply(null, pTimes);
+    var maxPing = Math.max.apply(null, pTimes);
+    var jitter = 0;
+    for(var j = 1; j < pTimes.length; j++){ jitter += Math.abs(pTimes[j] - pTimes[j-1]); }
+    jitter = jitter / (pTimes.length - 1);
+    setSpeedResult('spPing', Math.round(avgPing), 'ms', '最快' + Math.round(minPing) + 'ms / 最慢' + Math.round(maxPing) + 'ms / 抖动' + Math.round(jitter) + 'ms');
+    document.getElementById('spPing').classList.remove('testing');
+    document.getElementById('spPing').classList.add('done');
+  }catch(e){
+    setSpeedResult('spPing', '失败', '', '请求超时或网络错误');
+    document.getElementById('spPing').classList.remove('testing');
+  }
+
+  /* 2. 下载 - 多源 CDN 竞速取最优 */
+  statusEl.textContent = '正在测试下载带宽...';
+  document.getElementById('spDownload').classList.add('testing');
+  var bestDown = 0, bestSource = '';
+  // 预设下载目标：{url, size(字节, 已知则填), name}
+  var dlTargets = [
+    // jsDelivr 走腾讯云国内 CDN
+    {url:'https://cdn.jsdelivr.net/npm/vue@3.4.0/dist/vue.global.prod.js', size:130000, name:'jsDelivr(国内)'},
+    {url:'https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js', size:1050000, name:'jsDelivr(国内)'},
+    // BootCDN 国内加速
+    {url:'https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js', size:88000, name:'BootCDN(国内)'},
+    // Cloudflare 国际 CDN 对照
+    {url:'https://speed.cloudflare.com/__down?bytes=524288', size:524288, name:'Cloudflare(国际)'},
+    {url:'https://speed.cloudflare.com/__down?bytes=1048576', size:1048576, name:'Cloudflare(国际)'},
+  ];
+  // 逐个测试，出错跳过
+  for(var di = 0; di < dlTargets.length; di++){
+    var tgt = dlTargets[di];
+    try{
+      statusEl.textContent = '下载: ' + tgt.name + '...';
+      var dStart = performance.now();
+      var res = await fetch(tgt.url, {cache:'no-store'});
+      var buf = await res.arrayBuffer();
+      var dElapsed = (performance.now() - dStart) / 1000;
+      var actualSize = tgt.size || (buf && buf.byteLength) || 100000;
+      var speed = (actualSize * 8) / dElapsed;
+      if(speed > bestDown){ bestDown = speed; bestSource = tgt.name; }
+    }catch(e){
+      // 该源不可达则跳过
+      continue;
+    }
+  }
+  if(bestDown > 0){
+    // 若 1M 以下文件瞬间下完，追加一个更大文件测真实带宽
+    var lastTgt = dlTargets[dlTargets.length - 1];
+    var lastActual = lastTgt.size || 100000;
+    if(bestDown / 1000000 > 3){
+      try{
+        statusEl.textContent = '下载: 大文件验证...';
+        var bigStart = performance.now();
+        var bigRes = await fetch('https://speed.cloudflare.com/__down?bytes=5242880', {cache:'no-store'});
+        var bigBuf = await bigRes.arrayBuffer();
+        var bigElapsed = (performance.now() - bigStart) / 1000;
+        var bigSpeed = (5242880 * 8) / bigElapsed;
+        if(bigSpeed > bestDown){ bestDown = bigSpeed; bestSource = 'Cloudflare(5MB验证)'; }
+      }catch(e){}
+    }
+    var downMbps = bestDown / 1000000;
+    var srcTag = bestSource ? ' [' + bestSource + ']' : '';
+    if(downMbps >= 1){
+      setSpeedResult('spDownload', downMbps.toFixed(1), 'Mbps', srcTag);
+    } else {
+      setSpeedResult('spDownload', Math.round(bestDown / 1000), 'Kbps', srcTag);
+    }
+    document.getElementById('spDownload').classList.add('done');
+  } else {
+    setSpeedResult('spDownload', '失败', '', '所有 CDN 均不可达');
+  }
+  document.getElementById('spDownload').classList.remove('testing');
+
+  /* 3. 上传 */
+  statusEl.textContent = '正在测试上传带宽...';
+  document.getElementById('spUpload').classList.add('testing');
+  try{
+    var ulSizes = [65536, 131072, 262144]; // 64K, 128K, 256K
+    var bestUp = 0;
+    for(var m = 0; m < ulSizes.length; m++){
+      var us = ulSizes[m];
+      statusEl.textContent = '上传测试: ' + Math.round(us/1024) + 'KB...';
+      var data = new Uint8Array(us);
+      if(window.crypto && crypto.getRandomValues){ crypto.getRandomValues(data); }
+      else{ for(var n = 0; n < us; n++) data[n] = n & 255; }
+      var uStart = performance.now();
+      await fetch('/api/speedtest/upload', {method:'POST', body:data, headers:{'Content-Type':'application/octet-stream'}});
+      var uElapsed = (performance.now() - uStart) / 1000;
+      var uSpeed = (us * 8) / uElapsed;
+      if(uSpeed > bestUp) bestUp = uSpeed;
+    }
+    var upMbps = bestUp / 1000000;
+    if(upMbps >= 1){
+      setSpeedResult('spUpload', upMbps.toFixed(1), 'Mbps', '');
+    } else {
+      setSpeedResult('spUpload', Math.round(bestUp / 1000), 'Kbps', '');
+    }
+    document.getElementById('spUpload').classList.remove('testing');
+    document.getElementById('spUpload').classList.add('done');
+  }catch(e){
+    setSpeedResult('spUpload', '失败', '', '请求超时或网络错误');
+    document.getElementById('spUpload').classList.remove('testing');
+  }
+
+  statusEl.textContent = '测试完成';
+  btn.disabled = false;
+  btn.textContent = '重新测试';
+}
+
+</script>
+</body>
+</html>

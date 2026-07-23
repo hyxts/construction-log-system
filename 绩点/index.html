@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#2f7d6b">
+<title>GPA</title>
+<link rel="manifest" id="pwaManifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="GPA">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23ef4444'/><text x='96' y='132' text-anchor='middle' font-size='68' fill='white' font-weight='bold' font-family='Arial,sans-serif'>GPA</text></svg>">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%23ef4444'/><text x='256' y='360' text-anchor='middle' font-size='180' fill='white' font-weight='bold' font-family='Arial,sans-serif'>GPA</text></svg>">
+<link rel="apple-touch-icon" sizes="192x192" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23ef4444'/><text x='96' y='132' text-anchor='middle' font-size='68' fill='white' font-weight='bold' font-family='Arial,sans-serif'>GPA</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function(){var m={name:'GPA',short_name:'GPA',description:'GPA成绩管理系统',start_url:'/gpa',display:'standalone',orientation:'portrait',background_color:'#f5f7fa',theme_color:'#2f7d6b',icons:[{src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23ef4444'/><text x='96' y='132' text-anchor='middle' font-size='68' fill='white' font-weight='bold' font-family='Arial,sans-serif'>GPA</text></svg>",sizes:'192x192',type:'image/svg+xml'},{src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%23ef4444'/><text x='256' y='360' text-anchor='middle' font-size='180' fill='white' font-weight='bold' font-family='Arial,sans-serif'>GPA</text></svg>",sizes:'512x512',type:'image/svg+xml'}]};
+document.getElementById('pwaManifest').href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/json'}))})();
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;background:#f5f7fa;color:#1f2937;font-size:15px;line-height:1.5;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-text-size-adjust:100%}
+header{background:#fff;text-align:center;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));font-size:17px;font-weight:600;position:sticky;top:0;z-index:100;border-bottom:1px solid #eef0f4;display:flex;align-items:center;justify-content:center;gap:8px}
+header a{transition:transform 0.2s,opacity 0.2s}
+header a:hover{transform:scale(1.05);opacity:0.9}
+header a:active{transform:scale(0.98)}
+.main{padding:12px}
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+h3{font-size:16px;margin-bottom:10px;font-weight:600}
+input,select{padding:10px 12px;border:1px solid #d1d5db;border-radius:10px;font-size:15px;width:100%;min-height:44px;background:#fff}
+input:focus,select:focus{outline:none;border-color:#2f7d6b;box-shadow:0 0 0 3px rgba(47,125,107,.15)}
+button{border:none;border-radius:10px;padding:10px 12px;cursor:pointer;background:#2f7d6b;color:#fff;font-size:14px;font-weight:600;min-height:40px;width:100%;margin-bottom:6px;touch-action:manipulation}
+button:active{opacity:.9;transform:scale(.98)}
+.btn-red{background:#dc2626!important}.btn-gray{background:#64748b!important}
+.btn-sm{padding:6px 10px;min-height:32px;font-size:13px;width:auto;margin:0 3px}
+.btn-xs{padding:2px 6px;min-height:22px;font-size:11px;width:auto;margin:0 2px;border-radius:6px}
+.gpa-box{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.gpa-card{background:linear-gradient(135deg,#2f7d6b,#3d9e85);color:#fff;border-radius:12px;padding:16px;text-align:center}
+.gpa-card .val{font-size:36px;font-weight:800;line-height:1.1}
+.gpa-card .lbl{font-size:12px;opacity:.85;margin-top:4px}
+.gpa-card.alt{background:linear-gradient(135deg,#1e40af,#3b82f6)}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;text-align:center;margin-bottom:10px}
+.stats .stat-item{border-radius:10px;padding:10px 4px;color:#fff}
+.stats .stat-item .lbl{font-size:11px;opacity:.85;margin-bottom:4px}
+.stats .stat-item .v{font-size:18px;font-weight:700;line-height:1.2}
+.si-credit{background:linear-gradient(135deg,#2f7d6b,#3d9e85)}
+.si-course{background:linear-gradient(135deg,#1e40af,#3b82f6)}
+.si-semester{background:linear-gradient(135deg,#7c3aed,#8b5cf6)}
+.si-latest{background:linear-gradient(135deg,#ea580c,#f97316)}
+.si-all{background:linear-gradient(135deg,#0d9488,#14b8a6)}
+.item{display:flex;align-items:center;padding:8px 10px;background:#fff;border-radius:10px;margin-bottom:4px;border:1px solid #e5e7eb;gap:8px;min-height:40px;touch-action:manipulation}
+.item-content{flex:1;min-width:0;overflow:hidden}.item-title{font-weight:600;font-size:15px;color:#111827}.item-sub{font-size:12px;color:#64748b}
+.item-right{flex-shrink:0;text-align:right;font-weight:700;font-size:15px}
+.item-actions{flex-shrink:0;display:flex;gap:4px}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.b-required{background:#eff6ff;color:#2563eb}.b-major{background:#fef3c7;color:#d97706}
+.b-elective{background:#f0fdf4;color:#16a34a}
+.grade-a{color:#16a34a}.grade-b{color:#2563eb}.grade-c{color:#d97706}.grade-d{color:#dc2626}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #e5e7eb;padding-bottom:env(safe-area-inset-bottom);z-index:100;height:60px}
+.tab{text-align:center;padding:10px 0;font-size:14px;color:#6b7280;display:flex;align-items:center;justify-content:center;font-weight:700;touch-action:manipulation}
+.tab.active{color:#2f7d6b;font-weight:800}
+.tab-content{display:none}.tab-content.show{display:block}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;z-index:1000}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:600px;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+.modal-box h4{margin-bottom:16px;font-size:17px}.modal-box label{display:block;font-size:13px;color:#4b5563;margin-bottom:4px;font-weight:500}
+.modal-box input,.modal-box select{margin-bottom:10px}
+.confirm-modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:2000}
+.confirm-modal.show{display:flex}
+.confirm-box{background:#fff;border-radius:16px;width:90%;max-width:360px;padding:28px 24px 20px;text-align:center}
+.confirm-title{font-size:17px;font-weight:700;margin-bottom:8px}
+.confirm-msg{font-size:13px;color:#64748b;margin-bottom:24px}
+.confirm-btns{display:flex;gap:10px}
+.confirm-btns button{flex:1;padding:10px;border-radius:10px;font-size:14px;font-weight:600;min-height:44px}
+.confirm-cancel{background:#f1f5f9;color:#475569}.confirm-danger{background:#dc2626;color:#fff}
+.course-item{cursor:grab}.course-item.dragging{opacity:.4;background:#e2e8f0}
+.course-item.drag-over{border-top:2px solid #2f7d6b}
+.drag-handle{cursor:grab;color:#cbd5e1;font-size:14px;flex-shrink:0;user-select:none}
+.drag-handle:active{cursor:grabbing}
+.course-toolbar{position:sticky;top:calc(52px + env(safe-area-inset-top, 0px));z-index:99;background:#f5f7fa;padding-bottom:10px;margin-bottom:10px}
+.sem-block{margin-bottom:16px}
+.sem-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f0fdf4;border-radius:10px;margin-bottom:6px;cursor:pointer}
+.sem-hdr .name{font-weight:600;font-size:15px}.sem-hdr .info{font-size:12px;color:#64748b}
+.sem-hdr .gpa{font-weight:800;font-size:16px;color:#2f7d6b}
+.sem-hdr .actions{display:flex;gap:4px}
+.sem-hdr .collapse-arrow{display:inline-block;width:20px;height:20px;line-height:18px;text-align:center;font-size:12px;transition:transform 0.2s;flex-shrink:0;color:#94a3b8}
+.sem-hdr.collapsed .collapse-arrow{transform:rotate(-90deg)}
+.sem-courses{overflow:hidden;transition:max-height 0.3s ease}
+.sem-courses.collapsed{max-height:0}
+.empty{text-align:center;color:#9ca3af;padding:30px 0;font-size:14px}
+.seq{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;background:#e5e7eb;border-radius:50%;font-size:11px;font-weight:600;color:#64748b;flex-shrink:0}
+.gpa-table{width:100%;border-collapse:collapse;font-size:13px}
+.gpa-table th{font-size:11px;color:#94a3b8;font-weight:500;padding:4px 8px 8px;text-align:center;border-bottom:1px solid #e2e8f0}
+.gpa-table td{padding:7px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.gpa-table tr:last-child td{border-bottom:none}
+.gpa-table tr:hover td{background:#f8fdf9}
+.gpa-table .td-gpa{font-weight:800;font-size:16px;width:42px;text-align:center}
+.gpa-table .td-range{font-size:11px;color:#94a3b8;width:44px;text-align:center}
+.gpa-table .td-bar{width:auto;padding-left:0;padding-right:6px}
+.gpa-table .td-count{width:44px;text-align:right;font-weight:600;font-size:14px;color:#1f2937}
+.gpa-table .td-pct{width:44px;text-align:right;font-size:11px;color:#9ca3af}
+.gpa-bar-wrap{width:100%;height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden}
+.gpa-bar-fill{height:100%;border-radius:5px;transition:width .5s ease;min-width:0}
+.gpa-row-zero .td-gpa,.gpa-row-zero .td-count,.gpa-row-zero .td-pct{color:#cbd5e1}
+/* PC顶部导航 */
+.pc-nav{display:flex;gap:4px;padding:6px 12px;border-bottom:1px solid #e5e7eb;background:#fff;overflow-x:auto}
+.pc-nav-btn{padding:8px 16px;border:none;background:none;font-size:14px;font-weight:600;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;min-height:36px;width:auto;margin:0;border-radius:0;transition:color .15s,border-color .15s}
+.pc-nav-btn.active{color:#2f7d6b;border-bottom-color:#2f7d6b}
+.pc-nav-btn:hover{color:#2f7d6b}
+/* 移动端 */
+@media (max-width:768px){
+  body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
+  .pc-nav{display:none}
+  .main{padding:8px}
+  .card{padding:10px;margin-bottom:8px}
+  .gpa-box{gap:8px}
+  .gpa-card{padding:14px}
+  .gpa-card .val{font-size:30px}
+  .stats{grid-template-columns:repeat(3,1fr);gap:6px}
+  .stats .stat-item .v{font-size:16px}
+  .modal-box{max-width:100%;padding:16px 16px calc(16px + env(safe-area-inset-bottom));border-radius:16px 16px 0 0}
+  .item{flex-wrap:wrap}
+  .item-right{font-size:14px}
+  .btn-sm{padding:6px 8px;font-size:12px}
+  .sem-hdr{padding:8px 10px}
+  .gpa-card .val{font-size:26px}
+  .stats{grid-template-columns:1fr 1fr;gap:4px}
+  .stats .stat-item .v{font-size:14px}
+  .stats .stat-item .lbl{font-size:10px}
+  .item-actions{flex-direction:column;gap:2px}
+  .item-right{font-size:13px}
+  .btn-xs{padding:2px 4px;font-size:10px}
+  .gpa-box{gap:6px}
+  .gpa-card{padding:10px}
+}
+/* PC端 */
+@media (min-width:769px){
+  .tab-bar{display:none}
+  .main{max-width:1100px;margin:0 auto;padding:16px 24px}
+  body{background:#eef1f5}
+  .tab-content{min-height:auto}
+}
+</style>
+</head>
+<body>
+<header>
+<a href="/gpa" style="text-decoration:none;display:flex;align-items:center;gap:8px">
+<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景圆形 -->
+  <circle cx="14" cy="14" r="13" fill="#2f7d6b" stroke="#fff" stroke-width="1"/>
+  <!-- 毕业帽主体 -->
+  <path d="M14 6L20 10L14 14L8 10L14 6Z" fill="#fff"/>
+  <!-- 毕业帽帽顶 -->
+  <path d="M8 10L14 14L20 10" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 帽穗 -->
+  <path d="M14 14V18" stroke="#ffd700" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="14" cy="19" r="1" fill="#ffd700"/>
+  <!-- 书本 -->
+  <path d="M10 17L14 19L18 17" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M10 17V21L14 23L18 21V17" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- GPA文字 -->
+  <text x="14" y="12" text-anchor="middle" font-size="5.5" font-weight="800" fill="#2f7d6b" font-family="Arial, sans-serif">GPA</text>
+</svg>
+<span style="font-weight:700;font-size:17px;color:#2f7d6b">GPA</span>
+</a>
+</header>
+<div class="pc-nav" id="pcNav">
+  <button class="pc-nav-btn active" data-page="overview">概览</button>
+  <button class="pc-nav-btn" data-page="courses">课程</button>
+</div>
+
+<div class="main">
+  <div class="tab-content show" id="tab-overview">
+    <div class="card">
+      <div class="gpa-box">
+        <div class="gpa-card"><div class="val" id="latestGpa">-</div><div class="lbl">最近学期 GPA</div></div>
+        <div class="gpa-card alt"><div class="val" id="cumulativeGpa">-</div><div class="lbl">累计 GPA</div></div>
+      </div>
+      <div class="stats">
+        <div class="stat-item si-credit"><div class="lbl">总学分</div><div class="v" id="totalCredits">0</div></div>
+        <div class="stat-item si-course"><div class="lbl">总课程</div><div class="v" id="totalCourses">0</div></div>
+        <div class="stat-item si-semester"><div class="lbl">学期数</div><div class="v" id="totalSemesters">0</div></div>
+        <div class="stat-item si-latest"><div class="lbl">最近学期均分</div><div class="v" id="latestAvgScore">-</div></div>
+        <div class="stat-item si-all"><div class="lbl">全部课程均分</div><div class="v" id="allAvgScore">-</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>GPA 趋势</h3>
+      <div style="position:relative;width:100%;height:200px"><canvas id="gpaChart"></canvas></div>
+    </div>
+    <div class="card" id="courseBarCard">
+      <h3 id="courseBarTitle">绩点分布</h3>
+      <div id="gpaTable"></div>
+      <div id="gpaSummary" style="margin-top:10px;text-align:center;font-size:12px;color:#94a3b8"></div>
+    </div>
+  </div>
+
+  <div class="tab-content" id="tab-courses">
+    <div class="course-toolbar">
+      <div style="display:flex;gap:8px">
+        <button onclick="showCourseModal()">添加课程</button>
+        <button class="btn-gray" onclick="toggleSemManager()">学期管理</button>
+      </div>
+      <div id="semManager" style="display:none;margin-top:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <span style="font-size:13px;color:#64748b" id="semCount"></span>
+          <button class="btn-sm" onclick="showSemesterModal()">新增</button>
+        </div>
+        <div id="semManagerList"></div>
+      </div>
+    </div>
+    <div id="semesterBlocks"></div>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab('overview')">概览</div>
+  <div class="tab" onclick="switchTab('courses')">课程</div>
+</div>
+
+<div class="modal" id="courseModal">
+  <div class="modal-box">
+    <h4 id="courseModalTitle">添加课程</h4>
+    <input type="hidden" id="courseEditId">
+    <label>学期</label>
+    <select id="courseSemester"></select>
+    <label>课程名称</label>
+    <input type="text" id="courseName">
+    <label>学分</label>
+    <input type="number" id="courseCredit" min="0" step="0.5">
+    <label>成绩</label>
+    <input type="number" id="courseScore" min="0" max="100">
+    <label>分类</label>
+    <select id="courseCategory">
+      <option value="major_required">专业必修</option>
+      <option value="public_required">公共必修</option>
+      <option value="general_required">通识必修</option>
+      <option value="elective">选修</option>
+    </select>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn-gray" onclick="closeCourseModal()">取消</button>
+      <button onclick="saveCourse()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="semesterModal">
+  <div class="modal-box">
+    <h4 id="semesterModalTitle">添加学期</h4>
+    <input type="hidden" id="semEditId">
+    <label>学期名称</label>
+    <input type="text" id="semName">
+    <label>开始日期</label>
+    <input type="date" id="semStart">
+    <label>结束日期</label>
+    <input type="date" id="semEnd">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn-gray" onclick="closeSemesterModal()">取消</button>
+      <button onclick="saveSemester()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-modal" id="confirmModal">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirmTitle">确认</div>
+    <div class="confirm-msg" id="confirmMsg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">取消</button>
+      <button class="confirm-danger" id="confirmBtn">确认</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='/api/gpa';
+let semesters=[],courses=[],gpaChart=null;
+const DEFAULT_SEMESTERS=[
+  {id:'sem-1',name:'大一上'},{id:'sem-2',name:'大一下'},
+  {id:'sem-3',name:'大二上'},{id:'sem-4',name:'大二下'},
+  {id:'sem-5',name:'大三上'},{id:'sem-6',name:'大三下'},
+  {id:'sem-7',name:'大四上'},{id:'sem-8',name:'大四下'}
+];
+
+function scoreToGpa(s){s=Number(s);if(isNaN(s)||s<0)return 0;if(s>=90)return 4;if(s>=85)return 3.7;if(s>=82)return 3.3;if(s>=78)return 3;if(s>=75)return 2.7;if(s>=72)return 2.3;if(s>=68)return 2;if(s>=64)return 1.5;if(s>=60)return 1;return 0}
+function gradeClass(s){s=Number(s);if(s>=90)return'grade-a';if(s>=75)return'grade-b';if(s>=60)return'grade-c';return'grade-d'}
+function catBadge(c){const m={major_required:['专业必修','b-required'],public_required:['公共必修','b-required'],general_required:['通识必修','b-major'],elective:['选修','b-elective']};const[n,cls]=m[c]||['其他',''];return`<span class="badge ${cls}">${n}</span>`}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+async function loadData(){
+  try{const r=await fetch(API+'/data');const j=await r.json();if(j.success&&j.data){semesters=j.data.semesters||[];courses=j.data.courses||[]}}catch(e){}
+  if(!semesters.length && !courses.length)semesters=[...DEFAULT_SEMESTERS];
+  refreshAll();
+}
+async function saveData(){await fetch(API+'/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({semesters,courses})})}
+function refreshAll(){renderOverview();renderSemesters();renderChart();renderCourseBarChart();if(document.getElementById('semManager').style.display!=='none')renderSemManager()}
+
+function calcSemGpa(semId){const sc=courses.filter(c=>c.semesterId===semId&&c.score);if(!sc.length)return 0;let ts=0,tc=0;sc.forEach(c=>{const s=Number(c.score);const cr=Number(c.credit)||0;ts+=scoreToGpa(s)*cr;tc+=cr});return tc?ts/tc:0}
+function cumulativeGpa(){let ts=0,tc=0;courses.forEach(c=>{if(!c.score)return;const s=Number(c.score);const cr=Number(c.credit)||0;ts+=scoreToGpa(s)*cr;tc+=cr});return tc?ts/tc:0}
+
+function getLatestSemWithGpa(){
+  for(let i=semesters.length-1;i>=0;i--){if(calcSemGpa(semesters[i].id)>0)return semesters[i]}
+  return semesters.length?semesters[semesters.length-1]:null;
+}
+
+function renderOverview(){
+  const cumGpa=cumulativeGpa();
+  const latest=getLatestSemWithGpa();
+  const latestGpa=latest?calcSemGpa(latest.id):0;
+  document.getElementById('latestGpa').textContent=latestGpa?latestGpa.toFixed(2):'-';
+  document.getElementById('cumulativeGpa').textContent=cumGpa?cumGpa.toFixed(2):'-';
+  document.getElementById('totalCredits').textContent=courses.reduce((s,c)=>s+(Number(c.credit)||0),0);
+  document.getElementById('totalCourses').textContent=courses.length;
+  document.getElementById('totalSemesters').textContent=semesters.length;
+
+  // 最近学期平均分
+  const sc=courses.filter(c=>c.score);
+  const latestScores=latest?sc.filter(c=>c.semesterId===latest.id).map(c=>Number(c.score)):[];
+  if(latestScores.length){
+    const avg=(latestScores.reduce((a,b)=>a+b,0)/latestScores.length).toFixed(1);
+    document.getElementById('latestAvgScore').textContent=avg;
+  }else{
+    document.getElementById('latestAvgScore').textContent='-';
+  }
+
+  // 全部课程平均分
+  if(sc.length){
+    const allAvg=(sc.reduce((a,c)=>a+Number(c.score),0)/sc.length).toFixed(1);
+    document.getElementById('allAvgScore').textContent=allAvg;
+  }else{
+    document.getElementById('allAvgScore').textContent='-';
+  }
+}
+
+function renderChart(){
+  const active=semesters.filter(s=>courses.some(c=>c.semesterId===s.id));
+  const labels=active.map(s=>s.name);
+  const data=active.map(s=>{const g=calcSemGpa(s.id);return g?Number(g.toFixed(2)):null});
+  if(gpaChart)gpaChart.destroy();
+  const ctx=document.getElementById('gpaChart');
+  if(!ctx||!labels.length){ctx.parentElement.innerHTML='<div class="empty">暂无数据</div>';return}
+  gpaChart=new Chart(ctx,{type:'line',data:{labels,datasets:[{label:'GPA',data,borderColor:'#2f7d6b',backgroundColor:'rgba(47,125,107,.12)',tension:.35,fill:true,pointRadius:5,pointBackgroundColor:'#fff',pointBorderColor:'#2f7d6b',pointBorderWidth:2,pointHoverRadius:7}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(15,23,42,.85)',titleFont:{size:13},bodyFont:{size:14,weight:'bold'},padding:10,cornerRadius:8,callbacks:{label:function(ctx){return'GPA: '+ctx.parsed.y.toFixed(2)}}}},scales:{y:{min:0,max:4,ticks:{stepSize:1,font:{size:11},color:'#94a3b8'},grid:{color:'rgba(0,0,0,.06)'}},x:{ticks:{font:{size:12,weight:'500'},color:'#475569'},grid:{display:false}}}},plugins:[{id:'gpaLabels',afterDatasetsDraw:function(chart){const meta=chart.getDatasetMeta(0);const ctx=chart.ctx;ctx.save();ctx.font='bold 11px -apple-system,BlinkMacSystemFont,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';meta.data.forEach(function(pt,i){const v=chart.data.datasets[0].data[i];if(v!=null){ctx.fillStyle='#2f7d6b';ctx.fillText(v.toFixed(2),pt.x,pt.y-7)}});ctx.restore()}}]});
+}
+
+function renderSemesters(){
+  const el=document.getElementById('semesterBlocks');
+  if(!semesters.length){el.innerHTML='<div class="empty">暂无学期，点击上方按钮添加</div>';return}
+  el.innerHTML=semesters.map(s=>{
+    const sc=courses.filter(c=>c.semesterId===s.id);
+    const gpa=calcSemGpa(s.id);
+    const isCollapsed=collapsedSems.has(s.id);
+    return`<div class="sem-block">
+      <div class="sem-hdr${isCollapsed?' collapsed':''}" onclick="toggleSemCollapse('${s.id}')">
+        <span class="collapse-arrow">&#9660;</span>
+        <div style="flex:1;min-width:0"><span class="name">${esc(s.name)}</span> <span class="info">${sc.length}门</span></div>
+        <div style="display:flex;align-items:center;gap:8px" onclick="event.stopPropagation()">
+          <span class="gpa">${gpa?gpa.toFixed(2):'-'}</span>
+          <span class="actions"><button class="btn-xs btn-red" onclick="event.stopPropagation();confirmDelSemester('${s.id}')">删</button></span>
+        </div>
+      </div>
+      <div class="sem-courses${isCollapsed?' collapsed':''}">
+      ${sc.map((c,idx)=>`<div class="item course-item" draggable="true" data-id="${c.id}" ondragstart="dragStart(event)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dragDrop(event)">
+        <span class="seq">${idx+1}</span>
+        <span class="drag-handle">⋮⋮</span>
+        <div class="item-content" onclick="editCourse('${c.id}')">
+          <div class="item-title">${esc(c.name)} ${catBadge(c.category)}</div>
+          <div class="item-sub">${c.credit||0}学分${c.score?' · 成绩 '+c.score:''}</div>
+        </div>
+        <div class="item-right ${c.score?gradeClass(c.score):''}">${c.score?scoreToGpa(Number(c.score)).toFixed(1):'-'}</div>
+        <div class="item-actions"><button class="btn-xs btn-red" onclick="event.stopPropagation();confirmDelCourse('${c.id}')">删</button></div>
+      </div>`).join('')||'<div style="padding:8px 12px;color:#9ca3af;font-size:13px">暂无课程，点击「添加课程」</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+let dragId=null;
+let collapsedSems=new Set(JSON.parse(localStorage.getItem('gpa_collapsed')||'[]'));
+function dragStart(e){dragId=e.target.dataset.id;e.target.classList.add('dragging');e.dataTransfer.effectAllowed='move'}
+function dragOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over')}
+function dragLeave(e){e.currentTarget.classList.remove('drag-over')}
+function dragDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('drag-over');
+  const targetId=e.currentTarget.dataset.id;
+  if(!dragId||dragId===targetId)return;
+  const fi=courses.findIndex(c=>c.id===dragId);
+  const ti=courses.findIndex(c=>c.id===targetId);
+  if(fi<0||ti<0)return;
+  const [item]=courses.splice(fi,1);
+  courses.splice(ti,0,item);
+  saveData();renderSemesters();dragId=null;
+}
+
+function showCourseModal(editId,preselectSem){
+  document.getElementById('courseEditId').value=editId||'';
+  document.getElementById('courseModalTitle').textContent=editId?'编辑课程':'添加课程';
+  const sel=document.getElementById('courseSemester');
+  sel.innerHTML=semesters.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  if(preselectSem)sel.value=preselectSem;
+  if(editId){const c=courses.find(x=>x.id===editId);if(c){sel.value=c.semesterId;document.getElementById('courseName').value=c.name;document.getElementById('courseCredit').value=c.credit||'';document.getElementById('courseScore').value=c.score||'';document.getElementById('courseCategory').value=c.category||'major_required'}}
+  else{
+    document.getElementById('courseName').value='';document.getElementById('courseCredit').value='';document.getElementById('courseScore').value='';
+    document.getElementById('courseCategory').value='major_required';
+    const lastSem=localStorage.getItem('gpa_lastSemester');
+    if(lastSem && semesters.some(s=>s.id===lastSem)) sel.value=lastSem;
+  }
+  document.getElementById('courseModal').classList.add('show');
+}
+function closeCourseModal(){document.getElementById('courseModal').classList.remove('show')}
+function saveCourse(){
+  const id=document.getElementById('courseEditId').value;
+  const name=document.getElementById('courseName').value.trim();
+  const credit=Number(document.getElementById('courseCredit').value)||0;
+  const score=Number(document.getElementById('courseScore').value)||0;
+  const category=document.getElementById('courseCategory').value;
+  const semesterId=document.getElementById('courseSemester').value;
+  if(!name){alert('请输入课程名称');return}
+  if(id){const c=courses.find(x=>x.id===id);if(c){c.name=name;c.credit=credit;c.score=score||null;c.category=category;c.semesterId=semesterId}}
+  else{courses.push({id:'c-'+Date.now(),name,credit,score:score||null,category,semesterId})}
+  localStorage.setItem('gpa_lastSemester',semesterId);
+  saveData();closeCourseModal();refreshAll();
+}
+function editCourse(id){showCourseModal(id)}
+function confirmDelCourse(id){const c=courses.find(x=>x.id===id);if(!c)return;document.getElementById('confirmMsg').textContent=`确定删除"${c.name}"？`;document.getElementById('confirmBtn').onclick=()=>{courses=courses.filter(x=>x.id!==id);saveData();closeConfirm();refreshAll()};document.getElementById('confirmModal').classList.add('show')}
+
+function showSemesterModal(editId){
+  document.getElementById('semEditId').value=editId||'';
+  document.getElementById('semesterModalTitle').textContent=editId?'编辑学期':'添加学期';
+  if(editId){const s=semesters.find(x=>x.id===editId);if(s){document.getElementById('semName').value=s.name;document.getElementById('semStart').value=s.startDate||'';document.getElementById('semEnd').value=s.endDate||''}}
+  else{document.getElementById('semName').value='';document.getElementById('semStart').value='';document.getElementById('semEnd').value=''}
+  document.getElementById('semesterModal').classList.add('show');
+}
+function closeSemesterModal(){document.getElementById('semesterModal').classList.remove('show')}
+function saveSemester(){
+  const id=document.getElementById('semEditId').value;
+  const name=document.getElementById('semName').value.trim();
+  const startDate=document.getElementById('semStart').value;
+  const endDate=document.getElementById('semEnd').value;
+  if(!name){alert('请输入学期名称');return}
+  if(id){const s=semesters.find(x=>x.id===id);if(s){s.name=name;s.startDate=startDate;s.endDate=endDate}}
+  else{semesters.push({id:'sem-'+Date.now(),name,startDate,endDate})}
+  saveData();closeSemesterModal();refreshAll();
+}
+function editSemester(id){showSemesterModal(id)}
+function confirmDelSemester(id){const s=semesters.find(x=>x.id===id);if(!s)return;const cnt=courses.filter(c=>c.semesterId===id).length;document.getElementById('confirmMsg').textContent=cnt>0?`"${s.name}"下有${cnt}门课程，删除学期将同时删除这些课程`:`确定删除"${s.name}"？`;document.getElementById('confirmBtn').onclick=()=>{if(cnt>0)courses=courses.filter(c=>c.semesterId!==id);semesters=semesters.filter(x=>x.id!==id);saveData();closeConfirm();refreshAll()};document.getElementById('confirmModal').classList.add('show')}
+
+function toggleSemCollapse(semId){
+  if(collapsedSems.has(semId)) collapsedSems.delete(semId);
+  else collapsedSems.add(semId);
+  localStorage.setItem('gpa_collapsed',JSON.stringify([...collapsedSems]));
+  renderSemesters();
+}
+
+function closeConfirm(){document.getElementById('confirmModal').classList.remove('show')}
+
+function toggleSemManager(){
+  const el=document.getElementById('semManager');
+  const show=el.style.display==='none';
+  el.style.display=show?'block':'none';
+  if(show)renderSemManager();
+}
+
+function renderSemManager(){
+  document.getElementById('semCount').textContent='共 '+semesters.length+' 个学期';
+  const el=document.getElementById('semManagerList');
+  el.innerHTML=semesters.map(s=>{
+    const cnt=courses.filter(c=>c.semesterId===s.id).length;
+    const gpa=calcSemGpa(s.id);
+    return`<div class="item">
+      <div class="item-content" onclick="editSemester('${s.id}')">
+        <div class="item-title">${esc(s.name)}</div>
+        <div class="item-sub">${cnt}门课程${gpa?' · GPA '+gpa.toFixed(2):''}</div>
+      </div>
+      <div class="item-actions">
+        <button class="btn-xs" onclick="event.stopPropagation();editSemester('${s.id}')">编辑</button>
+        <button class="btn-xs btn-red" onclick="event.stopPropagation();confirmDelSemester('${s.id}')">删除</button>
+      </div>
+    </div>`;
+  }).join('')||'<div class="empty">暂无学期</div>';
+}
+
+function renderCourseBarChart(){
+  const sc=courses.filter(c=>c.score);
+  const el=document.getElementById('gpaTable');
+  const summary=document.getElementById('gpaSummary');
+  if(!el)return;
+  if(!sc.length){document.getElementById('courseBarTitle').textContent='绩点分布';el.innerHTML='<div class="empty">暂无成绩数据</div>';if(summary)summary.textContent='';return}
+
+  const points=[
+    {gpa:4.0,range:'90-100',color:'#0d6e3e'},
+    {gpa:3.7,range:'85-89',color:'#16a34a'},
+    {gpa:3.3,range:'82-84',color:'#22c55e'},
+    {gpa:3.0,range:'78-81',color:'#14b8a6'},
+    {gpa:2.7,range:'75-77',color:'#2563eb'},
+    {gpa:2.3,range:'72-74',color:'#7c3aed'},
+    {gpa:2.0,range:'68-71',color:'#d97706'},
+    {gpa:1.5,range:'64-67',color:'#ea580c'},
+    {gpa:1.0,range:'60-63',color:'#dc2626'},
+    {gpa:0,  range:'0-59', color:'#991b1b'}
+  ];
+
+  const gpasAll=sc.map(c=>scoreToGpa(Number(c.score)));
+  const counts=points.map(p=>gpasAll.filter(g=>g===p.gpa).length);
+  const maxCount=Math.max(...counts,1);
+  const totalN=counts.reduce((a,b)=>a+b,0);
+
+  document.getElementById('courseBarTitle').textContent='绩点分布 · '+sc.length+'门';
+
+  // 汇总信息
+  const avgGpa=(gpasAll.reduce((a,b)=>a+b,0)/gpasAll.length).toFixed(2);
+  const above30=gpasAll.filter(g=>g>=3.0).length;
+  if(summary)summary.textContent='均绩 '+avgGpa+'  ·  3.0以上 '+above30+'门 ('+((above30/sc.length)*100).toFixed(0)+'%)';
+
+  el.innerHTML=`<table class="gpa-table">
+    <thead><tr><th>绩点</th><th>分数</th><th style="text-align:left">分布</th><th>数量</th><th>占比</th></tr></thead>
+    <tbody>${points.map((p,i)=>{
+    const n=counts[i];
+    const pct=((n/sc.length)*100).toFixed(1);
+    const barW=Math.max((n/maxCount)*100, n>0?3:0);
+    const rowCls=n===0?'gpa-row-zero':'';
+    return`<tr class="${rowCls}">
+      <td class="td-gpa" style="color:${p.color}">${p.gpa.toFixed(1)}</td>
+      <td class="td-range">${p.range}</td>
+      <td class="td-bar"><div class="gpa-bar-wrap"><div class="gpa-bar-fill" style="width:${barW}%;background:${p.color}"></div></div></td>
+      <td class="td-count">${n>0?n+'门':'-'}</td>
+      <td class="td-pct">${n>0?pct+'%':''}</td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('show'));
+  document.getElementById('tab-'+name).classList.add('show');
+  document.querySelectorAll('.tab').forEach((el,i)=>{el.classList.toggle('active',(name==='overview'&&i===0)||(name==='courses'&&i===1))});
+  document.querySelectorAll('.pc-nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===name));
+  if(name==='overview'){renderChart();renderCourseBarChart();}
+}
+
+document.getElementById('pcNav').addEventListener('click',e=>{
+  const btn=e.target.closest('.pc-nav-btn');
+  if(btn) switchTab(btn.dataset.page);
+});
+
+loadData();
+</script>
+</body>
+</html>
