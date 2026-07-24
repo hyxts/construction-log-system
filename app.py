@@ -44,6 +44,7 @@ def _load_auth():
     return ''
 
 AUTH_HASH = _load_auth()
+_AUTH_LOCK = threading.Lock()
 
 SETUP_PAGE = '''<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>设置密码</title>
 <style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#f5f7fa;font-family:system-ui}
@@ -67,9 +68,10 @@ def setup():
         if pw != pw2:
             return SETUP_PAGE.replace('请设置系统访问密码', '两次密码不一致')
         global AUTH_HASH
-        AUTH_HASH = _hash(pw)
-        with open(AUTH_FILE, 'w') as f:
-            f.write(AUTH_HASH)
+        with _AUTH_LOCK:
+            AUTH_HASH = _hash(pw)
+            with open(AUTH_FILE, 'w') as f:
+                f.write(AUTH_HASH)
         return redirect('/login')
     return SETUP_PAGE
 
@@ -85,11 +87,14 @@ button:hover{background:#5a6fd6}.err{color:#dc2626;font-size:13px;margin-top:8px
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if not AUTH_HASH:
+    with _AUTH_LOCK:
+        auth_set = bool(AUTH_HASH)
+        current_hash = AUTH_HASH
+    if not auth_set:
         return redirect('/setup')
     if request.method == 'POST':
         pw = request.form.get('password', '')
-        if _hash(pw) == AUTH_HASH:
+        if _hash(pw) == current_hash:
             session['auth'] = True
             session.permanent = True
             nxt = request.args.get('next', '/')

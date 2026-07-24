@@ -122,3 +122,28 @@ def download_apk():
     if not os.path.exists(apk_path):
         return jsonify({'error': 'APK文件不存在'}), 404
     return send_from_directory('排班', 'app-debug.apk', as_attachment=True, download_name='枫叶管理.apk')
+
+
+# ==================== PWA ====================
+
+@bp.route('/api/paiban/manifest')
+def pwa_manifest():
+    return jsonify({
+        'name': '排工考勤',
+        'short_name': '排班',
+        'description': '排工考勤管理系统',
+        'start_url': '/paiban',
+        'display': 'standalone',
+        'orientation': 'portrait',
+        'background_color': '#f5f7fa',
+        'theme_color': '#2563eb',
+        'icons': [{
+            'src': "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%232563eb'/><text x='96' y='128' text-anchor='middle' font-size='72' fill='white' font-weight='bold' font-family='Arial,sans-serif'>排班</text></svg>",
+            'sizes': '192x192',
+            'type': 'image/svg+xml'
+        }, {
+            'src': "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%232563eb'/><text x='256' y='350' text-anchor='middle' font-size='200' fill='white' font-weight='bold' font-family='Arial,sans-serif'>排班</text></svg>",
+            'sizes': '512x512',
+            'type': 'image/svg+xml'
+        }]
+    })

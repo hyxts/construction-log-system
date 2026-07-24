@@ -129,6 +129,69 @@ def calc_age(birth_date, cal_type='solar'):
 
 # ==================== API ====================
 
+def _validate_event_dates(data):
+    """校验事件日期字段，返回 (error_msg_or_None, clean_data_dict)"""
+    cal_type = data.get('cal_type', 'solar')
+    repeat_annual = data.get('repeat_annual', False)
+    year = data.get('year', 0)
+    month = data.get('month', 0)
+    day = data.get('day', 0)
+    is_leap = data.get('is_leap', 0)
+
+    try:
+        month = int(month)
+        day = int(day)
+        year = int(year)
+    except (ValueError, TypeError):
+        return '请填写有效数字日期', None
+
+    if not month or not day:
+        return '请填写完整的日期', None
+
+    if repeat_annual:
+        year = 0
+        test_year = 2000  # 闰年，可验证2月29日
+        if cal_type == 'lunar':
+            if not HAS_LUNAR:
+                return '服务器未安装农历库，无法使用农历事件', None
+            try:
+                ZhDate(test_year, month, day, bool(is_leap))
+            except Exception as ee:
+                return f'农历日期不合法: {str(ee)}', None
+        else:
+            try:
+                date(test_year, month, day)
+            except Exception:
+                return '公历日期不合法', None
+    else:
+        if not year:
+            return '请选择年份', None
+        if cal_type == 'lunar':
+            if not HAS_LUNAR:
+                return '服务器未安装农历库，无法使用农历事件', None
+            try:
+                ZhDate(year, month, day, bool(is_leap))
+            except Exception as ee:
+                return f'农历日期不合法: {str(ee)}', None
+        else:
+            try:
+                date(year, month, day)
+            except Exception:
+                return '公历日期不合法', None
+
+    clean = {
+        'name': (data.get('name', '') or '').strip(),
+        'cal_type': cal_type,
+        'year': year,
+        'month': month,
+        'day': day,
+        'is_leap': int(is_leap),
+        'note': (data.get('note', '') or '').strip(),
+        'display_mode': data.get('display_mode', 'full'),
+        'category': data.get('category', 'custom'),
+    }
+    return None, clean
+
 # 倒计时页面
 @bp.route('/countdown')
 @bp.route('/countdown/')
@@ -300,61 +363,20 @@ def create_event():
     """创建倒计时事件"""
     try:
         data = request.get_json(silent=True) or {}
-        name = data.get('name', '').strip()
-        cal_type = data.get('cal_type', 'solar')
-        repeat_annual = data.get('repeat_annual', False)
-        year = data.get('year', 0)
-        month = data.get('month', 0)
-        day = data.get('day', 0)
-        is_leap = data.get('is_leap', 0)
-        note = data.get('note', '').strip()
-        display_mode = data.get('display_mode', 'full')
-        category = data.get('category', 'custom')
-
-        if not name:
+        err, clean = _validate_event_dates(data)
+        if err:
+            return jsonify({'success': False, 'error': err}), 400
+        if not clean['name']:
             return jsonify({'success': False, 'error': '请输入事件名称'}), 400
-        if not month or not day:
-            return jsonify({'success': False, 'error': '请填写完整的日期'}), 400
-
-        if repeat_annual:
-            year = 0
-            # 用测试年份验证月日合法性（2000年为闰年，可验证2月29日）
-            test_year = 2000
-            if cal_type == 'lunar':
-                if not HAS_LUNAR:
-                    return jsonify({'success': False, 'error': '服务器未安装农历库，无法添加农历事件'}), 400
-                try:
-                    ZhDate(test_year, int(month), int(day), bool(is_leap))
-                except Exception as ee:
-                    return jsonify({'success': False, 'error': f'农历日期不合法: {str(ee)}'}), 400
-            else:
-                try:
-                    date(test_year, int(month), int(day))
-                except Exception:
-                    return jsonify({'success': False, 'error': '公历日期不合法'}), 400
-        else:
-            if not year:
-                return jsonify({'success': False, 'error': '请选择年份'}), 400
-            if cal_type == 'lunar':
-                if not HAS_LUNAR:
-                    return jsonify({'success': False, 'error': '服务器未安装农历库，无法添加农历事件'}), 400
-                try:
-                    ZhDate(int(year), int(month), int(day), bool(is_leap))
-                except Exception as ee:
-                    return jsonify({'success': False, 'error': f'农历日期不合法: {str(ee)}'}), 400
-            else:
-                try:
-                    date(int(year), int(month), int(day))
-                except Exception:
-                    return jsonify({'success': False, 'error': '公历日期不合法'}), 400
 
         conn = _get_db()
         conn.execute(
             "INSERT INTO events (name, cal_type, year, month, day, is_leap, note, display_mode, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (name, cal_type, int(year), int(month), int(day), int(is_leap), note, display_mode, category))
+            (clean['name'], clean['cal_type'], clean['year'], clean['month'], clean['day'],
+             clean['is_leap'], clean['note'], clean['display_mode'], clean['category']))
         conn.commit()
         conn.close()
-        _log(f'新增倒计时: {name} ({cal_type})')
+        _log(f'新增倒计时: {clean["name"]} ({clean["cal_type"]})')
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -365,60 +387,20 @@ def update_event(eid):
     """更新倒计时事件"""
     try:
         data = request.get_json(silent=True) or {}
-        name = data.get('name', '').strip()
-        cal_type = data.get('cal_type', 'solar')
-        repeat_annual = data.get('repeat_annual', False)
-        year = data.get('year', 0)
-        month = data.get('month', 0)
-        day = data.get('day', 0)
-        is_leap = data.get('is_leap', 0)
-        note = data.get('note', '').strip()
-        display_mode = data.get('display_mode', 'full')
-        category = data.get('category', 'custom')
-
-        if not name:
+        err, clean = _validate_event_dates(data)
+        if err:
+            return jsonify({'success': False, 'error': err}), 400
+        if not clean['name']:
             return jsonify({'success': False, 'error': '请输入事件名称'}), 400
-        if not month or not day:
-            return jsonify({'success': False, 'error': '请填写完整的日期'}), 400
-
-        if repeat_annual:
-            year = 0
-            test_year = 2000
-            if cal_type == 'lunar':
-                if not HAS_LUNAR:
-                    return jsonify({'success': False, 'error': '服务器未安装农历库，无法保存农历事件'}), 400
-                try:
-                    ZhDate(test_year, int(month), int(day), bool(is_leap))
-                except Exception as ee:
-                    return jsonify({'success': False, 'error': f'农历日期不合法: {str(ee)}'}), 400
-            else:
-                try:
-                    date(test_year, int(month), int(day))
-                except Exception:
-                    return jsonify({'success': False, 'error': '公历日期不合法'}), 400
-        else:
-            if not year:
-                return jsonify({'success': False, 'error': '请选择年份'}), 400
-            if cal_type == 'lunar':
-                if not HAS_LUNAR:
-                    return jsonify({'success': False, 'error': '服务器未安装农历库，无法保存农历事件'}), 400
-                try:
-                    ZhDate(int(year), int(month), int(day), bool(is_leap))
-                except Exception as ee:
-                    return jsonify({'success': False, 'error': f'农历日期不合法: {str(ee)}'}), 400
-            else:
-                try:
-                    date(int(year), int(month), int(day))
-                except Exception:
-                    return jsonify({'success': False, 'error': '公历日期不合法'}), 400
 
         conn = _get_db()
         conn.execute(
-            "UPDATE events SET name = ?, cal_type = ?, year = ?, month = ?, day = ?, is_leap = ?, note = ?, display_mode = ?, category = ?, updated_at = datetime('now','localtime') WHERE id = ?",
-            (name, cal_type, int(year), int(month), int(day), int(is_leap), note, display_mode, category, eid))
+            "UPDATE events SET name=?, cal_type=?, year=?, month=?, day=?, is_leap=?, note=?, display_mode=?, category=?, updated_at=datetime('now','localtime') WHERE id=?",
+            (clean['name'], clean['cal_type'], clean['year'], clean['month'], clean['day'],
+             clean['is_leap'], clean['note'], clean['display_mode'], clean['category'], eid))
         conn.commit()
         conn.close()
-        _log(f'更新倒计时: {name} (ID:{eid})')
+        _log(f'更新倒计时: {clean["name"]} (ID:{eid})')
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500

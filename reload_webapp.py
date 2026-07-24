@@ -8,9 +8,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(BASE_DIR, 'routes'))
 
 try:
-    from utils import FOLDER_MAP, db_has_data
+    from utils import FOLDER_MAP, db_has_data, decode_pw, make_db
 except ImportError:
-    # Fallback for standalone execution before routes/utils exists
     FOLDER_MAP = {
         'countdown': '倒计时', 'gpa': '绩点', 'hsgrades': '成绩',
         'paiban': '排班', 'pa': '服务器', 'renqing': '人情', 'deploy': '部署',
@@ -26,6 +25,21 @@ except ImportError:
             return False
         except Exception:
             return False
+    def decode_pw(encoded, salt_path):
+        if not encoded:
+            return ''
+        try:
+            data = base64.b64decode(encoded)
+            key = hashlib.sha256(salt_path.encode()).digest()[:16]
+            return bytes(b ^ key[i % len(key)] for i, b in enumerate(data)).decode('utf-8')
+        except Exception:
+            return ''
+    def make_db(db_file):
+        def _get_db():
+            conn = sqlite3.connect(db_file)
+            conn.row_factory = sqlite3.Row
+            return conn
+        return _get_db
 
 PA_DIR = os.path.join(BASE_DIR, '服务器')
 DB_FILE = os.path.join(PA_DIR, 'pa.db')
@@ -56,10 +70,9 @@ def log(msg):
 
 
 def load_credentials():
-    """从 pa.db 读取 PA 账号密码和 API Token（兼容旧路径）"""
+    """从 pa.db 读取 PA 账号密码和 API Token（兼容旧路径，使用统一编码/解码函数）"""
     username, password, api_token = '', '', ''
     db_to_try = [DB_FILE]
-    # 兼容旧数据库路径
     old_db = os.path.join(BASE_DIR, 'pa', 'pa.db')
     if os.path.exists(old_db) and not os.path.exists(DB_FILE):
         db_to_try.insert(0, old_db)
@@ -68,9 +81,8 @@ def load_credentials():
             continue
         conn = None
         try:
-            conn = sqlite3.connect(db_path)
-            conn.row_factory = sqlite3.Row
-            # 兼容旧表无 api_token 列
+            get_db = make_db(db_path)
+            conn = get_db()
             try:
                 conn.execute("ALTER TABLE pa_config ADD COLUMN api_token TEXT DEFAULT ''")
             except sqlite3.OperationalError:
@@ -80,14 +92,11 @@ def load_credentials():
                 if row['username'] and row['password']:
                     username = row['username']
                     pw = row['password']
+                    # 统一使用 decode_pw 处理新旧格式
                     if pw.startswith('ENC:'):
-                        try:
-                            pw_enc = pw[4:]
-                            key = hashlib.sha256(PA_DIR.encode()).digest()[:16]
-                            data = base64.b64decode(pw_enc)
-                            pw = bytes(b ^ key[i % len(key)] for i, b in enumerate(data)).decode('utf-8')
-                        except Exception:
-                            pass
+                        pw = decode_pw(pw[4:], PA_DIR)
+                    elif pw.startswith('v2:'):
+                        pw = decode_pw(pw, PA_DIR)
                     password = pw
                 try:
                     if row['api_token']:

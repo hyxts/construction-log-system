@@ -50,11 +50,22 @@ def init_db():
     cur = conn.execute("SELECT COUNT(*) FROM pa_config")
     if cur.fetchone()[0] == 0:
         conn.execute("INSERT INTO pa_config (id) VALUES (1)")
-    # 迁移旧明文密码到编码格式
+    # 迁移旧明文密码和旧 ENC: 格式到新版 v2: 编码格式
     row = conn.execute("SELECT password FROM pa_config WHERE id = 1").fetchone()
-    if row and row['password'] and not row['password'].startswith('ENC:'):
-        old_pw = row['password']
-        conn.execute("UPDATE pa_config SET password = ? WHERE id = 1", ('ENC:' + encode_pw(old_pw, PA_DIR),))
+    if row and row['password']:
+        pw = row['password']
+        if pw.startswith('v2:'):
+            pass  # 已是最新格式
+        elif pw.startswith('ENC:'):
+            # 旧格式解码后重新编码
+            old_pw = decode_pw(pw[4:], PA_DIR)
+            if old_pw:
+                conn.execute("UPDATE pa_config SET password = ? WHERE id = 1",
+                           (encode_pw(old_pw, PA_DIR),))
+        else:
+            # 明文密码，直接编码
+            conn.execute("UPDATE pa_config SET password = ? WHERE id = 1",
+                       (encode_pw(pw, PA_DIR),))
     conn.commit()
     conn.close()
     try:
@@ -106,7 +117,9 @@ def _load_config():
         d.pop('updated_at', None)
         # 解码密码
         pw = d.get('password', '')
-        if pw.startswith('ENC:'):
+        if pw.startswith('v2:'):
+            d['password'] = decode_pw(pw, PA_DIR)
+        elif pw.startswith('ENC:'):
             d['password'] = decode_pw(pw[4:], PA_DIR)
         # api_token 可能不存在（旧数据库），给默认值
         d.setdefault('api_token', '')
@@ -181,7 +194,7 @@ def save_data():
             params.append(data['username'])
         if data.get('password'):
             updates.append("password = ?")
-            params.append('ENC:' + encode_pw(data['password'], PA_DIR))
+            params.append(encode_pw(data['password'], PA_DIR))
         if 'interval' in data:
             updates.append("interval_days = ?")
             params.append(int(data['interval']))
@@ -348,81 +361,82 @@ def _find_extend_button(soup):
     return btn
 
 
-def _do_renew(username, password):
+def _pa_login(session, username, password):
+    """PA 登录步骤（获取 token + 登录），返回 (success, token_or_error, details, final_url)"""
     import requests
-    from bs4 import BeautifulSoup
-    s = requests.Session()
-    s.headers['User-Agent'] = 'Mozilla/5.0 Chrome/125.0.0.0 Safari/537.36'
     base = 'https://www.pythonanywhere.com'
     webapps_url = f'{base}/user/{username}/webapps/'
-    extend_url = f'{base}/user/{username}/webapps/{username}.pythonanywhere.com/extend'
     details = []
+
     def d(msg):
         _log(msg)
         details.append(msg)
 
-    # ---- 步骤1: 获取初始页面和CSRF Token ----
+    # 步骤1: 获取初始页面和 CSRF Token
     d('[1] 获取页面...')
     try:
-        r = s.get(webapps_url, timeout=15)
+        r = session.get(webapps_url, timeout=15)
     except Exception as e:
         d(f'  [1失败] 网络访问异常: {e}')
-        return (False, '', '', [f'网络访问异常: {e}'])
+        return (False, f'网络访问异常: {e}', details, '')
     token = extract_csrf(r.text)
     if not token:
         page_preview = r.text[:500].replace('\n', ' ')[:300]
         d(f'  [1失败] 未找到安全令牌，页面可能结构变更。当前地址: {r.url}，页面预览: {page_preview}')
-        return (False, '', '', ['未找到安全令牌，PA页面结构可能已变更'])
+        return (False, '未找到安全令牌，PA页面结构可能已变更', details, '')
 
-    # ---- 步骤2: 登录 ----
+    # 步骤2: 登录
     d('[2] 登录...')
-    s.headers['Referer'] = r.url
+    session.headers['Referer'] = r.url
     try:
-        r = s.post(f'{base}/login/', data={
+        r = session.post(f'{base}/login/', data={
             'csrfmiddlewaretoken': token, 'auth-username': username,
             'auth-password': password, 'next': f'/user/{username}/webapps/',
             'login_view-current_step': 'auth',
         }, allow_redirects=True, timeout=15)
     except Exception as e:
         d(f'  [2失败] 登录请求异常: {e}')
-        return (False, '', '', [f'登录请求异常: {e}'])
+        return (False, f'登录请求异常: {e}', details, '')
 
     if 'login' in r.url.lower() and 'webapps' not in r.url.lower():
-        # 登录失败，从页面提取具体错误信息
         try:
+            from bs4 import BeautifulSoup
             soup_err = BeautifulSoup(r.text, 'html.parser')
             err_el = soup_err.find(class_=re.compile(r'error|alert|message', re.I))
             err_text = err_el.get_text(strip=True) if err_el else ''
             if not err_text:
-                # 尝试查找表单区域中的错误文本
                 for tag in soup_err.find_all(['div', 'p', 'span', 'li']):
                     txt = tag.get_text(strip=True)
                     if txt and ('incorrect' in txt.lower() or 'error' in txt.lower() or 'wrong' in txt.lower()):
-                        err_text = txt
-                        break
+                        err_text = txt; break
             if err_text:
                 d(f'  [2失败] 登录失败: {err_text}')
             else:
-                d(f'  [2失败] 登录失败，停留在登录页面 (地址={r.url})，未提取到具体错误信息')
+                d(f'  [2失败] 登录失败，停留在登录页面 (地址={r.url})')
         except Exception:
             d(f'  [2失败] 登录失败，停留在登录页面 (地址={r.url})')
-        return (False, '', '', ['登录失败，请检查账号密码'])
-
+        return (False, '登录失败，请检查账号密码', details, '')
     d('  登录成功')
     d(f'  登录后跳转地址: {r.url}')
+    return (True, token, details, r.url)
 
-    # ---- 步骤3: 获取Web应用状态 ----
+
+def _pa_get_status(session, webapps_url):
+    """获取 PA WebApp 状态并解析到期日，返回 (pre_expiry, token, details)"""
+    import requests
+    details = []
+    def d(msg):
+        _log(msg)
+        details.append(msg)
+
     d('[3] 获取状态...')
     try:
-        r = s.get(webapps_url, timeout=15)
+        r = session.get(webapps_url, timeout=15)
     except Exception as e:
         d(f'  [3失败] 获取网站应用页面异常: {e}')
-        return (False, '', '', [f'获取网站应用页面异常: {e}'])
-
-    # 验证是否真的进入了webapps页面
+        return ('', '', details + [f'获取网站应用页面异常: {e}'])
     if 'webapps' not in r.url.lower():
-        d(f'  [3警告] 未进入网站应用页面，当前地址: {r.url}，可能登录会话未生效')
-        # 不直接返回失败，继续尝试
+        d(f'  [3警告] 未进入网站应用页面，当前地址: {r.url}')
 
     token = extract_csrf(r.text)
     if not token:
@@ -432,14 +446,24 @@ def _do_renew(username, password):
         d(f'  当前到期: {pre}')
     else:
         d('  [3警告] 未能解析到期日，页面结构可能变更')
+    return (pre or '', token or '', details)
 
-    # ---- 步骤4: 执行续期 ----
+
+def _pa_do_extend(session, username, html, token, webapps_url):
+    """执行续期操作（找按钮 + 提交），返回 (success, details)"""
+    import requests
+    from bs4 import BeautifulSoup
+    base = 'https://www.pythonanywhere.com'
+    extend_url = f'{base}/user/{username}/webapps/{username}.pythonanywhere.com/extend'
+    details = []
+    def d(msg):
+        _log(msg)
+        details.append(msg)
+
     d('[4] 查找续期按钮...')
-    soup = BeautifulSoup(r.text, 'html.parser')
+    soup = BeautifulSoup(html, 'html.parser')
     btn = _find_extend_button(soup)
-
     if btn:
-        # 找到按钮，走传统流程
         form = btn.find_parent('form')
         if form and form.get('action'):
             act = form['action']
@@ -452,37 +476,84 @@ def _do_renew(username, password):
             post_data['webapp_extend'] = val
         d(f'  找到续期按钮，提交地址: {post_url}')
     else:
-        # 按钮不存在，直接 POST 到续期接口
         d('  未找到页面按钮，使用直接续期接口')
         post_url = extend_url
         post_data = {'csrfmiddlewaretoken': token or ''}
 
     d('[5] 提交续期请求...')
-    s.headers['Referer'] = webapps_url
+    session.headers['Referer'] = webapps_url
     try:
-        r = s.post(post_url, data=post_data, allow_redirects=True, timeout=15)
+        r = session.post(post_url, data=post_data, allow_redirects=True, timeout=15)
     except Exception as e:
         d(f'  [5失败] 续期提交请求异常: {e}')
-        return (False, pre or '', '', [f'续期提交请求异常: {e}'])
+        return (False, details + [f'续期提交请求异常: {e}'])
     d(f'  服务器响应状态码 {r.status_code}')
+    return (True, details)
 
-    # ---- 步骤5: 验证结果 ----
+
+def _pa_verify_result(session, webapps_url, pre_expiry):
+    """验证续期结果，返回 (post_expiry, details)"""
+    import requests
+    details = []
+    def d(msg):
+        _log(msg)
+        details.append(msg)
+
     d('[6] 验证续期结果...')
     try:
-        r = s.get(webapps_url, timeout=15)
+        r = session.get(webapps_url, timeout=15)
     except Exception as e:
         d(f'  [6失败] 验证请求异常: {e}')
-        return (False, pre or '', '', [f'验证请求异常: {e}'])
-
+        return ('', details + [f'验证请求异常: {e}'])
     post_exp = _parse_date(r.text)
     if post_exp:
-        if pre and post_exp == pre:
+        if pre_expiry and post_exp == pre_expiry:
             d(f'  到期日不变: {post_exp}（已续至最长）')
         else:
             d(f'  到期日已延至: {post_exp}')
     else:
         d('  [6警告] 未能解析续期后到期日')
-    return (True, pre or '', post_exp or '', details)
+    return (post_exp or '', details)
+
+
+def _do_renew(username, password):
+    """执行 PA 续期的主协调函数"""
+    import requests
+    s = requests.Session()
+    s.headers['User-Agent'] = 'Mozilla/5.0 Chrome/125.0.0.0 Safari/537.36'
+    all_details = []
+    base = 'https://www.pythonanywhere.com'
+    webapps_url = f'{base}/user/{username}/webapps/'
+
+    # 步骤1+2: 登录
+    ok, token_err, details, _ = _pa_login(s, username, password)
+    all_details.extend(details)
+    if not ok:
+        return (False, '', '', all_details)
+
+    # 步骤3: 获取状态
+    pre, token, details = _pa_get_status(s, webapps_url)
+    all_details.extend(details)
+
+    # 从获取状态的响应中取的 token（更可靠）
+    if not token:
+        import requests
+        r = s.get(webapps_url, timeout=15)
+        token = extract_csrf(r.text)
+        pre2 = _parse_date(r.text)
+        if pre2:
+            pre = pre2
+
+    # 步骤4+5: 执行续期
+    import requests
+    r = s.get(webapps_url, timeout=15)
+    ok, details = _pa_do_extend(s, username, r.text, token, webapps_url)
+    all_details.extend(details)
+
+    # 步骤6: 验证结果
+    post, details = _pa_verify_result(s, webapps_url, pre)
+    all_details.extend(details)
+    return (True, pre, post, all_details)
 
 
 def _renew_thread(username, password, api_token=''):

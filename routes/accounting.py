@@ -470,6 +470,47 @@ def toggle_event_settle(eid):
 VALID_TYPES = ('付给', '收到', '应收')
 
 
+def _validate_record_data(data):
+    """校验记账流水数据，返回 (error_msg_or_None, clean_data_dict)"""
+    account_id = data.get('account_id')
+    event_id = data.get('event_id') or None
+    rtype = data.get('type', '')
+    amount = data.get('amount', 0)
+    category = data.get('category', '')
+    date_str = data.get('date', '')
+    note = (data.get('note', '') or '').strip()
+
+    if not account_id:
+        return '请选择对象', None
+    if rtype not in VALID_TYPES:
+        return f'类型不合法：{rtype}', None
+    try:
+        amount = float(amount)
+        if amount <= 0:
+            return '金额必须大于0', None
+    except (ValueError, TypeError):
+        return '金额格式不正确', None
+    if not date_str:
+        date_str = _now().strftime('%Y-%m-%d')
+
+    if event_id:
+        try:
+            event_id = int(event_id)
+        except (ValueError, TypeError):
+            event_id = None
+
+    clean = {
+        'account_id': account_id,
+        'event_id': event_id,
+        'type': rtype,
+        'amount': amount,
+        'category': category,
+        'date': date_str,
+        'note': note,
+    }
+    return None, clean
+
+
 @bp.route('/api/accounting/records', methods=['GET'])
 def list_records():
     try:
@@ -526,54 +567,32 @@ def list_records():
 def create_record():
     try:
         data = request.get_json(silent=True) or {}
-        account_id = data.get('account_id')
-        event_id = data.get('event_id') or None
-        rtype = data.get('type', '')
-        amount = data.get('amount', 0)
-        category = data.get('category', '')
-        date_str = data.get('date', '')
-        note = data.get('note', '').strip()
-
-        if not account_id:
-            return jsonify({'success': False, 'error': '请选择对象'}), 400
-        if rtype not in VALID_TYPES:
-            return jsonify({'success': False, 'error': f'类型不合法：{rtype}'}), 400
-        try:
-            amount = float(amount)
-            if amount <= 0:
-                return jsonify({'success': False, 'error': '金额必须大于0'}), 400
-        except (ValueError, TypeError):
-            return jsonify({'success': False, 'error': '金额格式不正确'}), 400
-        if not date_str:
-            date_str = _now().strftime('%Y-%m-%d')
-
-        if event_id:
-            try:
-                event_id = int(event_id)
-            except (ValueError, TypeError):
-                event_id = None
+        err, clean = _validate_record_data(data)
+        if err:
+            return jsonify({'success': False, 'error': err}), 400
 
         conn = _get_db()
-        acc = conn.execute('SELECT id, name FROM accounts WHERE id=?', (account_id,)).fetchone()
+        acc = conn.execute('SELECT id, name FROM accounts WHERE id=?', (clean['account_id'],)).fetchone()
         if not acc:
             conn.close()
             return jsonify({'success': False, 'error': '对象不存在'}), 404
 
-        if event_id:
+        if clean['event_id']:
             ev = conn.execute('SELECT id FROM events WHERE id=? AND account_id=?',
-                            (event_id, account_id)).fetchone()
+                            (clean['event_id'], clean['account_id'])).fetchone()
             if not ev:
                 conn.close()
                 return jsonify({'success': False, 'error': '所选事项不存在或不属于该对象'}), 400
 
         conn.execute(
             'INSERT INTO records (account_id, event_id, type, amount, category, date, note) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (account_id, event_id, rtype, amount, category, date_str, note)
+            (clean['account_id'], clean['event_id'], clean['type'], clean['amount'],
+             clean['category'], clean['date'], clean['note'])
         )
-        _auto_settle_if_needed(conn, event_id)
+        _auto_settle_if_needed(conn, clean['event_id'])
         conn.commit()
         conn.close()
-        _log(f'新增记录: {acc["name"]} {rtype} {amount}元 ({category})')
+        _log(f'新增记录: {acc["name"]} {clean["type"]} {clean["amount"]}元 ({clean["category"]})')
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -583,35 +602,17 @@ def create_record():
 def update_record(rid):
     try:
         data = request.get_json(silent=True) or {}
-        account_id = data.get('account_id')
-        event_id = data.get('event_id') or None
-        rtype = data.get('type', '')
-        amount = data.get('amount', 0)
-        category = data.get('category', '')
-        date_str = data.get('date', '')
-        note = data.get('note', '').strip()
-
-        if rtype not in VALID_TYPES:
-            return jsonify({'success': False, 'error': f'类型不合法：{rtype}'}), 400
-        try:
-            amount = float(amount)
-            if amount <= 0:
-                return jsonify({'success': False, 'error': '金额必须大于0'}), 400
-        except (ValueError, TypeError):
-            return jsonify({'success': False, 'error': '金额格式不正确'}), 400
-
-        if event_id:
-            try:
-                event_id = int(event_id)
-            except (ValueError, TypeError):
-                event_id = None
+        err, clean = _validate_record_data(data)
+        if err:
+            return jsonify({'success': False, 'error': err}), 400
 
         conn = _get_db()
         conn.execute(
             'UPDATE records SET account_id=?, event_id=?, type=?, amount=?, category=?, date=?, note=? WHERE id=?',
-            (account_id, event_id, rtype, amount, category, date_str, note, rid)
+            (clean['account_id'], clean['event_id'], clean['type'], clean['amount'],
+             clean['category'], clean['date'], clean['note'], rid)
         )
-        _auto_settle_if_needed(conn, event_id)
+        _auto_settle_if_needed(conn, clean['event_id'])
         conn.commit()
         conn.close()
         _log(f'更新记录: ID:{rid}')

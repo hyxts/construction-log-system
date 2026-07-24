@@ -69,7 +69,6 @@ def get_data():
 @bp.route('/api/hsgrades/data', methods=['POST'])
 def save_data():
     data = request.get_json(silent=True) or {}
-    # 防止意外覆盖：需要明确传入 exams 字段
     if 'exams' not in data:
         return jsonify({'success': False, 'error': '缺少数据'}), 400
     conn = None
@@ -85,3 +84,28 @@ def save_data():
     finally:
         if conn:
             conn.close()
+
+
+# ==================== PWA ====================
+
+@bp.route('/api/hsgrades/manifest')
+def pwa_manifest():
+    return jsonify({
+        'name': '高中成绩',
+        'short_name': '成绩',
+        'description': '高中成绩管理系统',
+        'start_url': '/hsgrades',
+        'display': 'standalone',
+        'orientation': 'portrait',
+        'background_color': '#f5f7fa',
+        'theme_color': '#059669',
+        'icons': [{
+            'src': "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23059669'/><text x='96' y='128' text-anchor='middle' font-size='72' fill='white' font-weight='bold' font-family='Arial,sans-serif'>成绩</text></svg>",
+            'sizes': '192x192',
+            'type': 'image/svg+xml'
+        }, {
+            'src': "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='80' fill='%23059669'/><text x='256' y='350' text-anchor='middle' font-size='200' fill='white' font-weight='bold' font-family='Arial,sans-serif'>成绩</text></svg>",
+            'sizes': '512x512',
+            'type': 'image/svg+xml'
+        }]
+    })

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """共享工具函数：时区、时间、日志、数据库连接、密码编码、CSRF提取等"""
-import os, re, sqlite3, base64, hashlib
+import os, re, sqlite3, base64, hashlib, hmac, json
 from datetime import datetime, timedelta, timezone
 
 TZ = timezone(timedelta(hours=8))  # 北京时间 UTC+8
@@ -86,23 +86,91 @@ def extract_csrf(html_text):
     return None
 
 
+# === 密码编码（PBKDF2 + XOR + HMAC 完整性校验，兼容旧格式） ===
+
+_PBKDF2_ITERATIONS = 200000
+_SALT_SIZE = 16
+_HMAC_SIZE = 32
+_NEW_FORMAT_PREFIX = 'v2:'  # 新格式前缀，与旧 ENC: 前缀区分
+
+
+def _xor_crypt(data, key):
+    """XOR 对称加密/解密"""
+    return bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
+
+
+def _derive_key(salt_path, salt, dklen, iterations=_PBKDF2_ITERATIONS):
+    """PBKDF2 派生密钥"""
+    return hashlib.pbkdf2_hmac('sha256', salt_path.encode(), salt, iterations, dklen=dklen)
+
+
 def encode_pw(plain, salt_path):
-    """简单混淆编码密码，防数据库泄露时明文暴露"""
+    """PBKDF2 派生密钥 + XOR 加密 + HMAC 完整性校验（返回 v2:base64 格式）"""
     if not plain:
         return ''
-    key = hashlib.sha256(salt_path.encode()).digest()[:16]
-    data = plain.encode('utf-8')
-    encoded = bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
-    return base64.b64encode(encoded).decode('ascii')
+    salt = os.urandom(_SALT_SIZE)
+    enc_key = _derive_key(salt_path, salt, 32)
+    mac_key = _derive_key(salt_path, salt, 32, iterations=_PBKDF2_ITERATIONS + 1)
+    encrypted = _xor_crypt(plain.encode('utf-8'), enc_key)
+    mac = hmac.new(mac_key, encrypted, hashlib.sha256).digest()
+    result = salt + mac + encrypted
+    return _NEW_FORMAT_PREFIX + base64.b64encode(result).decode('ascii')
 
 
 def decode_pw(encoded, salt_path):
-    """简单混淆解码密码"""
+    """解码密码（自动识别 v2/PBKDF2 格式和旧版 XOR 格式）"""
     if not encoded:
         return ''
     try:
+        # 新格式：v2:base64(salt+mac+encrypted)
+        if encoded.startswith(_NEW_FORMAT_PREFIX):
+            data = base64.b64decode(encoded[3:])
+            salt = data[:_SALT_SIZE]
+            mac = data[_SALT_SIZE:_SALT_SIZE + _HMAC_SIZE]
+            encrypted = data[_SALT_SIZE + _HMAC_SIZE:]
+            enc_key = _derive_key(salt_path, salt, 32)
+            mac_key = _derive_key(salt_path, salt, 32, iterations=_PBKDF2_ITERATIONS + 1)
+            expected_mac = hmac.new(mac_key, encrypted, hashlib.sha256).digest()
+            if not hmac.compare_digest(mac, expected_mac):
+                return ''  # HMAC 校验失败，数据可能被篡改
+            return _xor_crypt(encrypted, enc_key).decode('utf-8')
+        # 旧格式兼容：base64(XOR数据) | ENC:base64(XOR数据)
+        if encoded.startswith('ENC:'):
+            encoded = encoded[4:]
         data = base64.b64decode(encoded)
         key = hashlib.sha256(salt_path.encode()).digest()[:16]
-        return bytes(b ^ key[i % len(key)] for i, b in enumerate(data)).decode('utf-8')
+        return _xor_crypt(data, key).decode('utf-8')
     except Exception:
         return ''
+
+
+# === JsonStore：简单 JSON 数据存取（替代 paiban/gpa/hsgrades 重复代码） ===
+
+class JsonStore:
+    """通用 JSON 键值存储，基于 SQLite 单表单行"""
+    def __init__(self, get_db, table_name='data_store'):
+        self._get_db = get_db
+        self._table = table_name
+
+    def _ensure_table(self, conn):
+        conn.execute(f'CREATE TABLE IF NOT EXISTS {self._table} (id INTEGER PRIMARY KEY, data TEXT)')
+
+    def get(self):
+        conn = self._get_db()
+        try:
+            self._ensure_table(conn)
+            row = conn.execute(f'SELECT data FROM {self._table} ORDER BY id LIMIT 1').fetchone()
+            return json.loads(row['data']) if row else {}
+        finally:
+            conn.close()
+
+    def save(self, data):
+        conn = self._get_db()
+        try:
+            self._ensure_table(conn)
+            payload = json.dumps(data, ensure_ascii=False)
+            conn.execute(f'DELETE FROM {self._table}')
+            conn.execute(f'INSERT INTO {self._table} (data) VALUES (?)', (payload,))
+            conn.commit()
+        finally:
+            conn.close()
