@@ -7,5 +7,5 @@
     </linearGradient>
   </defs>
   <rect width="192" height="192" rx="40" fill="url(#g)"/>
-  <text x="96" y="108" text-anchor="middle" font-size="52" fill="white" font-weight="bold" font-family="PingFang SC,Microsoft YaHei,Hiragino Sans GB,sans-serif" letter-spacing="2">PY</text>
+  <text x="96" y="115" text-anchor="middle" font-size="72" fill="white" font-weight="bold" font-family="PingFang SC,Microsoft YaHei,Hiragino Sans GB,sans-serif" letter-spacing="3">PY</text>
 </svg>
