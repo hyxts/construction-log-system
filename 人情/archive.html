@@ -38,20 +38,20 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px}
 /* 表格 */
 .t-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
-table thead th{padding:10px 12px;text-align:left;font-size:12px;color:#7f8c8d;border-bottom:2px solid #eae6dd;white-space:nowrap;font-weight:500}
-table tbody td{padding:9px 12px;font-size:13px;border-bottom:1px solid #f0ede5;vertical-align:middle}
+table thead th{padding:10px 12px;text-align:center;font-size:12px;color:#7f8c8d;border-bottom:2px solid #eae6dd;white-space:nowrap;font-weight:500}
+table tbody td{padding:9px 12px;font-size:13px;border-bottom:1px solid #f0ede5;vertical-align:middle;text-align:center}
 table tbody tr:hover{background:#fafaf8}
 table tbody tr.row-locked{opacity:.6}
 td.amt{font-weight:600;color:#2c3e50}
-td.num{text-align:right}
+td.num{text-align:center}
 td.act{white-space:nowrap}
 /* 事件选择器 */
 .evt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
 .evt-item{padding:14px;background:#fff;border:1px solid #eae6dd;border-radius:8px;cursor:pointer;transition:all .15s}
 .evt-item:hover{border-color:#2c3e50;box-shadow:0 2px 6px rgba(0,0,0,.08)}
 .evt-item.selected{border-color:#2c3e50;background:#fafaf8}
-.evt-item .ename{font-size:14px;font-weight:600;margin-bottom:4px}
-.evt-item .emeta{font-size:12px;color:#7f8c8d;display:flex;gap:12px}
+.evt-item .ename{font-size:14px;font-weight:600;margin-bottom:4px;text-align:center}
+.evt-item .emeta{font-size:12px;color:#7f8c8d;display:flex;gap:12px;justify-content:center}
 .evt-item .etotal{font-size:16px;font-weight:700;color:#2c3e50;margin-top:6px}
 /* 页导航 */
 .batch-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
@@ -60,7 +60,7 @@ td.act{white-space:nowrap}
 .batch-bar span.on{background:#2c3e50;color:#fff;font-weight:600}
 /* 礼薄页面 */
 .gift-page{background:#fff;border:1px solid #eae6dd;border-radius:8px;overflow:hidden}
-.gift-page .page-header{background:#fafaf8;padding:10px 16px;font-size:13px;color:#7f8c8d;border-bottom:1px solid #eae6dd;display:flex;justify-content:space-between;align-items:center}
+.gift-page .page-header{background:#fafaf8;padding:10px 16px;font-size:13px;color:#7f8c8d;border-bottom:1px solid #eae6dd;display:flex;justify-content:center;align-items:center;gap:16px}
 .gift-page table thead th{background:#fafaf8}
 /* 可编辑录入表单 */
 .page-form table td{padding:4px 8px}
