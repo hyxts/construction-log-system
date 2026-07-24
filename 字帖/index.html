@@ -194,7 +194,7 @@ body {
 }
 .paper-header {
   text-align: center;
-  padding: 32px 40px 16px;
+  padding: 28px 48px 20px;
 }
 .paper-title {
   font-size: 22px;
@@ -207,12 +207,15 @@ body {
   margin-top: 4px;
 }
 .paper-grid {
-  display: grid;
-  padding: 0 40px 40px;
-  justify-content: center;
+  padding: 0 48px 48px;
 }
 .paper-grid.no-title {
-  padding-top: 40px;
+  padding-top: 48px;
+}
+.paper-grid > .grid-inner {
+  display: grid;
+  width: 100%;
+  justify-content: center;
 }
 
 /* 格子 */
@@ -832,10 +835,10 @@ function updatePreview() {
     header.style.display = 'block';
     titleEl.textContent = state.title;
     document.getElementById('paperSubtitle').textContent = state.trace ? '描红临摹' : '临写练习';
-    grid.classList.add('no-title');
     grid.classList.remove('no-title');
   } else {
     header.style.display = 'none';
+    grid.classList.add('no-title');
   }
 
   // 内容
@@ -848,9 +851,49 @@ function updatePreview() {
   const lines = text.split('\n').filter(l => l.trim());
   const cols = state.cols;
 
-  // 字号映射
-  const sizeMap = { small: 48, medium: 60, large: 72 };
-  const cellSize = sizeMap[state.fontSize] || 60;
+  // A4纸可用区域：794 - 48*2 = 698px，高度：1123 - 48*2(边距) - 标题区(约68) = 959px
+  const marginX = 48;
+  const marginY = 48;
+  const paperW = 794;
+  const paperH = 1123;
+  const headerH = state.title ? 68 : 0;
+  const availableW = paperW - marginX * 2;
+  const availableH = paperH - marginY * 2 - headerH;
+
+  // 字号系数（控制字体占格子的比例）
+  const sizeCoef = { small: 0.55, medium: 0.65, large: 0.75 };
+  const coef = sizeCoef[state.fontSize] || 0.65;
+
+  // 统计总字符数（不补空行，计算实际需要多少行）
+  let totalChars = 0;
+  const lineChars = [];
+  for (const line of lines) {
+    const chars = [...line.trim()].filter(c => c !== ' ');
+    lineChars.push(chars.length);
+    totalChars += chars.length;
+  }
+  // 加上行末补空：每行都补齐到 cols 的倍数
+  let totalCells = 0;
+  for (const lc of lineChars) {
+    totalCells += Math.ceil(lc / cols) * cols;
+  }
+  const totalRows = Math.ceil(totalCells / cols);
+
+  // 根据宽度计算格子大小
+  let cellSize = Math.floor(availableW / cols);
+
+  // 检查高度是否放得下
+  const neededH = totalRows * cellSize;
+  if (neededH > availableH) {
+    // 高度不够，按高度反推
+    cellSize = Math.floor(availableH / totalRows);
+    // 同时确保宽度也不溢出
+    if (cellSize * cols > availableW) {
+      cellSize = Math.floor(Math.min(availableW / cols, availableH / totalRows));
+    }
+  }
+  // 确保最小尺寸
+  if (cellSize < 28) cellSize = 28;
 
   // 构建格子CSS类
   let cellClasses = ['cell'];
@@ -863,31 +906,26 @@ function updatePreview() {
   if (state.trace) cellClasses.push('trace');
 
   const cellClass = cellClasses.join(' ');
-  const pinyinHeight = state.pinyin ? 16 : 0;
 
   let html = '';
-  html += `<div style="display:grid;grid-template-columns:repeat(${cols}, ${cellSize + 2}px);gap:0">`;
+  html += `<div class="grid-inner" style="grid-template-columns:repeat(${cols}, ${cellSize}px);grid-auto-rows:${cellSize}px">`;
 
   for (const line of lines) {
     const chars = [...line.trim()].filter(c => c !== ' ');
-    for (const ch of chars) {
-      const py = state.pinyin ? getPinyin(ch) : '';
-      const fontSize = cellSize * 0.65;
+    // 每行补齐到 cols 的倍数（但不跨行）
+    const filledCount = Math.ceil(chars.length / cols) * cols;
+    for (let i = 0; i < filledCount; i++) {
+      const ch = i < chars.length ? chars[i] : '';
+      const py = state.pinyin && ch ? getPinyin(ch) : '';
+      const fontSize = Math.round(cellSize * coef);
       const pySize = Math.round(fontSize * 0.25);
-      html += `<div class="${cellClass}" style="width:${cellSize + 2}px;height:${cellSize + 2}px">`;
+      html += `<div class="${cellClass}" style="width:${cellSize}px;height:${cellSize}px">`;
       html += `<div class="cell-inner">`;
       if (state.pinyin) {
         html += `<span class="cell-pinyin" style="font-size:${pySize}px;min-height:14px;${state.trace?'color:rgba(0,0,0,.12)':''}">${py}</span>`;
       }
       html += `<span class="cell-text" style="font-size:${fontSize}px;font-family:${state.font};color:${state.trace?'rgba(0,0,0,.15)':'#222'}">${ch}</span>`;
       html += `</div></div>`;
-    }
-    // 行末补空，保持网格对齐
-    const remaining = cols - chars.length;
-    if (remaining > 0) {
-      for (let i = 0; i < remaining; i++) {
-        html += `<div class="${cellClass}" style="width:${cellSize + 2}px;height:${cellSize + 2}px"><div class="cell-inner"></div></div>`;
-      }
     }
   }
 
