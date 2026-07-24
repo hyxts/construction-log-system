@@ -126,7 +126,7 @@ def check_auth():
         return jsonify({'success': False, 'error': '请求过于频繁'}), 429
 
     # 免登录路径
-    PUBLIC_PREFIXES = ('/static', '/countdown', '/accounting', '/renqing/manifest', '/renqing/icon', '/deploy/manifest', '/deploy/icon', '/api/accounting', '/api/countdown', '/api/pa/', '/api/status', '/api/speedtest/')
+    PUBLIC_PREFIXES = ('/static', '/countdown', '/accounting', '/renqing/manifest', '/renqing/icon', '/deploy/manifest', '/deploy/icon', '/calligraphy/manifest', '/calligraphy/icon', '/api/accounting', '/api/countdown', '/api/pa/', '/api/status', '/api/speedtest/')
     if request.path in ('/login', '/setup') or any(request.path.startswith(p) for p in PUBLIC_PREFIXES):
         return
     if session.get('auth'):
@@ -343,6 +343,23 @@ def accounting_icon_512():
 @app.route('/speedtest/')
 def speedtest_index():
     return redirect('/deploy')
+
+@app.route('/calligraphy')
+@app.route('/calligraphy/')
+def calligraphy_index():
+    return send_from_directory('字帖', 'index.html')
+
+@app.route('/calligraphy/manifest.json')
+def calligraphy_manifest():
+    return send_from_directory('字帖', 'manifest.json')
+
+@app.route('/calligraphy/icon-192.svg')
+def calligraphy_icon_192():
+    return send_from_directory('字帖', 'icon-192.svg')
+
+@app.route('/calligraphy/icon-512.svg')
+def calligraphy_icon_512():
+    return send_from_directory('字帖', 'icon-512.svg')
 
 # ==================== 启动 ====================
 

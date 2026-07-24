@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#2c1810">
+<link rel="apple-touch-icon" href="/calligraphy/icon-192.svg">
+<link rel="icon" type="image/svg+xml" href="/calligraphy/icon-512.svg">
+<link rel="manifest" href="/calligraphy/manifest.json">
+<title>字帖设计</title>
+<style>
+:root {
+  --bg: #faf6f0;
+  --card: #fff;
+  --border: #e0d8cc;
+  --text: #2c1810;
+  --muted: #8c8078;
+  --accent: #8b4513;
+  --accent-light: #d4a574;
+  --shadow: 0 2px 8px rgba(0,0,0,.06);
+  --radius: 10px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: system-ui, -apple-system, 'Microsoft YaHei', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* 顶部栏 */
+.topbar {
+  background: #2c1810;
+  color: #fff;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  gap: 12px;
+}
+.topbar h1 {
+  font-size: 17px;
+  font-weight: 600;
+  font-family: KaiTi, STKaiti, serif;
+  white-space: nowrap;
+}
+.topbar .subtitle {
+  font-size: 11px;
+  opacity: .7;
+  display: none;
+}
+.topbar .actions { display:flex; gap:8px; flex-shrink:0; }
+.topbar button {
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity .15s;
+}
+.topbar button:active { opacity:.8; }
+.btn-print { background: var(--accent-light); color: #2c1810; }
+.btn-reset { background: rgba(255,255,255,.15); color: #fff; }
+
+/* 主体布局 */
+.layout {
+  display: flex;
+  min-height: calc(100vh - 48px);
+  max-width: 1300px;
+  margin: 0 auto;
+}
+.sidebar {
+  width: 320px;
+  flex-shrink: 0;
+  padding: 16px;
+  overflow-y: auto;
+  max-height: calc(100vh - 48px);
+  position: sticky;
+  top: 48px;
+  background: transparent;
+}
+.main {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* 设置面板 */
+.panel {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--accent-light);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.panel-row {
+  margin-bottom: 12px;
+}
+.panel-row:last-child { margin-bottom:0; }
+.panel-row label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+.panel-row .opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.panel-row .opt {
+  padding: 5px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #fff;
+  transition: all .15s;
+  user-select: none;
+  white-space: nowrap;
+}
+.panel-row .opt:hover { border-color: var(--accent-light); }
+.panel-row .opt.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.panel-row select, .panel-row textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  font-family: inherit;
+  color: var(--text);
+  resize: vertical;
+}
+.panel-row textarea {
+  min-height: 80px;
+  line-height: 1.6;
+}
+.panel-row input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+.range-val {
+  text-align: right;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* A4纸预览 */
+.paper-wrapper {
+  position: sticky;
+  top: 64px;
+}
+.paper {
+  background: #fff;
+  box-shadow: 0 4px 24px rgba(0,0,0,.12);
+  position: relative;
+  /* A4 ratio: 1:√2 */
+  width: 794px;
+  height: 1123px;
+  transform-origin: top center;
+  overflow: hidden;
+}
+.paper-header {
+  text-align: center;
+  padding: 32px 40px 16px;
+}
+.paper-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 4px;
+}
+.paper-subtitle {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+}
+.paper-grid {
+  display: grid;
+  padding: 0 40px 40px;
+  justify-content: center;
+}
+.paper-grid.no-title {
+  padding-top: 40px;
+}
+
+/* 格子 */
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1.5px solid #333;
+}
+.cell-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.cell-text {
+  line-height: 1;
+  text-align: center;
+}
+.cell-pinyin {
+  font-size: 10px;
+  color: #999;
+  line-height: 1;
+  margin-top: 2px;
+  min-height: 14px;
+}
+
+/* 田字格虚线 */
+.cell.tian::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(to right, transparent calc(50% - .5px), rgba(0,0,0,.15) calc(50% - .5px), rgba(0,0,0,.15) calc(50% + .5px), transparent calc(50% + .5px)),
+    linear-gradient(to bottom, transparent calc(50% - .5px), rgba(0,0,0,.15) calc(50% - .5px), rgba(0,0,0,.15) calc(50% + .5px), transparent calc(50% + .5px));
+}
+
+/* 米字格 = 田字格 + 对角线 */
+.cell.mi::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(to right, transparent calc(50% - .5px), rgba(0,0,0,.15) calc(50% - .5px), rgba(0,0,0,.15) calc(50% + .5px), transparent calc(50% + .5px)),
+    linear-gradient(to bottom, transparent calc(50% - .5px), rgba(0,0,0,.15) calc(50% - .5px), rgba(0,0,0,.15) calc(50% + .5px), transparent calc(50% + .5px));
+}
+.cell.mi::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(135deg, transparent calc(50% - .5px), rgba(0,0,0,.1) calc(50% - .5px), rgba(0,0,0,.1) calc(50% + .5px), transparent calc(50% + .5px)),
+    linear-gradient(45deg, transparent calc(50% - .5px), rgba(0,0,0,.1) calc(50% - .5px), rgba(0,0,0,.1) calc(50% + .5px), transparent calc(50% + .5px));
+}
+
+/* 回宫格 = 内框 */
+.cell.hui::before {
+  content: '';
+  position: absolute;
+  inset: 18%;
+  z-index: 0;
+  border: 1.5px dashed rgba(0,0,0,.15);
+}
+
+/* 方格 = 无内线 */
+.cell.square::before { display:none; }
+.cell.square::after { display:none; }
+
+/* 横线格 */
+.cell.hline {
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+.cell.hline::before { display:none; }
+.cell.hline::after { display:none; }
+
+/* 描红 */
+.cell.trace .cell-text { color: rgba(0,0,0,.15); }
+.cell.trace .cell-pinyin { color: rgba(0,0,0,.1); }
+
+/* 格线颜色 */
+.cell.red-line { border-color: #c0392b; }
+.cell.red-line::before, .cell.red-line::after {
+  --line-color: rgba(192,57,43,.2);
+}
+.cell.red-line.tian::before {
+  background:
+    linear-gradient(to right, transparent calc(50% - .5px), rgba(192,57,43,.2) calc(50% - .5px), rgba(192,57,43,.2) calc(50% + .5px), transparent calc(50% + .5px)),
+    linear-gradient(to bottom, transparent calc(50% - .5px), rgba(192,57,43,.2) calc(50% - .5px), rgba(192,57,43,.2) calc(50% + .5px), transparent calc(50% + .5px));
+}
+.cell.red-line.mi::before {
+  background:
+    linear-gradient(to right, transparent calc(50% - .5px), rgba(192,57,43,.2) calc(50% - .5px), rgba(192,57,43,.2) calc(50% + .5px), transparent calc(50% + .5px)),
+    linear-gradient(to bottom, transparent calc(50% - .5px), rgba(192,57,43,.2) calc(50% - .5px), rgba(192,57,43,.2) calc(50% + .5px), transparent calc(50% + .5px));
+}
+.cell.red-line.mi::after {
+  background:
+    linear-gradient(135deg, transparent calc(50% - .5px), rgba(192,57,43,.15) calc(50% - .5px), rgba(192,57,43,.15) calc(50% + .5px), transparent calc(50% + .5px)),
+    linear-gradient(45deg, transparent calc(50% - .5px), rgba(192,57,43,.15) calc(50% - .5px), rgba(192,57,43,.15) calc(50% + .5px), transparent calc(50% + .5px));
+}
+.cell.red-line.hui::before { border-color: rgba(192,57,43,.3); }
+
+/* 缩放控制 */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.zoom-controls button {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+}
+.zoom-controls button:hover { background: #f5f0e8; }
+.zoom-label { font-size: 12px; color: var(--muted); min-width: 42px; text-align: center; }
+
+/* 空状态 */
+.empty-hint {
+  text-align: center;
+  color: var(--muted);
+  padding: 60px 20px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+/* 移动端底部上滑面板 */
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  .sidebar {
+    width: 100%;
+    max-height: none;
+    position: static;
+    padding: 12px;
+    order: 2;
+  }
+  .main {
+    order: 1;
+    padding: 12px;
+    overflow-x: auto;
+  }
+  .paper-wrapper { position: static; }
+  .topbar .subtitle { display: inline; }
+  .topbar h1 { font-size: 15px; }
+  .zoom-controls { display: none; }
+}
+
+/* 打印样式 */
+@media print {
+  body { background: #fff; }
+  .topbar, .sidebar, .zoom-controls { display: none !important; }
+  .layout { display: block; max-width: none; }
+  .main { padding: 0; display: block; }
+  .paper-wrapper { position: static; }
+  .paper {
+    box-shadow: none;
+    width: 210mm;
+    height: 297mm;
+    transform: none !important;
+    margin: 0 auto;
+    page-break-after: always;
+  }
+  @page { size: A4; margin: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>字帖设计</h1>
+    <span class="subtitle">硬笔书法</span>
+  </div>
+  <div class="actions">
+    <button class="btn-reset" onclick="resetAll()" title="恢复默认">重置</button>
+    <button class="btn-print" onclick="window.print()" title="打印或导出PDF">打印 / 导出PDF</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- 左侧设置面板 -->
+  <div class="sidebar" id="sidebar">
+
+    <div class="panel">
+      <div class="panel-title">网格类型</div>
+      <div class="panel-row">
+        <div class="opts" id="gridOpts">
+          <span class="opt active" data-v="tian">田字格</span>
+          <span class="opt" data-v="mi">米字格</span>
+          <span class="opt" data-v="hui">回宫格</span>
+          <span class="opt" data-v="square">方格</span>
+          <span class="opt" data-v="hline">横线格</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">字体选择</div>
+      <div class="panel-row">
+        <select id="fontSelect">
+          <option value="KaiTi, STKaiti, '楷体', serif">楷体</option>
+          <option value="'FangSong', STFangsong, '仿宋', serif">仿宋</option>
+          <option value="SimSun, STSong, '宋体', serif">宋体</option>
+          <option value="'SimHei', STHeiti, '黑体', sans-serif">黑体</option>
+          <option value="'STXingkai', '华文行楷', KaiTi, serif">行楷</option>
+          <option value="'Microsoft YaHei', sans-serif">微软雅黑</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">练习内容</div>
+      <div class="panel-row">
+        <select id="contentPreset" onchange="selectPreset()">
+          <option value="">-- 选择预设内容 --</option>
+          <optgroup label="唐诗精选">
+            <option value="poem1">静夜思 - 李白</option>
+            <option value="poem2">春晓 - 孟浩然</option>
+            <option value="poem3">登鹳雀楼 - 王之涣</option>
+            <option value="poem4">悯农 - 李绅</option>
+            <option value="poem5">咏鹅 - 骆宾王</option>
+            <option value="poem6">望庐山瀑布 - 李白</option>
+            <option value="poem7">江雪 - 柳宗元</option>
+            <option value="poem8">赋得古原草送别 - 白居易</option>
+            <option value="poem9">回乡偶书 - 贺知章</option>
+            <option value="poem10">出塞 - 王昌龄</option>
+          </optgroup>
+          <optgroup label="宋词精选">
+            <option value="ci1">水调歌头·明月几时有</option>
+            <option value="ci2">念奴娇·赤壁怀古</option>
+            <option value="ci3">声声慢·寻寻觅觅</option>
+          </optgroup>
+          <optgroup label="常用字">
+            <option value="basic">基础汉字（三百千）</option>
+            <option value="number">数字大写（壹贰叁肆伍）</option>
+            <option value="name">常见姓氏</option>
+          </optgroup>
+          <optgroup label="偏旁部首">
+            <option value="pianpang">常见偏旁部首</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="panel-row">
+        <label>或输入自定义内容（每行一字或词语）</label>
+        <textarea id="customText" placeholder="在此输入要练习的文字，每行一个词或一句话..." oninput="updatePreview()"></textarea>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">显示设置</div>
+      <div class="panel-row">
+        <label>字号大小</label>
+        <div class="opts" id="sizeOpts">
+          <span class="opt" data-v="small">小号</span>
+          <span class="opt active" data-v="medium">中号</span>
+          <span class="opt" data-v="large">大号</span>
+        </div>
+      </div>
+      <div class="panel-row">
+        <label>每行格数</label>
+        <div class="opts" id="colsOpts">
+          <span class="opt" data-v="4">4</span>
+          <span class="opt" data-v="5">5</span>
+          <span class="opt active" data-v="6">6</span>
+          <span class="opt" data-v="7">7</span>
+          <span class="opt" data-v="8">8</span>
+          <span class="opt" data-v="10">10</span>
+        </div>
+      </div>
+      <div class="panel-row">
+        <label>格线颜色</label>
+        <div class="opts" id="lineColorOpts">
+          <span class="opt active" data-v="black">黑色</span>
+          <span class="opt" data-v="red">红色</span>
+          <span class="opt" data-v="gray">灰色</span>
+        </div>
+      </div>
+      <div class="panel-row">
+        <label>描红模式（浅色字迹供临摹）</label>
+        <div class="opts" id="traceOpts">
+          <span class="opt active" data-v="0">关闭</span>
+          <span class="opt" data-v="1">开启</span>
+        </div>
+      </div>
+      <div class="panel-row">
+        <label>显示拼音</label>
+        <div class="opts" id="pinyinOpts">
+          <span class="opt active" data-v="0">关闭</span>
+          <span class="opt" data-v="1">开启</span>
+        </div>
+      </div>
+      <div class="panel-row">
+        <label>字帖标题（可选）</label>
+        <input type="text" id="paperTitle" placeholder="如：楷书练习·静夜思" oninput="updatePreview()">
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 右侧A4预览 -->
+  <div class="main">
+    <div class="paper-wrapper">
+      <div class="zoom-controls">
+        <button onclick="zoomOut()" title="缩小">-</button>
+        <span class="zoom-label" id="zoomLabel">100%</span>
+        <button onclick="zoomIn()" title="放大">+</button>
+      </div>
+      <div class="paper" id="paper">
+        <div class="paper-header" id="paperHeader" style="display:none">
+          <div class="paper-title" id="paperTitleEl"></div>
+          <div class="paper-subtitle" id="paperSubtitle"></div>
+        </div>
+        <div class="paper-grid" id="paperGrid">
+          <div class="empty-hint">请选择练习内容或输入自定义文字</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ==================== 状态管理 ====================
+const state = {
+  grid: 'tian',
+  font: 'KaiTi, STKaiti, "楷体", serif',
+  content: '',
+  fontSize: 'medium',
+  cols: 6,
+  lineColor: 'black',
+  trace: false,
+  pinyin: false,
+  title: '',
+  zoom: 1
+};
+
+// ==================== 拼音数据库（常用字） ====================
+const PINYIN_DB = {
+  '一':'yi','二':'er','三':'san','四':'si','五':'wu','六':'liu','七':'qi','八':'ba','九':'jiu','十':'shi',
+  '人':'ren','口':'kou','手':'shou','足':'zu','目':'mu','耳':'er','鼻':'bi','舌':'she','牙':'ya','头':'tou',
+  '大':'da','小':'xiao','多':'duo','少':'shao','上':'shang','下':'xia','左':'zuo','右':'you','前':'qian','后':'hou',
+  '日':'ri','月':'yue','水':'shui','火':'huo','山':'shan','石':'shi','田':'tian','土':'tu','木':'mu','金':'jin',
+  '天':'tian','地':'di','风':'feng','云':'yun','雨':'yu','雪':'xue','花':'hua','草':'cao','树':'shu','叶':'ye',
+  '马':'ma','牛':'niu','羊':'yang','鸟':'niao','鱼':'yu','虫':'chong','龙':'long','虎':'hu','兔':'tu','鸡':'ji',
+  '爸':'ba','妈':'ma','爷':'ye','奶':'nai','哥':'ge','姐':'jie','弟':'di','妹':'mei','儿':'er','女':'nv',
+  '红':'hong','黄':'huang','蓝':'lan','绿':'lv','白':'bai','黑':'hei','青':'qing','紫':'zi',
+  '东':'dong','西':'xi','南':'nan','北':'bei','中':'zhong',
+  '春':'chun','夏':'xia','秋':'qiu','冬':'dong',
+  '男':'nan','老':'lao','少':'shao','子':'zi',
+  '心':'xin','力':'li','气':'qi','生':'sheng','死':'si',
+  '高':'gao','低':'di','长':'chang','短':'duan','远':'yuan','近':'jin',
+  '来':'lai','去':'qu','出':'chu','入':'ru','开':'kai','关':'guan',
+  '上':'shang','下':'xia','里':'li','外':'wai',
+  '学':'xue','习':'xi','写':'xie','读':'du','看':'kan','听':'ting',
+  '好':'hao','美':'mei','新':'xin','旧':'jiu','快':'kuai','慢':'man',
+  '早':'zao','晚':'wan','明':'ming','暗':'an',
+  '爱':'ai','家':'jia','国':'guo','朋':'peng','友':'you',
+  '王':'wang','李':'li','张':'zhang','刘':'liu','陈':'chen','杨':'yang','赵':'zhao','黄':'huang','周':'zhou','吴':'wu',
+  '壹':'yi','贰':'er','叁':'san','肆':'si','伍':'wu','陆':'liu','柒':'qi','捌':'ba','玖':'jiu','拾':'shi',
+  '静':'jing','夜':'ye','思':'si','床':'chuang','明':'ming','光':'guang','疑':'yi','霜':'shuang','举':'ju','望':'wang',
+  '低':'di','故':'gu','乡':'xiang','春':'chun','晓':'xiao','眠':'mian','处':'chu','闻':'wen','啼':'ti','落':'luo',
+  '登':'deng','鹳':'guan','雀':'que','楼':'lou','尽':'jin','河':'he','流':'liu','欲':'yu','穷':'qiong','层':'ceng',
+  '悯':'min','农':'nong','锄':'chu','禾':'he','午':'wu','汗':'han','滴':'di','餐':'can','皆':'jie','苦':'ku',
+  '咏':'yong','鹅':'e','歌':'ge','曲':'qu','波':'bo','红':'hong','掌':'zhang','清':'qing','绿':'lv',
+  '瀑':'pu','布':'bu','紫':'zi','烟':'yan','遥':'yao','挂':'gua','川':'chuan','飞':'fei','直':'zhi',
+  '千':'qian','万':'wan','踪':'zong','灭':'mie','孤':'gu','舟':'zhou','蓑':'suo','笠':'li','翁':'weng','钓':'diao',
+  '草':'cao','离':'li','枯':'ku','荣':'rong','野':'ye','烧':'shao','吹':'chui',
+  '回':'hui','偶':'ou','书':'shu','童':'tong','客':'ke','改':'gai','鬓':'bin','衰':'shuai',
+  '塞':'sai','秦':'qin','汉':'han','关':'guan','征':'zheng','将':'jiang',
+  '调':'diao','头':'tou','把':'ba','酒':'jiu','琼':'qiong','宇':'yu','乘':'cheng','弄':'nong','影':'ying',
+  '赤':'chi','壁':'bi','淘':'tao','英':'ying','雄':'xiong','垒':'lei','涛':'tao','拍':'pai','岸':'an','卷':'juan',
+  '声':'sheng','寻':'xun','觅':'mi','冷':'leng','清':'qing','凄':'qi','惨':'can','戚':'qi',
+  '永':'yong','之':'zhi','氏':'shi','可':'ke','也':'ye','而':'er','不':'bu','其':'qi','以':'yi','者':'zhe',
+  '氵':'shui','艹':'cao','扌':'shou','亻':'ren','讠':'yan','忄':'xin','木':'mu','火':'huo','土':'tu','钅':'jin',
+  '纟':'si','女':'nv','口':'kou','日':'ri','月':'yue','目':'mu','石':'shi','虫':'chong','鱼':'yu','鸟':'niao',
+  '禾':'he','米':'mi','竹':'zhu','车':'che','马':'ma','走':'zou','足':'zu','页':'ye','风':'feng','雨':'yu'
+};
+
+// ==================== 内容预设 ====================
+const PRESETS = {
+  poem1: '床前明月光\n疑是地上霜\n举头望明月\n低头思故乡',
+  poem2: '春眠不觉晓\n处处闻啼鸟\n夜来风雨声\n花落知多少',
+  poem3: '白日依山尽\n黄河入海流\n欲穷千里目\n更上一层楼',
+  poem4: '锄禾日当午\n汗滴禾下土\n谁知盘中餐\n粒粒皆辛苦',
+  poem5: '鹅鹅鹅\n曲项向天歌\n白毛浮绿水\n红掌拨清波',
+  poem6: '日照香炉生紫烟\n遥看瀑布挂前川\n飞流直下三千尺\n疑是银河落九天',
+  poem7: '千山鸟飞绝\n万径人踪灭\n孤舟蓑笠翁\n独钓寒江雪',
+  poem8: '离离原上草\n一岁一枯荣\n野火烧不尽\n春风吹又生',
+  poem9: '少小离家老大回\n乡音无改鬓毛衰\n儿童相见不相识\n笑问客从何处来',
+  poem10: '秦时明月汉时关\n万里长征人未还\n但使龙城飞将在\n不教胡马度阴山',
+  ci1: '明月几时有\n把酒问青天\n不知天上宫阙\n今夕是何年\n我欲乘风归去\n又恐琼楼玉宇\n高处不胜寒\n起舞弄清影\n何似在人间',
+  ci2: '大江东去\n浪淘尽\n千古风流人物\n故垒西边\n人道是\n三国周郎赤壁\n乱石穿空\n惊涛拍岸\n卷起千堆雪',
+  ci3: '寻寻觅觅\n冷冷清清\n凄凄惨惨戚戚\n乍暖还寒时候\n最难将息\n三杯两盏淡酒\n怎敌他\n晚来风急',
+  basic: '天地玄黄\n宇宙洪荒\n日月盈昃\n辰宿列张\n寒来暑往\n秋收冬藏\n闰余成岁\n律吕调阳\n云腾致雨\n露结为霜',
+  number: '壹贰叁肆伍\n陆柒捌玖拾\n壹佰贰佰叁佰\n肆佰伍佰陆佰\n柒佰捌佰玖佰\n壹仟贰仟叁仟',
+  name: '赵钱孙李\n周吴郑王\n冯陈褚卫\n蒋沈韩杨\n朱秦尤许\n何吕施张\n孔曹严华\n金魏陶姜',
+  pianpang: '江河湖海\n花草芬芳\n推拉提打\n休仙伶俐\n讲谈论议\n怕忙快情\n树村林森\n灯烛炎煌\n地球圣域\n钉钢铁锁'
+};
+
+// ==================== 预设选择 ====================
+function selectPreset() {
+  const val = document.getElementById('contentPreset').value;
+  if (!val) return;
+  const text = PRESETS[val] || '';
+  document.getElementById('customText').value = text;
+  state.content = text;
+  document.getElementById('contentPreset').value = val;
+  updatePreview();
+}
+
+// ==================== 设置切换 ====================
+function setupToggleGroup(id, stateKey, callback) {
+  const container = document.getElementById(id);
+  if (!container) return;
+  container.querySelectorAll('.opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      container.querySelectorAll('.opt').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      const val = opt.dataset.v;
+      if (stateKey === 'trace') state[stateKey] = val === '1';
+      else if (stateKey === 'pinyin') state[stateKey] = val === '1';
+      else state[stateKey] = val;
+      callback();
+    });
+  });
+}
+
+setupToggleGroup('gridOpts', 'grid', updatePreview);
+setupToggleGroup('sizeOpts', 'fontSize', updatePreview);
+setupToggleGroup('colsOpts', 'cols', () => { state.cols = parseInt(state.cols); updatePreview(); });
+setupToggleGroup('lineColorOpts', 'lineColor', updatePreview);
+setupToggleGroup('traceOpts', 'trace', updatePreview);
+setupToggleGroup('pinyinOpts', 'pinyin', updatePreview);
+
+document.getElementById('fontSelect').addEventListener('change', function() {
+  state.font = this.value;
+  updatePreview();
+});
+
+document.getElementById('customText').addEventListener('input', function() {
+  state.content = this.value;
+  updatePreview();
+});
+
+document.getElementById('paperTitle').addEventListener('input', function() {
+  state.title = this.value;
+  updatePreview();
+});
+
+// ==================== 缩放 ====================
+function applyZoom() {
+  const paper = document.getElementById('paper');
+  paper.style.transform = `scale(${state.zoom})`;
+  document.getElementById('zoomLabel').textContent = Math.round(state.zoom * 100) + '%';
+}
+function zoomIn() {
+  state.zoom = Math.min(1.5, state.zoom + 0.1);
+  applyZoom();
+}
+function zoomOut() {
+  state.zoom = Math.max(0.4, state.zoom - 0.1);
+  applyZoom();
+}
+
+// ==================== 获取拼音 ====================
+function getPinyin(char) {
+  return PINYIN_DB[char] || '';
+}
+
+// ==================== 渲染字帖 ====================
+function updatePreview() {
+  const grid = document.getElementById('paperGrid');
+  const header = document.getElementById('paperHeader');
+  const titleEl = document.getElementById('paperTitleEl');
+
+  // 标题
+  if (state.title) {
+    header.style.display = 'block';
+    titleEl.textContent = state.title;
+    document.getElementById('paperSubtitle').textContent = state.trace ? '描红临摹' : '临写练习';
+    grid.classList.add('no-title');
+    grid.classList.remove('no-title');
+  } else {
+    header.style.display = 'none';
+  }
+
+  // 内容
+  const text = state.content || document.getElementById('customText').value || '';
+  if (!text.trim()) {
+    grid.innerHTML = '<div class="empty-hint">请选择练习内容或输入自定义文字</div>';
+    return;
+  }
+
+  const lines = text.split('\n').filter(l => l.trim());
+  const cols = state.cols;
+
+  // 字号映射
+  const sizeMap = { small: 48, medium: 60, large: 72 };
+  const cellSize = sizeMap[state.fontSize] || 60;
+
+  // 构建格子CSS类
+  let cellClasses = ['cell'];
+  if (state.grid === 'tian') cellClasses.push('tian');
+  else if (state.grid === 'mi') cellClasses.push('mi');
+  else if (state.grid === 'hui') cellClasses.push('hui');
+  else if (state.grid === 'square') cellClasses.push('square');
+  else if (state.grid === 'hline') cellClasses.push('hline');
+  if (state.lineColor === 'red') cellClasses.push('red-line');
+  if (state.trace) cellClasses.push('trace');
+
+  const cellClass = cellClasses.join(' ');
+  const pinyinHeight = state.pinyin ? 16 : 0;
+
+  let html = '';
+  html += `<div style="display:grid;grid-template-columns:repeat(${cols}, ${cellSize + 2}px);gap:0">`;
+
+  for (const line of lines) {
+    const chars = [...line.trim()].filter(c => c !== ' ');
+    for (const ch of chars) {
+      const py = state.pinyin ? getPinyin(ch) : '';
+      const fontSize = cellSize * 0.65;
+      const pySize = Math.round(fontSize * 0.25);
+      html += `<div class="${cellClass}" style="width:${cellSize + 2}px;height:${cellSize + 2}px">`;
+      html += `<div class="cell-inner">`;
+      if (state.pinyin) {
+        html += `<span class="cell-pinyin" style="font-size:${pySize}px;min-height:14px;${state.trace?'color:rgba(0,0,0,.12)':''}">${py}</span>`;
+      }
+      html += `<span class="cell-text" style="font-size:${fontSize}px;font-family:${state.font};color:${state.trace?'rgba(0,0,0,.15)':'#222'}">${ch}</span>`;
+      html += `</div></div>`;
+    }
+    // 行末补空，保持网格对齐
+    const remaining = cols - chars.length;
+    if (remaining > 0) {
+      for (let i = 0; i < remaining; i++) {
+        html += `<div class="${cellClass}" style="width:${cellSize + 2}px;height:${cellSize + 2}px"><div class="cell-inner"></div></div>`;
+      }
+    }
+  }
+
+  html += '</div>';
+  grid.innerHTML = html;
+}
+
+// ==================== 重置 ====================
+function resetAll() {
+  state.grid = 'tian';
+  state.font = 'KaiTi, STKaiti, "楷体", serif';
+  state.content = '';
+  state.fontSize = 'medium';
+  state.cols = 6;
+  state.lineColor = 'black';
+  state.trace = false;
+  state.pinyin = false;
+  state.title = '';
+  state.zoom = 1;
+
+  document.getElementById('customText').value = '';
+  document.getElementById('paperTitle').value = '';
+  document.getElementById('contentPreset').value = '';
+  document.getElementById('fontSelect').value = 'KaiTi, STKaiti, "楷体", serif';
+
+  resetOptGroup('gridOpts', 'tian');
+  resetOptGroup('sizeOpts', 'medium');
+  resetOptGroup('colsOpts', '6');
+  resetOptGroup('lineColorOpts', 'black');
+  resetOptGroup('traceOpts', '0');
+  resetOptGroup('pinyinOpts', '0');
+
+  applyZoom();
+  updatePreview();
+}
+
+function resetOptGroup(id, val) {
+  const container = document.getElementById(id);
+  container.querySelectorAll('.opt').forEach(o => {
+    o.classList.toggle('active', o.dataset.v === val);
+  });
+}
+
+// ==================== 初始化 ====================
+applyZoom();
+// 默认加载一首诗
+document.getElementById('contentPreset').value = 'poem1';
+selectPreset();
+</script>
+</body>
+</html>
