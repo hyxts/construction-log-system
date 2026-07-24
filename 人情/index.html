@@ -672,8 +672,8 @@ async function loadEventDetail(){
   unarchivedEvts=nonDaily.filter(e=>!e.archived);
   renderEvtGrid();
   renderUnarchivedGrid();
-  // 更新当前事件引用
-  const refreshed=events.find(e=>e.id===selEvtId);
+  // 更新当前事件引用（在正确的列表中查找）
+  const refreshed=(isUnarchivedMode?unarchivedEvts:events).find(e=>e.id===selEvtId);
 
   // 统计
   const total=evtRecords.reduce((s,r)=>s+(r.amount||0),0);
@@ -703,7 +703,7 @@ function renderBatchPage(){
   if(!selBatch){$('giftPage').innerHTML='<div style="text-align:center;padding:40px;color:#999">选择页面查看</div>';return;}
   const batchRecs=evtRecords.filter(r=>r.batch===selBatch);
   const sorted=batchRecs.sort((a,b)=>a.id-b.id);
-  const evt=events.find(e=>e.id===selEvtId);
+  const evt=(isUnarchivedMode?unarchivedEvts:events).find(e=>e.id===selEvtId);
   const ps=evt?evt.page_size||12:12;
   const locked=evt&&evt.locked;
   const total=sorted.reduce((s,r)=>s+(r.amount||0),0);
@@ -776,8 +776,8 @@ async function loadEvtDataSilent(){
     unarchivedEvts=nonDaily.filter(e=>!e.archived);
     renderEvtGrid();
     renderUnarchivedGrid();
-    // 更新统计面板（无需重新渲染整个 detail）
-    const evt=events.find(e=>e.id===selEvtId);
+    // 更新统计面板（无需重新渲染整个 detail），在正确的列表中查找
+    const evt=(isUnarchivedMode?unarchivedEvts:events).find(e=>e.id===selEvtId);
     if(evt){
       const total=evtRecords.reduce((s,r)=>s+(r.amount||0),0);
       const isDaily=evt.event_type==='日常'||evt.name==='流水';
@@ -813,7 +813,7 @@ async function savePage(silent=false){
   }
   if(rows.length===0){if(!silent)toast('请至少填写一条完整记录',1);return;}
 
-  const evt=events.find(e=>e.id===selEvtId);
+  const evt=(isUnarchivedMode?unarchivedEvts:events).find(e=>e.id===selEvtId);
   const defaultDate=evt&&evt.event_date?evt.event_date:'';
   // 并行保存所有记录，显著提升移动端响应速度
   const results=await Promise.allSettled(rows.map(r=>{
