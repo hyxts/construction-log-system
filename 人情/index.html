@@ -643,7 +643,7 @@ function renderUnarchivedGrid(){
     <div class="ename">${escH(e.name)}${e.locked?' <span style="font-size:11px;color:#c0392b">[锁定]</span>':''}</div>
     <div class="emeta"><span>${escH(evtTypeLabel(e.event_type))}</span>${e.event_date?`<span>${e.event_date}</span>`:''}<span>${e.record_count}条</span></div>
     <div class="etotal">${fmtA(e.total_amount)} 元</div>
-  </div>`).join('');
+  </div>`).join(''):'';
 }
 
 async function selectEvent(eid,unarchived){
