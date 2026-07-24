@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>礼金管理系统</title>
+<title>礼金归档库</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;background:#f5f4f0;color:#2c3e50;min-height:100vh;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);padding-top:env(safe-area-inset-top);padding-bottom:calc(16px + env(safe-area-inset-bottom))}
@@ -12,17 +12,13 @@ body.modal-open{overflow:hidden;position:fixed;width:100%}
 header{background:#fff;border-bottom:1px solid #e0dbd0;padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:100}
 header h1{font-size:18px;font-weight:600;letter-spacing:2px;color:#2c3e50}
 nav{display:flex;gap:0}
-nav button{padding:14px 20px;border:none;background:none;font-size:14px;color:#7f8c8d;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;font-family:inherit}
-nav button:hover{color:#2c3e50;background:#fafaf8}
-nav button.active{color:#2c3e50;border-bottom-color:#2c3e50;font-weight:600}
+nav a,nav button{padding:14px 20px;border:none;background:none;font-size:14px;color:#7f8c8d;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s;font-family:inherit;text-decoration:none}
+nav a:hover,nav button:hover{color:#2c3e50;background:#fafaf8}
 /* 主容器 */
 main{max-width:1100px;margin:0 auto;padding:24px 20px}
-.pg{display:none}
-.pg.active{display:block}
 /* 卡片 */
 .card{background:#fff;border-radius:8px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06);border:1px solid #eae6dd}
 .card-title{font-size:15px;font-weight:600;color:#2c3e50;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #eae6dd;display:flex;justify-content:space-between;align-items:center;gap:8px}
-/* 事件详情标题防止文字撑爆按钮 */
 #evtDetail .card-title > span:first-child{min-width:0;flex-shrink:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card-title .btn-group{flex-shrink:0}
 /* 按钮 */
@@ -39,10 +35,6 @@ main{max-width:1100px;margin:0 auto;padding:24px 20px}
 .fgroup input,.fgroup select{padding:8px 12px;border:1px solid #d5cfc5;border-radius:6px;font-size:13px;font-family:inherit;color:#2c3e50;background:#fafaf8;min-width:0}
 .fgroup input:focus,.fgroup select:focus{outline:none;border-color:#2c3e50;background:#fff}
 .fgroup input[type="date"]{width:138px}
-.fgroup input[name="name"]{width:120px;flex:1;max-width:160px}
-.fgroup input[name="amount"]{width:100px}
-.fgroup input[name="note"]{flex:1;max-width:200px}
-.fgroup select{width:90px}
 /* 表格 */
 .t-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
@@ -53,11 +45,6 @@ table tbody tr.row-locked{opacity:.6}
 td.amt{font-weight:600;color:#2c3e50}
 td.num{text-align:right}
 td.act{white-space:nowrap}
-/* 年度标签 */
-.ytabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-.ytabs span{padding:6px 14px;background:#f5f4f0;border-radius:16px;font-size:13px;cursor:pointer;color:#7f8c8d;border:1px solid transparent;transition:all .15s}
-.ytabs span:hover{color:#2c3e50;border-color:#d5cfc5}
-.ytabs span.on{background:#2c3e50;color:#fff;font-weight:600}
 /* 事件选择器 */
 .evt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
 .evt-item{padding:14px;background:#fff;border:1px solid #eae6dd;border-radius:8px;cursor:pointer;transition:all .15s}
@@ -71,7 +58,7 @@ td.act{white-space:nowrap}
 .batch-bar span{padding:6px 12px;background:#f5f4f0;border-radius:6px;font-size:13px;cursor:pointer;border:1px solid transparent;transition:all .15s}
 .batch-bar span:hover{border-color:#d5cfc5}
 .batch-bar span.on{background:#2c3e50;color:#fff;font-weight:600}
-/* 礼薄页面 (页) */
+/* 礼薄页面 */
 .gift-page{background:#fff;border:1px solid #eae6dd;border-radius:8px;overflow:hidden}
 .gift-page .page-header{background:#fafaf8;padding:10px 16px;font-size:13px;color:#7f8c8d;border-bottom:1px solid #eae6dd;display:flex;justify-content:space-between;align-items:center}
 .gift-page table thead th{background:#fafaf8}
@@ -105,61 +92,37 @@ td.act{white-space:nowrap}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:10px 24px;background:#2c3e50;color:#fff;border-radius:8px;font-size:13px;z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;width:max-content;max-width:90vw}
 .toast.show{opacity:1}
 .toast.err{background:#c0392b}
+/* 空状态 */
+.empty-hint{grid-column:1/-1;text-align:center;padding:40px 20px;color:#999;font-size:14px}
 /* 移动端 */
 @media(max-width:768px){
-  body{padding-bottom:calc(60px + env(safe-area-inset-bottom))}
-  /* 顶部导航 - 隐藏按钮，保留标题 */
+  body{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
   header{flex-direction:column;height:auto;padding:8px 10px;gap:6px}
   header h1{font-size:16px;letter-spacing:1px}
-  nav{display:none}
-  /* 底部导航 - 仅在移动端显示 */
-  .bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom));border-top:1px solid #eef0f4;z-index:100;box-shadow:0 -1px 6px rgba(0,0,0,.04)}
-  .bottom-nav button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 6px;border:none;background:none;font-size:10px;color:#999;cursor:pointer;min-height:44px;width:auto;margin:0;border-radius:0}
-  .bottom-nav button.active{color:#c0392b}
+  nav{display:flex}
+  nav a,nav button{padding:10px 14px;font-size:13px}
   main{padding:12px 8px;max-width:100%}
   .card{padding:12px;margin-bottom:10px;border-radius:6px}
-
-  /* 表单控件 */
   .fgroup{flex-direction:column;align-items:stretch;gap:8px}
   .fgroup input,.fgroup select,.fgroup .btn{width:100%!important;max-width:none!important;min-width:0!important;box-sizing:border-box!important}
   .fgroup input,.fgroup select{padding:10px 12px;font-size:16px}
-  .fgroup .btn{padding:12px;font-size:16px;text-align:center}
-  .date-row{display:flex;gap:6px}
-  .date-row select{flex:1;min-width:0!important;padding:10px 6px;font-size:16px}
-
-  /* 按钮 */
   .btn{padding:8px 14px;font-size:14px}
   .btn.sm{padding:6px 10px;font-size:13px}
   .btn-group{gap:6px}
-
-  /* 统计卡片 - 两列网格 */
   .stat-row{grid-template-columns:1fr 1fr;gap:8px}
   .stat-card{padding:12px 8px}
   .stat-card .svalue{font-size:20px}
   .stat-card.sub .svalue{font-size:16px}
-
-  /* 年度标签 */
-  .ytabs{gap:4px;margin-bottom:12px}
-  .ytabs span{padding:5px 10px;font-size:12px}
-
-  /* 表格 - 水平滚动 */
-  .t-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -12px;padding:0 12px}
-  table{font-size:13px;min-width:500px}
-  table thead th{padding:8px 8px;font-size:11px}
-  table tbody td{padding:7px 8px;font-size:12px}
-  td.act{white-space:nowrap}
-
-  /* 事件选择卡片 */
   .evt-grid{grid-template-columns:1fr;gap:8px}
   .evt-item{padding:12px}
-
-  /* 事件详情 - 标题栏按钮竖向堆叠 */
   #evtDetail .card-title{flex-direction:column;align-items:stretch;gap:8px}
   #evtDetail .card-title > span:first-child{white-space:normal;overflow:visible;text-overflow:clip}
   #evtDetail .card-title .btn-group{justify-content:flex-end;flex-shrink:1}
   #evtDetail .card-title .btn-group .btn{height:38px;min-width:44px;font-size:13px}
-
-  /* 礼薄页面 - 可编辑表单表格优化 */
+  .t-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -12px;padding:0 12px}
+  table{font-size:13px;min-width:500px}
+  table thead th{padding:8px 8px;font-size:11px}
+  table tbody td{padding:7px 8px;font-size:12px}
   .gift-page{border-radius:6px}
   .gift-page .page-header{flex-wrap:wrap;gap:6px;padding:8px 10px;font-size:12px}
   .page-form{overflow-x:auto;-webkit-overflow-scrolling:touch}
@@ -173,12 +136,8 @@ td.act{white-space:nowrap}
   .page-form table th:nth-child(5){width:34px}
   .page-form input{padding:8px 4px;font-size:16px;width:100%!important;box-sizing:border-box!important}
   .page-form .btn.sm{padding:4px 6px;font-size:12px;min-width:28px}
-
-  /* 页导航 */
   .batch-bar{gap:4px;margin-bottom:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap}
   .batch-bar span{padding:5px 8px;font-size:12px;white-space:nowrap;flex-shrink:0}
-
-  /* 弹窗 */
   .modal-box{min-width:0;width:92vw;max-width:92vw;padding:16px;margin:0 auto;border-radius:8px}
   .modal-mask{padding:10px}
   .modal-box h3{font-size:15px;margin-bottom:12px}
@@ -187,28 +146,9 @@ td.act{white-space:nowrap}
   .modal-box .fgroup input,.modal-box .fgroup select{padding:10px 12px;font-size:16px}
   .modal-box .btn-row{flex-direction:column-reverse;gap:8px}
   .modal-box .btn-row .btn{width:100%;padding:12px;font-size:15px;text-align:center;height:46px}
-
-  /* 统计页搜索框全宽 */
-  #sSearchName{width:100%!important;max-width:none!important}
-  /* 统计表格/视图间距 */
-  #sPersonDetail .t-wrap{margin:0 -12px;padding:0 12px}
-  /* 人员详情头信息的响应式 */
-
-  /* 人员查询详情 - 摘要行改为纵向 */
-  #sPersonDetail .stat-row > div[style*="background"] > div[style*="display:flex"]{
-    flex-direction:column;gap:6px
-  }
-  #sPersonDetail .stat-row > div[style*="background"] > div[style*="display:flex"] span{font-size:13px}
-
-  /* 数据总览表格 */
-  #sBalTable td,#sEvtTable td{padding:7px 6px}
-
-  /* toast 避开刘海/HomeIndicator */
   .toast{top:auto;max-width:90vw;padding:10px 18px;font-size:13px;bottom:calc(20px + env(safe-area-inset-bottom))}
 }
-/* PC端 */
 @media(min-width:769px){
-  .bottom-nav{display:none}
   main{max-width:1100px;margin:0 auto;padding:16px 24px}
   body{background:#eef1f5}
 }
@@ -217,120 +157,34 @@ td.act{white-space:nowrap}
 <body>
 
 <header>
-  <h1>礼金管理系统</h1>
-  <nav id="topNav">
-    <button data-pg="daily" class="active">日常随礼</button>
-    <button data-pg="stats">数据总览</button>
-    <button data-pg="event">事件收礼</button>
-    <button onclick="location.href='/renqing/archive'" style="border-bottom:none">归档库</button>
+  <h1>礼金归档库</h1>
+  <nav>
+    <a href="/renqing">返回工作台</a>
   </nav>
 </header>
-<div class="bottom-nav" id="bottomNav">
-  <button data-pg="daily" class="active">随礼录入</button>
-  <button data-pg="stats">数据总览</button>
-  <button data-pg="event">事件收礼</button>
-</div>
 
-<main class="pg active" id="pg-daily">
-  <!-- 日常随礼 - 快速录入 -->
-  <div class="card">
-    <div class="card-title">录入随礼</div>
-    <div class="fgroup" id="dailyForm">
-      <div class="date-row"><label style="display:block;font-size:11px;color:#7f8c8d;margin-bottom:2px">日期</label>
-        <select id="dYear"></select><select id="dMonth"></select><select id="dDay"></select>
-      </div>
-      <div><label style="display:block;font-size:11px;color:#7f8c8d;margin-bottom:2px">姓名</label><input type="text" id="dName" name="name" autocomplete="off"></div>
-      <div><label style="display:block;font-size:11px;color:#7f8c8d;margin-bottom:2px">金额</label><input type="number" id="dAmt" name="amount" step="0.01"></div>
-      <div><label style="display:block;font-size:11px;color:#7f8c8d;margin-bottom:2px">备注</label><input type="text" id="dNote" name="note"></div>
-      <button class="btn primary" onclick="saveDaily()">保存</button>
-    </div>
-  </div>
-
-  <!-- 年度筛选 -->
-  <div id="dYearTabs" class="ytabs"></div>
-
-  <!-- 年度统计 -->
-  <div class="stat-row" id="dSummary"></div>
-
-  <!-- 记录表格 -->
-  <div class="card">
-    <div class="card-title">
-      <span>随礼记录</span>
-      <div><button class="btn sm" id="dLockBtn" onclick="toggleDailyLock()">锁定</button>
-      <button class="btn sm" onclick="exportCSV()">导出CSV</button></div>
-    </div>
-    <div class="t-wrap">
-      <table><thead><tr><th>日期</th><th>姓名</th><th>金额</th><th>备注</th><th style="width:100px">操作</th></tr></thead>
-        <tbody id="dList"></tbody>
-      </table>
-    </div>
-  </div>
-</main>
-
-<main class="pg" id="pg-event">
-  <!-- 当前编辑中的事件 -->
-  <div class="card" id="unarchivedCard" style="display:none">
-    <div class="card-title" style="cursor:pointer">
-      <span>未归档事件 <span id="unarchivedToggleIcon" style="font-size:12px;color:#999">[-]</span></span>
-      <button class="btn primary sm" onclick="event.stopPropagation();showEvtModal()">新增事件</button>
-    </div>
-    <div class="evt-grid" id="unarchivedGrid"></div>
+<main>
+  <!-- 已归档事件列表 -->
+  <div class="card" id="archivedCard">
+    <div class="card-title">已归档事件</div>
+    <div class="evt-grid" id="evtGrid"></div>
   </div>
 
   <!-- 选中事件的详情 -->
   <div id="evtDetail" style="display:none">
-    <!-- 事件头部信息 -->
     <div class="card">
       <div class="card-title">
         <span id="evtTitle"></span>
         <div class="btn-group">
-          <button class="btn sm" id="evtArchiveBtn" onclick="toggleArchive()">归档</button>
+          <button class="btn sm" id="evtArchiveBtn" onclick="toggleArchive()">取消归档</button>
           <button class="btn sm" id="evtLockBtn" onclick="toggleLock()">锁定</button>
           <button class="btn sm" onclick="editEvt()">编辑事件</button>
           <button class="btn sm danger" onclick="deleteEvt()">删除</button>
         </div>
       </div>
       <div class="stat-row" id="evtStats"></div>
-      <!-- 页导航 -->
       <div class="batch-bar" id="batchNav"></div>
-      <!-- 礼薄页面 -->
       <div class="gift-page" id="giftPage"></div>
-    </div>
-  </div>
-</main>
-
-<main class="pg" id="pg-stats">
-  <!-- 全局数据 -->
-  <div class="stat-row" id="sSummary"></div>
-
-  <!-- 人员查找 -->
-  <div class="card">
-    <div class="card-title">
-      <span>人员往来查询</span>
-    </div>
-    <div class="fgroup" style="margin-bottom:14px">
-      <label style="font-size:11px;color:#7f8c8d;margin-right:4px">搜索</label><input type="text" id="sSearchName" style="width:220px">
-    </div>
-    <div id="sPersonDetail"></div>
-  </div>
-
-  <!-- 各事件汇总 -->
-  <div class="card">
-    <div class="card-title">各事件汇总</div>
-    <div class="t-wrap">
-      <table><thead><tr><th>事件名称</th><th>类型</th><th>记录数</th><th>总金额</th></tr></thead>
-        <tbody id="sEvtTable"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- 人情往来 -->
-  <div class="card">
-    <div class="card-title">人情往来明细</div>
-    <div class="t-wrap">
-      <table><thead><tr><th style="text-align:center">姓名</th><th style="text-align:center">收到</th><th style="text-align:center">送出</th><th style="text-align:center">净额</th><th style="text-align:center">说明</th></tr></thead>
-        <tbody id="sBalTable"></tbody>
-      </table>
     </div>
   </div>
 </main>
@@ -347,31 +201,6 @@ td.act{white-space:nowrap}
 const API='/api/renqing';
 const $=id=>document.getElementById(id);
 
-// ---- 日期选择器工具 ----
-function initDateSelects(){
-  const yy=$('dYear'),mm=$('dMonth'),dd=$('dDay');
-  const now=new Date();
-  for(let y=now.getFullYear()-5;y<=now.getFullYear()+1;y++)yy.innerHTML+=`<option value="${y}">${y}年</option>`;
-  for(let m=1;m<=12;m++)mm.innerHTML+=`<option value="${m}">${m}月</option>`;
-  function fillDays(){
-    const y=parseInt(yy.value),m=parseInt(mm.value);
-    const last=new Date(y,m,0).getDate();
-    dd.innerHTML='';
-    for(let d=1;d<=last;d++)dd.innerHTML+=`<option value="${d}">${d}日</option>`;
-  }
-  yy.addEventListener('change',fillDays);
-  mm.addEventListener('change',fillDays);
-  yy.value=now.getFullYear();mm.value=now.getMonth()+1;fillDays();dd.value=now.getDate();
-}
-function getDate(){
-  return $('dYear').value+'-'+String($('dMonth').value).padStart(2,'0')+'-'+String($('dDay').value).padStart(2,'0');
-}
-function setDate(v){
-  if(!v)return;
-  const p=v.split('-');
-  if(p.length===3){$('dYear').value=p[0];$('dMonth').value=parseInt(p[1]);$('dYear').dispatchEvent(new Event('change'));$('dDay').value=parseInt(p[2]);}
-}
-
 // ==================== 工具函数 ====================
 function escH(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 function fmtD(d){return d||'-';}
@@ -385,7 +214,7 @@ function toast(msg,isErr){
 }
 
 // ==================== 模糊搜索联想 ====================
-let acDrops=[]; // 跟踪所有下拉框，用于批量清理
+let acDrops=[];
 function acCleanAll(){acDrops.forEach(d=>{if(d.parentNode)d.parentNode.removeChild(d);});acDrops=[];}
 
 function acAttach(input){
@@ -427,7 +256,7 @@ function acAttach(input){
       const r=input.getBoundingClientRect();
       dd.style.top=(r.bottom+2)+'px';dd.style.left=r.left+'px';dd.style.minWidth=r.width+'px';
       render();dd.classList.add('show');
-    }catch(e){/* input可能已移出DOM */}
+    }catch(e){}
   }
 
   input.addEventListener('input',()=>{
@@ -461,28 +290,10 @@ function acAttach(input){
   });
 }
 
-// ==================== 导航 ====================
-let curPg='daily';
-document.querySelectorAll('nav button, .bottom-nav button').forEach(b=>{
-  b.addEventListener('click',()=>{
-    document.querySelectorAll('.pg').forEach(p=>p.classList.remove('active'));
-    document.querySelectorAll('nav button, .bottom-nav button').forEach(n=>n.classList.remove('active'));
-    b.classList.add('active');
-    // 同步选中状态到另一组导航
-    const pg=b.dataset.pg;
-    document.querySelectorAll('nav button[data-pg="'+pg+'"], .bottom-nav button[data-pg="'+pg+'"]').forEach(x=>x.classList.add('active'));
-    curPg=pg;$('pg-'+curPg).classList.add('active');
-    if(curPg==='daily')loadDaily();
-    else if(curPg==='event')loadEvents();
-    else loadStats();
-  });
-});
-
 // ==================== 弹窗 ====================
 function showModal(html){
   $('modalBox').innerHTML=html;$('modal').classList.add('show');
   document.body.classList.add('modal-open');
-  // 移动端弹窗自动聚焦第一个输入框
   setTimeout(()=>{
     const firstInp=$('modalBox').querySelector('input,select');
     if(firstInp)firstInp.focus();
@@ -494,14 +305,12 @@ function hideModal(){
 }
 $('modal').addEventListener('click',e=>{if(e.target===$('modal'))hideModal();});
 
-// ==================== 确认弹窗（替代原生confirm，移动端更流畅） ====================
 function showConfirm(msg, onOk){
   showModal(`<h3>${msg}</h3>
     <div class="btn-row" style="justify-content:flex-end;margin-top:20px">
       <button class="btn" onclick="hideModal()">取消</button>
       <button class="btn danger" id="confirmOkBtn">确定</button>
     </div>`);
-  // 直接绑定事件，避免内联 onclick 作用域问题
   setTimeout(()=>{
     const btn=$('confirmOkBtn');
     if(btn){btn.addEventListener('click',()=>{hideModal();onOk();},{once:true});}
@@ -509,92 +318,7 @@ function showConfirm(msg, onOk){
   },50);
 }
 
-// ==================== 日常随礼 ====================
-let dailyEventId=null,dailyYear='',dailyRecords=[],dailyLocked=false;
-acAttach($('dName'));
-
-async function loadDaily(){
-  try{
-    const evts=await fetch(API+'/events').then(r=>r.json());
-    const dailyEvt=evts.find(e=>e.event_type==='日常'||e.name==='流水');
-    if(!dailyEvt){$('dYearTabs').innerHTML='';$('dSummary').innerHTML='';$('dList').innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:#999">暂无日常事件</td></tr>';return;}
-    dailyEventId=dailyEvt.id;
-    dailyLocked=dailyEvt.locked;
-    $('dLockBtn').textContent=dailyLocked?'解锁':'锁定';
-
-    const recs=await fetch(API+'/records?event_id='+dailyEventId).then(r=>r.json());
-    dailyRecords=recs.filter(r=>!r.direction||r.direction==='送');
-
-    const years=[...new Set(dailyRecords.map(r=>r.date?r.date.slice(0,4):'未知').filter(Boolean))].sort((a,b)=>b-a);
-    if(!dailyYear||!years.includes(dailyYear))dailyYear=years[0]||'';
-    renderYearTabs(years);
-    renderDaily();
-  }catch(e){$('dList').innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:#999">加载失败，请刷新重试</td></tr>';}
-}
-
-function renderYearTabs(years){
-  $('dYearTabs').innerHTML=years.map(y=>
-    `<span class="${y===dailyYear?'on':''}" onclick="document.querySelectorAll('#dYearTabs span').forEach(s=>s.classList.remove('on'));this.classList.add('on');dailyYear='${y}';renderDaily()">${y}年</span>`
-  ).join('');
-}
-
-function renderDaily(){
-  const recs=dailyYear?dailyRecords.filter(r=>r.date&&r.date.startsWith(dailyYear)):dailyRecords;
-  const total=recs.reduce((s,r)=>s+(r.amount||0),0);
-  const allTotal=dailyRecords.reduce((s,r)=>s+(r.amount||0),0);
-  const allLabel=dailyYear&&dailyYear!=='全部'?'历史累计':'全部合计';
-  $('dSummary').innerHTML=`
-    <div class="stat-card"><div class="slabel">${dailyYear||'全部'}送出</div><div class="svalue">${fmtA(total)} 元</div></div>
-    <div class="stat-card sub"><div class="slabel">记录数</div><div class="svalue">${recs.length} 条</div></div>
-    <div class="stat-card sub"><div class="slabel">涉及人数</div><div class="svalue">${new Set(recs.map(r=>r.name)).size} 人</div></div>
-    <div class="stat-card sub"><div class="slabel">平均</div><div class="svalue">${recs.length?fmtA(Math.round(total/recs.length)):0} 元</div></div>
-    ${dailyYear&&dailyYear!=='全部'?`<div class="stat-card sub" style="background:#fafaf8"><div class="slabel">${allLabel}</div><div class="svalue" style="color:#c0392b">${fmtA(allTotal)} 元</div></div>`:''}`;
-
-  $('dList').innerHTML=recs.length?recs.map(r=>`<tr>
-    <td>${fmtD(r.date)}</td><td>${escH(r.name)}</td><td class="amt">${fmtA(r.amount)}</td>
-    <td style="color:#999">${escH(r.note||'')}</td>
-    <td class="act">${dailyLocked?'':
-      `<button class="btn sm" onclick="editDailyRec(${r.id})">编辑</button>
-      <button class="btn sm danger" onclick="delRec(${r.id})">删除</button>`}</td></tr>`).join('')
-    :'<tr><td colspan="5" style="text-align:center;padding:20px;color:#999">暂无记录</td></tr>';
-}
-
-async function saveDaily(){
-  const name=$('dName').value.trim(),amt=parseFloat($('dAmt').value);
-  if(!name||!amt||amt<=0){toast('请填写姓名和金额',1);return;}
-  const rid=$('dName').dataset.rid;
-  const body={event_id:dailyEventId,name,amount:amt,date:getDate(),note:$('dNote').value.trim(),direction:'送'};
-  const url=rid?API+'/records/'+rid:API+'/records';
-  const method=rid?'PUT':'POST';
-  const res=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(res.ok){toast(rid?'已更新':'已保存');resetDailyForm();loadDaily();}
-  else{const e=await res.json();toast(e.error||'保存失败',1);}
-}
-
-function resetDailyForm(){
-  $('dName').value='';$('dAmt').value='';$('dNote').value='';delete $('dName').dataset.rid;
-  const d=new Date();setDate(d.toISOString().slice(0,10));
-}
-
-async function editDailyRec(rid){
-  const r=dailyRecords.find(x=>x.id===rid);if(!r)return;
-  $('dName').value=r.name;$('dAmt').value=r.amount;$('dNote').value=r.note||'';
-  setDate(r.date);$('dName').dataset.rid=rid;$('dName').focus();
-}
-
-async function delRec(rid){
-  showConfirm('确定删除此记录？',async()=>{
-    const res=await fetch(API+'/records/'+rid,{method:'DELETE'});
-    if(res.ok){toast('已删除');if(curPg==='daily')loadDaily();else loadEventDetail();}
-    else{const e=await res.json();toast(e.error||'删除失败',1);}
-  });
-}
-
-async function exportCSV(){
-  const url=API+'/export?event_id='+dailyEventId;window.open(url,'_blank');
-}
-
-// ==================== 事件收礼 ====================
+// ==================== 事件收礼（归档库专用） ====================
 let events=[],unarchivedEvts=[],selEvtId=null,selBatch=null,evtRecords=[],_gotoBatch=null,isUnarchivedMode=false;
 
 async function loadEvents(){
@@ -604,42 +328,34 @@ async function loadEvents(){
     events=nonDaily.filter(e=>e.archived);
     unarchivedEvts=nonDaily.filter(e=>!e.archived);
     renderEvtGrid();
-    renderUnarchivedGrid();
     if(!selEvtId) return;
-    const merged=[...events,...unarchivedEvts];
-    const stillExists=merged.find(e=>e.id===selEvtId);
+    const stillExists=events.find(e=>e.id===selEvtId);
     if(stillExists)loadEventDetail();
     else{$('evtDetail').style.display='none';selEvtId=null;}
   }catch(e){toast('加载事件列表失败',1);}
 }
 
-function renderEvtGrid(){/* 已归档事件移至归档库页面 */}
-
-function renderUnarchivedGrid(){
-  $('unarchivedCard').style.display='';
-  $('unarchivedGrid').innerHTML=unarchivedEvts.length?unarchivedEvts.map(e=>`<div class="evt-item${e.id===selEvtId?' selected':''}${e.locked?' row-locked':''}" onclick="selectEvent(${e.id},true)">
+function renderEvtGrid(){
+  $('evtGrid').innerHTML=events.length?events.map(e=>`<div class="evt-item${e.id===selEvtId?' selected':''}${e.locked?' row-locked':''}" onclick="selectEvent(${e.id})">
     <div class="ename">${escH(e.name)}${e.locked?' <span style="font-size:11px;color:#c0392b">[锁定]</span>':''}</div>
     <div class="emeta"><span>${escH(evtTypeLabel(e.event_type))}</span>${e.event_date?`<span>${e.event_date}</span>`:''}<span>${e.record_count}条</span></div>
     <div class="etotal">${fmtA(e.total_amount)} 元</div>
-  </div>`).join(''):'';
+  </div>`).join(''):'<div class="empty-hint">暂无已归档事件</div>';
 }
 
-async function selectEvent(eid,unarchived){
-  selEvtId=eid;isUnarchivedMode=unarchived;selBatch=null;
+async function selectEvent(eid){
+  selEvtId=eid;selBatch=null;
   $('evtDetail').style.display='block';
   renderEvtGrid();
-  renderUnarchivedGrid();
   loadEventDetail();
 }
 
 async function loadEventDetail(){
-  const evt=(isUnarchivedMode?unarchivedEvts:events).find(e=>e.id===selEvtId);if(!evt)return;
-  // 标题
+  const evt=events.find(e=>e.id===selEvtId);if(!evt)return;
   $('evtTitle').innerHTML=`${escH(evt.name)} <span style="font-size:12px;color:#999">(${escH(evtTypeLabel(evt.event_type))}${evt.event_date?' | '+evt.event_date:''})</span>`;
   $('evtLockBtn').textContent=evt.locked?'解锁':'锁定';
-  $('evtArchiveBtn').textContent=evt.archived?'取消归档':'归档';
+  $('evtArchiveBtn').textContent='取消归档';
 
-  // 并行加载记录和最新事件列表
   const [recs, allEvts]=await Promise.all([
     fetch(API+'/records?event_id='+selEvtId).then(r=>r.json()),
     fetch(API+'/events').then(r=>r.json())
@@ -649,11 +365,8 @@ async function loadEventDetail(){
   events=nonDaily.filter(e=>e.archived);
   unarchivedEvts=nonDaily.filter(e=>!e.archived);
   renderEvtGrid();
-  renderUnarchivedGrid();
-  // 更新当前事件引用（在正确的列表中查找）
-  const refreshed=(isUnarchivedMode?unarchivedEvts:events).find(e=>e.id===selEvtId);
+  const refreshed=events.find(e=>e.id===selEvtId);
 
-  // 统计
   const total=evtRecords.reduce((s,r)=>s+(r.amount||0),0);
   const isDaily=(refreshed||evt).event_type==='日常'||(refreshed||evt).name==='流水';
   $('evtStats').innerHTML=`
@@ -662,7 +375,6 @@ async function loadEventDetail(){
     <div class="stat-card sub"><div class="slabel">涉及人数</div><div class="svalue">${new Set(evtRecords.map(r=>r.name)).size} 人</div></div>
     <div class="stat-card sub"><div class="slabel">页数</div><div class="svalue">${new Set(evtRecords.map(r=>r.batch)).size}</div></div>`;
 
-  // 页导航
   const batches=[...new Set(evtRecords.map(r=>r.batch))].sort((a,b)=>a-b);
   if(_gotoBatch!==null){selBatch=_gotoBatch;_gotoBatch=null;}
   else if(!selBatch||!batches.includes(selBatch))selBatch=batches[batches.length-1]||1;
@@ -677,17 +389,17 @@ async function loadEventDetail(){
 }
 
 function renderBatchPage(){
-  acCleanAll(); // 清理所有旧下拉框DOM
+  acCleanAll();
   if(!selBatch){$('giftPage').innerHTML='<div style="text-align:center;padding:40px;color:#999">选择页面查看</div>';return;}
   const batchRecs=evtRecords.filter(r=>r.batch===selBatch);
   const sorted=batchRecs.sort((a,b)=>a.id-b.id);
-  const evt=(isUnarchivedMode?unarchivedEvts:events).find(e=>e.id===selEvtId);
+  const evt=events.find(e=>e.id===selEvtId);
   const ps=evt?evt.page_size||12:12;
   const locked=evt&&evt.locked;
   const total=sorted.reduce((s,r)=>s+(r.amount||0),0);
 
   let html=`<div class="page-header"><span>第 ${selBatch} 页&nbsp;·&nbsp;${sorted.length}/${ps} 条 · ${fmtA(total)} 元</span>`;
-  if(!locked){html+=`<span class="btn-group"><button class="btn primary sm" onclick="savePage()">保存</button><button class="btn primary sm" onclick="gotoNextPage()">翻页</button></span>`;}
+  if(!locked){html+=`<span class="btn-group"><button class="btn primary sm" onclick="savePage()">保存</button></span>`;}
   html+=`</div>`;
 
   if(locked){
@@ -718,7 +430,6 @@ function renderBatchPage(){
   }
   $('giftPage').innerHTML=html;
   if(!locked){
-    // 键盘导航：Tab在各输入框间切换，最后一个输入框按Enter触发保存
     setTimeout(()=>{
       const inputs=$('pageForm').querySelectorAll('input');
       inputs.forEach((inp,i)=>{
@@ -727,22 +438,13 @@ function renderBatchPage(){
             if(document.querySelector('.ac-dd.show'))return;
             e.preventDefault();
             if(i+1<inputs.length){inputs[i+1].focus();}
-            else{savePage(true).then(()=>gotoNextPage());}
+            else{savePage(true);}
           }
         });
       });
       document.querySelectorAll('.pi-name').forEach(inp=>acAttach(inp));
     },50);
   }
-}
-
-async function gotoNextPage(){
-  const curBatch=selBatch;
-  selBatch=curBatch+1;
-  _gotoBatch=selBatch;
-  renderBatchPage();
-  // 后台静默刷新数据
-  loadEvtDataSilent();
 }
 
 async function loadEvtDataSilent(){
@@ -753,9 +455,7 @@ async function loadEvtDataSilent(){
     events=nonDaily.filter(e=>e.archived);
     unarchivedEvts=nonDaily.filter(e=>!e.archived);
     renderEvtGrid();
-    renderUnarchivedGrid();
-    // 更新统计面板（无需重新渲染整个 detail），在正确的列表中查找
-    const evt=(isUnarchivedMode?unarchivedEvts:events).find(e=>e.id===selEvtId);
+    const evt=events.find(e=>e.id===selEvtId);
     if(evt){
       const total=evtRecords.reduce((s,r)=>s+(r.amount||0),0);
       const isDaily=evt.event_type==='日常'||evt.name==='流水';
@@ -765,7 +465,7 @@ async function loadEvtDataSilent(){
         <div class="stat-card sub"><div class="slabel">涉及人数</div><div class="svalue">${new Set(evtRecords.map(r=>r.name)).size} 人</div></div>
         <div class="stat-card sub"><div class="slabel">页数</div><div class="svalue">${new Set(evtRecords.map(r=>r.batch)).size}</div></div>`;
       $('evtLockBtn').textContent=evt.locked?'解锁':'锁定';
-      $('evtArchiveBtn').textContent=evt.archived?'取消归档':'归档';
+      $('evtArchiveBtn').textContent='取消归档';
       const batches=[...new Set(evtRecords.map(r=>r.batch))].sort((a,b)=>a-b);
       if(!batches.includes(selBatch))selBatch=batches[batches.length-1]||1;
       const ps=evt.page_size||12;
@@ -781,7 +481,6 @@ async function loadEvtDataSilent(){
 async function savePage(silent=false){
   const inputs=$('pageForm').querySelectorAll('input');
   const rows=[];
-  // 两遍扫描：收集数据
   for(let i=0;i<inputs.length;i+=3){
     const nameInp=inputs[i],amtInp=inputs[i+1],noteInp=inputs[i+2];
     const name=nameInp.value.trim();
@@ -791,9 +490,8 @@ async function savePage(silent=false){
   }
   if(rows.length===0){if(!silent)toast('请至少填写一条完整记录',1);return;}
 
-  const evt=(isUnarchivedMode?unarchivedEvts:events).find(e=>e.id===selEvtId);
+  const evt=events.find(e=>e.id===selEvtId);
   const defaultDate=evt&&evt.event_date?evt.event_date:'';
-  // 并行保存所有记录，显著提升移动端响应速度
   const results=await Promise.allSettled(rows.map(r=>{
     const body={event_id:selEvtId,name:r.name,amount:r.amount,note:r.note,direction:'收',batch:selBatch,date:defaultDate};
     const url=r.rid?API+'/records/'+r.rid:API+'/records';
@@ -803,7 +501,6 @@ async function savePage(silent=false){
   const okCount=results.filter(r=>r.status==='fulfilled'&&r.value.success).length;
   const errCount=results.length-okCount;
   if(!silent)toast(`保存完成: ${okCount}条成功${errCount>0?`, ${errCount}条失败`:''}`,errCount>0?1:0);
-  // 合并刷新：一次加载后端最新数据即可
   await loadEvtDataSilent();
   renderBatchPage();
 }
@@ -812,17 +509,14 @@ async function toggleLock(){
   const res=await fetch(API+'/events/'+selEvtId+'/lock',{method:'POST'});
   if(res.ok){
     toast('已切换锁定状态');
-    // 只需刷新事件列表+轻量更新当前详情，避免全量 reload
     const allEvts=await fetch(API+'/events').then(r=>r.json());
     const nonDaily=allEvts.filter(e=>e.event_type!=='日常');
     events=nonDaily.filter(e=>e.archived);
     unarchivedEvts=nonDaily.filter(e=>!e.archived);
     renderEvtGrid();
-    renderUnarchivedGrid();
-    const evt=(isUnarchivedMode?unarchivedEvts:events).find(e=>e.id===selEvtId);
+    const evt=events.find(e=>e.id===selEvtId);
     if(evt){
       $('evtLockBtn').textContent=evt.locked?'解锁':'锁定';
-      // 锁定/解锁需要重新渲染礼薄以切换只读/编辑模式
       evtRecords=await fetch(API+'/records?event_id='+selEvtId).then(r=>r.json());
       $('evtTitle').innerHTML=`${escH(evt.name)} <span style="font-size:12px;color:#999">(${escH(evtTypeLabel(evt.event_type))}${evt.event_date?' | '+evt.event_date:''})</span>`;
       renderBatchPage();
@@ -834,25 +528,29 @@ async function toggleArchive(){
   const res=await fetch(API+'/events/'+selEvtId+'/archive',{method:'POST'});
   if(res.ok){
     const data=await res.json();
-    toast(data.archived?'已归档':'已取消归档');
-    isUnarchivedMode=!data.archived;
-    $('evtArchiveBtn').textContent=data.archived?'取消归档':'归档';
-    await loadEvents();
+    if(data.archived){
+      toast('已归档（仍在当前页）');
+      await loadEvents();
+    }else{
+      toast('已取消归档，事件已移至工作台');
+      // 从当前视图移除后重新加载
+      selEvtId=null;$('evtDetail').style.display='none';
+      await loadEvents();
+    }
   }else{const e=await res.json();toast(e.error||'操作失败',1);}
 }
 
-async function toggleDailyLock(){
-  if(!dailyEventId){toast('日常事件不存在',1);return;}
-  const res=await fetch(API+'/events/'+dailyEventId+'/lock',{method:'POST'});
-  if(res.ok){toast('已切换锁定状态');loadDaily();}
-  else{const e=await res.json();toast(e.error||'操作失败',1);}
+async function delRec(rid){
+  showConfirm('确定删除此记录？',async()=>{
+    const res=await fetch(API+'/records/'+rid,{method:'DELETE'});
+    if(res.ok){toast('已删除');loadEventDetail();}
+    else{const e=await res.json();toast(e.error||'删除失败',1);}
+  });
 }
 
 function showEvtModal(evt){
-  let title='新增事件';
-  if(evt)title='编辑事件';
+  let title='编辑事件';
   const selType=evt?evt.event_type:'事件';
-  const saveFn=evt?`saveEvt(${evt.id})`:'saveEvt()';
   showModal(`<h3>${title}</h3>
     <div class="fgroup"><label>事件名称</label><input type="text" id="mEName" value="${evt?escH(evt.name):''}"></div>
     <div class="fgroup"><label>类型</label><select id="mEType">
@@ -864,7 +562,7 @@ function showEvtModal(evt){
     <div class="fgroup"><label>每页条数</label><input type="number" id="mEPageSize" value="${evt?evt.page_size||12:12}" min="4" max="50" step="1"></div>
     <div class="btn-row">
       <button class="btn" onclick="hideModal()">取消</button>
-      <button class="btn primary" onclick="${saveFn}">保存</button>
+      <button class="btn primary" onclick="saveEvt(${evt.id})">保存</button>
     </div>`);
 }
 
@@ -872,16 +570,13 @@ async function saveEvt(eid){
   const name=$('mEName').value.trim(),type=$('mEType').value,date=$('mEDate').value,ps=parseInt($('mEPageSize').value)||12;
   if(!name){toast('事件名称不能为空',1);return;}
   const body={name,event_type:type,event_date:date,page_size:ps};
-  const isNew = eid===undefined || eid===null;
-  const url = isNew ? API+'/events' : API+'/events/'+eid;
-  const method = isNew ? 'POST' : 'PUT';
   let res;
   try{
-    res=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    res=await fetch(API+'/events/'+eid,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   }catch(netErr){
     toast('网络请求失败，请检查网络连接',1);return;
   }
-  if(res.ok){toast(isNew?'已创建':'已更新');hideModal();loadEvents();if(curPg==='daily')loadDaily();}
+  if(res.ok){toast('已更新');hideModal();loadEvents();}
   else{
     let errMsg='保存失败';
     try{
@@ -900,7 +595,7 @@ async function saveEvt(eid){
 }
 
 function editEvt(){
-  const evt=(isUnarchivedMode?unarchivedEvts:events).find(e=>e.id===selEvtId);
+  const evt=events.find(e=>e.id===selEvtId);
   if(evt)showEvtModal(evt);
 }
 
@@ -912,93 +607,14 @@ async function deleteEvt(){
   });
 }
 
-// ==================== 数据总览 ====================
-async function loadStats(){
-  try{
-    const dash=await fetch(API+'/dashboard').then(r=>r.json());
-    const ov=dash.overview;
-    $('sSummary').innerHTML=`
-      <div class="stat-card"><div class="slabel">总收到</div><div class="svalue">${fmtA(ov.total_rec)} 元</div></div>
-      <div class="stat-card"><div class="slabel">总送出</div><div class="svalue">${fmtA(ov.total_send)} 元</div></div>
-      <div class="stat-card sub"><div class="slabel">涉及人数</div><div class="svalue">${ov.person_cnt} 人</div></div>
-      <div class="stat-card sub"><div class="slabel">总记录</div><div class="svalue">${ov.total_records} 条</div></div>`;
-
-    $('sEvtTable').innerHTML=dash.events.map(e=>`<tr>
-      <td>${escH(e.name)}${e.locked?' <span style="font-size:11px;color:#c0392b">[锁定]</span>':''}</td>
-      <td>${escH(evtTypeLabel(e.event_type))}</td><td>${e.record_count}</td><td class="amt">${fmtA(e.total_amount)}</td>
-    </tr>`).join('');
-
-    const bal=await fetch(API+'/balance').then(r=>r.json());
-    const oweThem=bal.owe_them||[],oweMe=bal.owe_me||[],even=bal.even||[];
-    const all=[...oweThem.map(x=>({...x,label:'我欠对方'})),...oweMe.map(x=>({...x,label:'对方欠我'})),...even.map(x=>({...x,label:'持平'}))];
-    $('sBalTable').innerHTML=all.length?all.map(x=>`<tr>
-      <td style="text-align:center">${escH(x.name)}</td><td class="amt num" style="text-align:center">${fmtA(x.rec)}</td><td class="amt num" style="text-align:center">${fmtA(x.send)}</td>
-      <td class="amt num" style="text-align:center;color:${x.net>0?'#27ae60':x.net<0?'#c0392b':''}">${x.net>0?'+'+fmtA(x.net):x.net<0?fmtA(x.net):'0'}</td>
-      <td style="text-align:center;color:#999;font-size:12px">${x.label}</td>
-    </tr>`).join(''):'<tr><td colspan="5" style="text-align:center;padding:20px;color:#999">暂无数据</td></tr>';
-  }catch(e){$('sSummary').innerHTML='<div style="text-align:center;color:#999;padding:20px">加载失败，请刷新重试</div>';}
-
-  // 人员查找：附加模糊搜索并监听输入
-  setTimeout(()=>{
-    const sInp=$('sSearchName');
-    acAttach(sInp);
-    sInp.addEventListener('keydown',e=>{
-      if(e.key==='Enter'&&!document.querySelector('.ac-dd.show')){e.preventDefault();loadPersonDetail();}
-    });
-    let pt;
-    sInp.addEventListener('input',()=>{clearTimeout(pt);pt=setTimeout(loadPersonDetail,400);});
-  },10);
-}
-
-async function loadPersonDetail(){
-  const name=$('sSearchName').value.trim();
-  const box=$('sPersonDetail');
-  if(!name){box.innerHTML='';return;}
-  try{
-    const d=await fetch(API+'/person?name='+encodeURIComponent(name)).then(r=>r.json());
-    if(!d||!d.name){box.innerHTML='<div style="color:#999;padding:8px">未找到该人员记录</div>';return;}
-    const net=d.total_rec-d.total_send;
-    const tag=net>0?'我欠对方':net<0?'对方欠我':'持平';
-    const cls=net>0?'color:#27ae60':net<0?'color:#c0392b':'';
-    box.innerHTML=`
-      <div style="background:#fafaf8;border-radius:6px;padding:12px 16px;margin-bottom:12px">
-        <span style="font-weight:600;font-size:14px">${escH(d.name)}</span>
-        <span style="margin-left:12px;color:#999;font-size:12px">${tag}</span>
-        <div style="display:flex;gap:20px;margin-top:8px;font-size:13px">
-          <span>收到 <b style="color:#27ae60">${fmtA(d.total_rec)}</b></span>
-          <span>送出 <b style="color:#c0392b">${fmtA(d.total_send)}</b></span>
-          <span>净额 <b style="${cls}">${net>0?'+'+fmtA(net):fmtA(net)}</b></span>
-          <span style="color:#999">共 ${d.total_count} 条记录</span>
-        </div>
-      </div>
-      <div class="t-wrap"><table><thead><tr><th>事件</th><th>日期</th><th>方向</th><th>金额</th><th>备注</th></tr></thead><tbody>
-      ${d.events.map(ev=>{
-        const eType=evtTypeLabel(ev.event_type||'');
-        return ev.records.map(r=>`<tr>
-          <td>${escH(ev.name)}<span style="color:#999;font-size:11px;margin-left:4px">${escH(eType)}</span></td>
-          <td>${fmtD(r.date)}</td>
-          <td>${r.direction==='收'?'收到':'送出'}</td>
-          <td class="amt${r.direction==='收'?' num':''}" style="color:${r.direction==='收'?'#27ae60':'#c0392b'}">${fmtA(r.amount)}</td>
-          <td style="color:#999;font-size:12px">${escH(r.note||'')}</td>
-        </tr>`).join('');
-      }).join('')}
-      ${d.events.length===0?`<tr><td colspan="5" style="text-align:center;color:#999;padding:12px">暂无记录</td></tr>`:''}
-      </tbody></table></div>`;
-  }catch(e){box.innerHTML='';}
-}
-
 // ==================== 键盘快捷键 ====================
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape')hideModal();
-  if(e.ctrlKey&&e.key==='Enter'){
-    if(curPg==='daily')saveDaily();
-    else if(curPg==='event')savePage(true);
-  }
+  if(e.ctrlKey&&e.key==='Enter')savePage(true);
 });
 
 // ==================== 初始化 ====================
-initDateSelects();
-loadDaily();
+loadEvents();
 </script>
 </body>
 </html>

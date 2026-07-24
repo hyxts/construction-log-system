@@ -259,6 +259,11 @@ def index():
 def renqing_index():
     return send_from_directory('人情', 'index.html')
 
+@app.route('/renqing/archive')
+@app.route('/renqing/archive/')
+def renqing_archive():
+    return send_from_directory('人情', 'archive.html')
+
 @app.route('/paiban')
 @app.route('/paiban/')
 def paiban_index():
