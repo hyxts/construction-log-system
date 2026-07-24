@@ -638,6 +638,7 @@ function renderDailyYears(){
   selDailyYear=null;
   $('dailyYearTitle').textContent='';
   $('dailyArchiveNav').innerHTML='';
+  $('dailyArchiveContent').innerHTML='<div class="evt-grid" id="dailyYearGrid"></div>';
   const byYear={};
   dailyRecords.forEach(r=>{const y=r.date?r.date.slice(0,4):'未知';if(!byYear[y])byYear[y]=[];byYear[y].push(r);});
   const years=Object.keys(byYear).filter(y=>y!=='未知').sort((a,b)=>b-a);
