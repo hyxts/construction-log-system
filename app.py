@@ -430,11 +430,17 @@ _thread = threading.Thread(target=_clean_rate_limits, daemon=True)
 _thread.start()
 
 if __name__ == '__main__':
+    import webbrowser
+    def _open_browser():
+        time_mod.sleep(1.2)
+        webbrowser.open('http://127.0.0.1:5000/calligraphy')
+    threading.Thread(target=_open_browser, daemon=True).start()
     print('礼金记录系统: http://127.0.0.1:5000')
     print('排工考勤系统: http://127.0.0.1:5000/paiban')
     print('GPA系统: http://127.0.0.1:5000/gpa')
     print('高中成绩系统: http://127.0.0.1:5000/hsgrades')
     print('个人记账系统: http://127.0.0.1:5000/accounting')
+    print('字帖生成器: http://127.0.0.1:5000/calligraphy')
     print('网速测试: http://127.0.0.1:5000/speedtest')
     print('提示: 使用 127.0.0.1 访问比 localhost 更快（约40倍）')
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
