@@ -315,6 +315,18 @@ def backup_index():
 def accounting_index():
     return send_from_directory('记账', 'index.html')
 
+@app.route('/accounting/manifest.json')
+def accounting_manifest():
+    return send_from_directory('记账', 'manifest.json')
+
+@app.route('/accounting/icon-192.svg')
+def accounting_icon_192():
+    return send_from_directory('记账', 'icon-192.svg')
+
+@app.route('/accounting/icon-512.svg')
+def accounting_icon_512():
+    return send_from_directory('记账', 'icon-512.svg')
+
 @app.route('/speedtest')
 @app.route('/speedtest/')
 def speedtest_index():
