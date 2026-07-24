@@ -187,6 +187,18 @@ td.act{white-space:nowrap}
       <div class="gift-page" id="giftPage"></div>
     </div>
   </div>
+
+  <!-- 日常随礼归档 -->
+  <div class="card" id="dailyArchiveCard">
+    <div class="card-title">
+      <span>日常随礼归档 <span id="dailyYearTitle" style="font-size:12px;color:#999"></span></span>
+      <span class="btn-group" id="dailyArchiveNav"></span>
+    </div>
+    <div id="dailyArchiveContent">
+      <div class="evt-grid" id="dailyYearGrid"></div>
+    </div>
+  </div>
+
 </main>
 
 <!-- 弹窗 -->
@@ -607,6 +619,69 @@ async function deleteEvt(){
   });
 }
 
+// ==================== 日常随礼归档 ====================
+let dailyRecords=[],dailyEventId=null,selDailyYear=null;
+
+async function loadDailyArchive(){
+  try{
+    const evts=await fetch(API+'/events').then(r=>r.json());
+    const dailyEvt=evts.find(e=>e.event_type==='日常'||e.name==='流水');
+    if(!dailyEvt){$('dailyYearGrid').innerHTML='<div class="empty-hint">暂无日常随礼数据</div>';return;}
+    dailyEventId=dailyEvt.id;
+    dailyRecords=await fetch(API+'/records?event_id='+dailyEventId).then(r=>r.json());
+    dailyRecords=dailyRecords.filter(r=>!r.direction||r.direction==='送');
+    renderDailyYears();
+  }catch(e){$('dailyYearGrid').innerHTML='<div class="empty-hint">加载失败</div>';}
+}
+
+function renderDailyYears(){
+  selDailyYear=null;
+  $('dailyYearTitle').textContent='';
+  $('dailyArchiveNav').innerHTML='';
+  const byYear={};
+  dailyRecords.forEach(r=>{const y=r.date?r.date.slice(0,4):'未知';if(!byYear[y])byYear[y]=[];byYear[y].push(r);});
+  const years=Object.keys(byYear).filter(y=>y!=='未知').sort((a,b)=>b-a);
+  if(Object.keys(byYear).includes('未知'))years.push('未知');
+  if(years.length===0){$('dailyYearGrid').innerHTML='<div class="empty-hint">暂无历史记录</div>';return;}
+  $('dailyYearGrid').innerHTML=years.map(y=>{
+    const recs=byYear[y],total=recs.reduce((s,r)=>s+(r.amount||0),0);
+    return `<div class="evt-item" onclick="selectDailyYear('${y}')">
+      <div class="ename">${y}年</div>
+      <div class="emeta"><span>${recs.length}条</span><span>${new Set(recs.map(r=>r.name)).size}人</span></div>
+      <div class="etotal">${fmtA(total)} 元</div>
+    </div>`;
+  }).join('');
+}
+
+async function selectDailyYear(y){
+  selDailyYear=y;
+  $('dailyYearTitle').textContent=' · '+y+'年';
+  $('dailyArchiveNav').innerHTML='<button class="btn sm" onclick="renderDailyYears()">返回年份列表</button>';
+  renderDailyYearDetail();
+}
+
+function renderDailyYearDetail(){
+  const recs=selDailyYear==='未知'?dailyRecords.filter(r=>!r.date||!r.date.slice(0,4)):dailyRecords.filter(r=>r.date&&r.date.startsWith(selDailyYear));
+  const sorted=recs.sort((a,b)=>new Date(b.date||'1900')-new Date(a.date||'1900')||b.id-a.id);
+  const total=sorted.reduce((s,r)=>s+(r.amount||0),0);
+  let html=`<div class="stat-row">
+    <div class="stat-card"><div class="slabel">${selDailyYear}年送出</div><div class="svalue">${fmtA(total)} 元</div></div>
+    <div class="stat-card sub"><div class="slabel">记录数</div><div class="svalue">${sorted.length} 条</div></div>
+    <div class="stat-card sub"><div class="slabel">涉及人数</div><div class="svalue">${new Set(sorted.map(r=>r.name)).size} 人</div></div>
+  </div>`;
+  if(sorted.length===0){html+='<div style="text-align:center;padding:20px;color:#999">该年份暂无记录</div>';}
+  else{
+    html+=`<div class="t-wrap"><table><thead><tr><th style="width:100px">日期</th><th>姓名</th><th>金额</th><th>备注</th></tr></thead><tbody>`;
+    sorted.forEach(r=>{
+      html+=`<tr><td>${fmtD(r.date)}</td><td>${escH(r.name)}</td><td class="amt num">${fmtA(r.amount)}</td><td style="color:#999">${escH(r.note||'')}</td></tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  }
+  $('dailyArchiveContent').innerHTML=`
+    <div id="dailyYearStats">${html}</div>
+  `;
+}
+
 // ==================== 键盘快捷键 ====================
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape')hideModal();
@@ -615,6 +690,7 @@ document.addEventListener('keydown',e=>{
 
 // ==================== 初始化 ====================
 loadEvents();
+loadDailyArchive();
 </script>
 </body>
 </html>

@@ -58,6 +58,8 @@ td.act{white-space:nowrap}
 .ytabs span{padding:6px 14px;background:#f5f4f0;border-radius:16px;font-size:13px;cursor:pointer;color:#7f8c8d;border:1px solid transparent;transition:all .15s}
 .ytabs span:hover{color:#2c3e50;border-color:#d5cfc5}
 .ytabs span.on{background:#2c3e50;color:#fff;font-weight:600}
+.arch-link{display:inline-block;padding:6px 14px;font-size:12px;color:#7f8c8d;text-decoration:none;border:1px dashed #d5cfc5;border-radius:16px;transition:all .15s}
+.arch-link:hover{color:#2c3e50;border-color:#2c3e50;background:#fafaf8}
 /* 事件选择器 */
 .evt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
 .evt-item{padding:14px;background:#fff;border:1px solid #eae6dd;border-radius:8px;cursor:pointer;transition:all .15s}
@@ -535,7 +537,7 @@ async function loadDaily(){
 function renderYearTabs(years){
   $('dYearTabs').innerHTML=years.map(y=>
     `<span class="${y===dailyYear?'on':''}" onclick="document.querySelectorAll('#dYearTabs span').forEach(s=>s.classList.remove('on'));this.classList.add('on');dailyYear='${y}';renderDaily()">${y}年</span>`
-  ).join('');
+  ).join('')+'<a href="/renqing/archive" class="arch-link">查看往年归档 ></a>';
 }
 
 function renderDaily(){
