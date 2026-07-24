@@ -527,30 +527,24 @@ async function loadDaily(){
     const recs=await fetch(API+'/records?event_id='+dailyEventId).then(r=>r.json());
     dailyRecords=recs.filter(r=>!r.direction||r.direction==='送');
 
-    const years=[...new Set(dailyRecords.map(r=>r.date?r.date.slice(0,4):'未知').filter(Boolean))].sort((a,b)=>b-a);
-    if(!dailyYear||!years.includes(dailyYear))dailyYear=years[0]||'';
-    renderYearTabs(years);
+    dailyYear=new Date().getFullYear().toString();
+    renderYearTabs();
     renderDaily();
   }catch(e){$('dList').innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:#999">加载失败，请刷新重试</td></tr>';}
 }
 
-function renderYearTabs(years){
-  $('dYearTabs').innerHTML=years.map(y=>
-    `<span class="${y===dailyYear?'on':''}" onclick="document.querySelectorAll('#dYearTabs span').forEach(s=>s.classList.remove('on'));this.classList.add('on');dailyYear='${y}';renderDaily()">${y}年</span>`
-  ).join('')+'<a href="/renqing/archive" class="arch-link">查看往年归档 ></a>';
+function renderYearTabs(){
+  $('dYearTabs').innerHTML=`<span class="on">${dailyYear}年</span><a href="/renqing/archive" class="arch-link">查看往年归档 &gt;</a>`;
 }
 
 function renderDaily(){
-  const recs=dailyYear?dailyRecords.filter(r=>r.date&&r.date.startsWith(dailyYear)):dailyRecords;
+  const recs=dailyRecords.filter(r=>r.date&&r.date.startsWith(dailyYear));
   const total=recs.reduce((s,r)=>s+(r.amount||0),0);
-  const allTotal=dailyRecords.reduce((s,r)=>s+(r.amount||0),0);
-  const allLabel=dailyYear&&dailyYear!=='全部'?'历史累计':'全部合计';
   $('dSummary').innerHTML=`
-    <div class="stat-card"><div class="slabel">${dailyYear||'全部'}送出</div><div class="svalue">${fmtA(total)} 元</div></div>
+    <div class="stat-card"><div class="slabel">${dailyYear}年送出</div><div class="svalue">${fmtA(total)} 元</div></div>
     <div class="stat-card sub"><div class="slabel">记录数</div><div class="svalue">${recs.length} 条</div></div>
     <div class="stat-card sub"><div class="slabel">涉及人数</div><div class="svalue">${new Set(recs.map(r=>r.name)).size} 人</div></div>
-    <div class="stat-card sub"><div class="slabel">平均</div><div class="svalue">${recs.length?fmtA(Math.round(total/recs.length)):0} 元</div></div>
-    ${dailyYear&&dailyYear!=='全部'?`<div class="stat-card sub" style="background:#fafaf8"><div class="slabel">${allLabel}</div><div class="svalue" style="color:#c0392b">${fmtA(allTotal)} 元</div></div>`:''}`;
+    <div class="stat-card sub"><div class="slabel">平均</div><div class="svalue">${recs.length?fmtA(Math.round(total/recs.length)):0} 元</div></div>`;
 
   $('dList').innerHTML=recs.length?recs.map(r=>`<tr>
     <td>${fmtD(r.date)}</td><td>${escH(r.name)}</td><td class="amt">${fmtA(r.amount)}</td>
