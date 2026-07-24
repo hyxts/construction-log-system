@@ -126,7 +126,7 @@ def check_auth():
         return jsonify({'success': False, 'error': '请求过于频繁'}), 429
 
     # 免登录路径
-    PUBLIC_PREFIXES = ('/static', '/countdown', '/accounting', '/renqing/manifest', '/renqing/icon', '/api/accounting', '/api/countdown', '/api/pa/', '/api/status', '/api/speedtest/')
+    PUBLIC_PREFIXES = ('/static', '/countdown', '/accounting', '/renqing/manifest', '/renqing/icon', '/deploy/manifest', '/deploy/icon', '/api/accounting', '/api/countdown', '/api/pa/', '/api/status', '/api/speedtest/')
     if request.path in ('/login', '/setup') or any(request.path.startswith(p) for p in PUBLIC_PREFIXES):
         return
     if session.get('auth'):
@@ -304,6 +304,18 @@ def pa_index():
 @app.route('/deploy/')
 def deploy_index():
     return send_from_directory('部署', 'index.html')
+
+@app.route('/deploy/manifest.json')
+def deploy_manifest():
+    return send_from_directory('部署', 'manifest.json')
+
+@app.route('/deploy/icon-192.svg')
+def deploy_icon_192():
+    return send_from_directory('部署', 'icon-192.svg')
+
+@app.route('/deploy/icon-512.svg')
+def deploy_icon_512():
+    return send_from_directory('部署', 'icon-512.svg')
 
 @app.route('/backup')
 @app.route('/backup/')
