@@ -10,6 +10,9 @@
 <link rel="apple-touch-icon" href="/calligraphy/icon-192.svg">
 <link rel="icon" type="image/svg+xml" href="/calligraphy/icon-512.svg">
 <link rel="manifest" href="/calligraphy/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;700&family=Ma+Shan+Zheng&family=ZCOOL+QingKe+HuangYou&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
 <title>字帖设计</title>
 <style>
 :root {
@@ -429,12 +432,33 @@ body {
       <div class="panel-title">字体选择</div>
       <div class="panel-row">
         <select id="fontSelect">
-          <option value="KaiTi, STKaiti, '楷体', serif">楷体</option>
-          <option value="'FangSong', STFangsong, '仿宋', serif">仿宋</option>
-          <option value="SimSun, STSong, '宋体', serif">宋体</option>
-          <option value="'SimHei', STHeiti, '黑体', sans-serif">黑体</option>
-          <option value="'STXingkai', '华文行楷', KaiTi, serif">行楷</option>
-          <option value="'Microsoft YaHei', sans-serif">微软雅黑</option>
+          <optgroup label="楷书类">
+            <option value="KaiTi, STKaiti, '楷体', serif">楷体（系统默认）</option>
+            <option value="'Noto Serif SC', STKaiti, '楷体', serif">思源宋体（谷歌）</option>
+            <option value="'Ma Shan Zheng', KaiTi, STKaiti, cursive">马山正楷（谷歌）</option>
+          </optgroup>
+          <optgroup label="行书类">
+            <option value="'STXingkai', '华文行楷', KaiTi, serif">华文行楷</option>
+            <option value="'ZCOOL QingKe HuangYou', 'STXingkai', cursive">黄油体（趣味）</option>
+            <option value="'ZCOOL XiaoWei', KaiTi, serif">小薇体（手写）</option>
+          </optgroup>
+          <optgroup label="宋体/仿宋类">
+            <option value="'FangSong', STFangsong, '仿宋', serif">仿宋</option>
+            <option value="SimSun, STSong, '宋体', serif">宋体</option>
+            <option value="'Noto Serif SC', SimSun, STSong, serif">思源宋体</option>
+          </optgroup>
+          <optgroup label="黑体/无衬线类">
+            <option value="'SimHei', STHeiti, '黑体', sans-serif">黑体</option>
+            <option value="'Noto Sans SC', 'Microsoft YaHei', sans-serif">思源黑体</option>
+            <option value="'Microsoft YaHei', sans-serif">微软雅黑</option>
+          </optgroup>
+          <optgroup label="其他书体">
+            <option value="'LiSu', STLiti, '隶书', serif">隶书</option>
+            <option value="'STXinwei', '华文新魏', serif">新魏</option>
+            <option value="'YouYuan', '幼圆', sans-serif">幼圆</option>
+            <option value="'FZShuTi', '方正舒体', serif">方正舒体</option>
+            <option value="'FZYaoti', '方正姚体', serif">方正姚体</option>
+          </optgroup>
         </select>
       </div>
     </div>
@@ -444,7 +468,7 @@ body {
       <div class="panel-row">
         <select id="contentPreset" onchange="selectPreset()">
           <option value="">-- 选择预设内容 --</option>
-          <optgroup label="唐诗精选">
+          <optgroup label="唐诗精选（20首）">
             <option value="poem1">静夜思 - 李白</option>
             <option value="poem2">春晓 - 孟浩然</option>
             <option value="poem3">登鹳雀楼 - 王之涣</option>
@@ -455,19 +479,50 @@ body {
             <option value="poem8">赋得古原草送别 - 白居易</option>
             <option value="poem9">回乡偶书 - 贺知章</option>
             <option value="poem10">出塞 - 王昌龄</option>
+            <option value="poem11">凉州词 - 王之涣</option>
+            <option value="poem12">枫桥夜泊 - 张继</option>
+            <option value="poem13">早发白帝城 - 李白</option>
+            <option value="poem14">望天门山 - 李白</option>
+            <option value="poem15">鹿柴 - 王维</option>
+            <option value="poem16">送元二使安西 - 王维</option>
+            <option value="poem17">九月九日忆山东兄弟 - 王维</option>
+            <option value="poem18">江南春 - 杜牧</option>
+            <option value="poem19">泊船瓜洲 - 王安石</option>
+            <option value="poem20">忆江南 - 白居易</option>
           </optgroup>
-          <optgroup label="宋词精选">
+          <optgroup label="宋词精选（10首）">
             <option value="ci1">水调歌头·明月几时有</option>
             <option value="ci2">念奴娇·赤壁怀古</option>
             <option value="ci3">声声慢·寻寻觅觅</option>
+            <option value="ci4">雨霖铃·寒蝉凄切</option>
+            <option value="ci5">蝶恋花·伫倚危楼</option>
+            <option value="ci6">青玉案·东风夜放</option>
+            <option value="ci7">浣溪沙·一曲新词</option>
+            <option value="ci8">如梦令·常记溪亭</option>
+            <option value="ci9">醉花阴·薄雾浓云</option>
+            <option value="ci10">虞美人·春花秋月</option>
           </optgroup>
-          <optgroup label="常用字">
-            <option value="basic">基础汉字（三百千）</option>
+          <optgroup label="古文名篇">
+            <option value="prose1">千字文（全文）</option>
+            <option value="prose2">三字经（劝学篇）</option>
+            <option value="prose3">弟子规（入则孝）</option>
+            <option value="prose4">论语·学而篇</option>
+            <option value="prose5">朱子家训（选段）</option>
+          </optgroup>
+          <optgroup label="常用字练习">
+            <option value="basic">千字文百字（启蒙古文）</option>
+            <option value="basic500">常用汉字500（按频序）</option>
             <option value="number">数字大写（壹贰叁肆伍）</option>
-            <option value="name">常见姓氏</option>
+            <option value="name">百家姓（全文）</option>
+            <option value="name48">常见姓氏48个</option>
           </optgroup>
           <optgroup label="偏旁部首">
             <option value="pianpang">常见偏旁部首</option>
+          </optgroup>
+          <optgroup label="散文名段">
+            <option value="essay1">匆匆 - 朱自清</option>
+            <option value="essay2">荷塘月色 - 朱自清</option>
+            <option value="essay3">从百草园到三味书屋</option>
           </optgroup>
         </select>
       </div>
@@ -554,7 +609,7 @@ body {
 // ==================== 状态管理 ====================
 const state = {
   grid: 'tian',
-  font: 'KaiTi, STKaiti, "楷体", serif',
+  font: "KaiTi, STKaiti, '楷体', serif",
   content: '',
   fontSize: 'medium',
   cols: 6,
@@ -604,7 +659,48 @@ const PINYIN_DB = {
   '永':'yong','之':'zhi','氏':'shi','可':'ke','也':'ye','而':'er','不':'bu','其':'qi','以':'yi','者':'zhe',
   '氵':'shui','艹':'cao','扌':'shou','亻':'ren','讠':'yan','忄':'xin','木':'mu','火':'huo','土':'tu','钅':'jin',
   '纟':'si','女':'nv','口':'kou','日':'ri','月':'yue','目':'mu','石':'shi','虫':'chong','鱼':'yu','鸟':'niao',
-  '禾':'he','米':'mi','竹':'zhu','车':'che','马':'ma','走':'zou','足':'zu','页':'ye','风':'feng','雨':'yu'
+  '禾':'he','米':'mi','竹':'zhu','车':'che','马':'ma','走':'zou','足':'zu','页':'ye','风':'feng','雨':'yu',
+  /* 新增：唐诗扩展 */
+  '凉':'liang','州':'zhou','词':'ci','远':'yuan','片':'pian','仞':'ren','羌':'qiang','笛':'di','须':'xu','怨':'yuan',
+  '杨':'yang','柳':'liu','度':'du','玉':'yu','门':'men','枫':'feng','桥':'qiao','泊':'bo','乌':'wu','满':'man',
+  '渔':'yu','对':'dui','愁':'chou','姑':'gu','苏':'su','寺':'si','钟':'zhong','到':'dao','船':'chuan','早':'zao',
+  '发':'fa','帝':'di','辞':'ci','彩':'cai','间':'jian','陵':'ling','还':'hai','两':'liang','岸':'an','猿':'yuan',
+  '住':'zhu','轻':'qing','已':'yi','过':'guo','重':'zhong','断':'duan','楚':'chu','碧':'bi','至':'zhi','此':'ci',
+  '相':'xiang','帆':'fan','边':'bian','鹿':'lu','柴':'zhai','空':'kong','语':'yu','响':'xiang','返':'fan','景':'jing',
+  '深':'shen','复':'fu','照':'zhao','苔':'tai','送':'song','元':'yuan','安':'an','渭':'wei','浥':'yi','尘':'chen',
+  '舍':'she','劝':'quan','杯':'bei','阳':'yang','九':'jiu','忆':'yi','兄':'xiong','独':'du','异':'yi','为':'wei',
+  '每':'mei','逢':'feng','佳':'jia','节':'jie','倍':'bei','亲':'qin','遥':'yao','知':'zhi','遍':'bian','插':'cha',
+  '茱':'zhu','萸':'yu','里':'li','莺':'ying','映':'ying','村':'cun','郭':'guo','旗':'qi','百':'bai','台':'tai',
+  '瓜':'gua','京':'jing','只':'zhi','隔':'ge','数':'shu','又':'you','时':'shi','谙':'an','胜':'sheng','蓝':'lan','能':'neng',
+  /* 新增：宋词扩展 */
+  '寒':'han','蝉':'chan','凄':'qi','切':'qie','亭':'ting','晚':'wan','骤':'zhou','初':'chu','歇':'xie','都':'dou',
+  '帐':'zhang','饮':'yin','绪':'xu','留':'liu','恋':'lian','兰':'lan','催':'cui','执':'zhi','泪':'lei','竟':'jing',
+  '凝':'ning','噎':'ye','念':'nian','暮':'mu','霭':'ai','沉':'chen','阔':'kuo','情':'qing','别':'bie','更':'geng',
+  '堪':'kan','宵':'xiao','醒':'xing','残':'can','经':'jing','年':'nian','良':'liang','辰':'chen','虚':'xu','设':'she',
+  '纵':'zong','种':'zhong','伫':'zhu','倚':'yi','危':'wei','细':'xi','极':'ji','黯':'an','际':'ji','言':'yan',
+  '凭':'ping','阑':'lan','拟':'ni','疏':'shu','狂':'kuang','图':'tu','强':'qiang','乐':'le','味':'wei','带':'dai',
+  '渐':'jian','宽':'kuan','终':'zhong','悔':'hui','消':'xiao','憔':'qiao','悴':'cui','案':'an','星':'xing','如':'ru',
+  '箫':'xiao','动':'dong','壶':'hu','转':'zhuan','蛾':'e','缕':'lv','盈':'ying','暗':'an','浣':'huan','溪':'xi',
+  '新':'xin','旧':'jiu','夕':'xi','阳':'yang','下':'xia','几':'ji','似':'si','曾':'ceng','识':'shi','燕':'yan','径':'jing',
+  '亭':'ting','藕':'ou','争':'zheng','渡':'du','惊':'jing','滩':'tan','鸥':'ou','鹭':'lu','醉':'zui','阴':'yin','雾':'wu',
+  '浓':'nong','永':'yong','昼':'zhou','脑':'nao','销':'xiao','兽':'shou','又':'you','凉':'liang','透':'tou','纱':'sha',
+  '盈':'ying','瘦':'shou','虞':'yu','美':'mei','了':'le','知':'zhi','多':'duo','恰':'qia','雕':'diao','砌':'qi',
+  '朱':'zhu','颜':'yan','改':'gai','问':'wen','愁':'chou','番':'fan',
+  /* 新增：古文常用 */
+  '玄':'xuan','黄':'huang','宇':'yu','宙':'zhou','洪':'hong','荒':'huang','盈':'ying','昃':'ze','辰':'chen','宿':'xiu',
+  '列':'lie','张':'zhang','藏':'cang','闰':'run','余':'yu','成':'cheng','岁':'sui','律':'lv','吕':'lv','调':'diao',
+  '腾':'teng','致':'zhi','露':'lu','结':'jie','霜':'shuang','金':'jin','丽':'li','重':'chong','姜':'jiang','海':'hai',
+  '咸':'xian','淡':'dan','鳞':'lin','潜':'qian','翔':'xiang','师':'shi','龙':'long','鸟':'niao','官':'guan','治':'zhi',
+  '本':'ben','基':'ji','籍':'ji','甚':'shen','竞':'jing','学':'xue','优':'you','登':'deng','摄':'she','职':'zhi',
+  '甘':'gan','棠':'tang','咏':'yong','初':'chu','性':'xing','善':'shan','苟':'gou','迁':'qian','孟':'meng','母':'mu',
+  '择':'ze','邻':'lin','断':'duan','杼':'zhu','窦':'dou','燕':'yan','义':'yi','宜':'yi','温':'wen','席':'xi',
+  '孝':'xiao','孔':'kong','融':'rong','梨':'li','篇':'pian','则':'ze','顺':'shun','谨':'jin','信':'xin','泛':'fan',
+  '仁':'ren','论':'lun','乎':'hu','德':'de','行':'xing','政':'zheng','廉':'lian','耻':'chi',
+  /* 新增：散文名段 */
+  '匆':'cong','聪':'cong','慧':'hui','溜':'liu','滴':'di','绪':'xu','掩':'yan','罢':'ba','踪':'zong','影':'ying',
+  '荷':'he','塘':'tang','曲':'qu','折':'zhe','弥':'mi','田':'tian','亭':'ting','裙':'qun','零':'ling','星':'xing',
+  '笼':'long','纱':'sha','酣':'han','固':'gu','百':'bai','园':'yuan','菜':'cai','畦':'qi','皂':'zao','荚':'jia',
+  '紫':'zi','桑':'sang','椹':'shen','蝉':'chan','吟':'yin','铃':'ling','蜈':'wu','蚣':'gong','斑':'ban','蝥':'mao'
 };
 
 // ==================== 内容预设 ====================
@@ -619,13 +715,40 @@ const PRESETS = {
   poem8: '离离原上草\n一岁一枯荣\n野火烧不尽\n春风吹又生',
   poem9: '少小离家老大回\n乡音无改鬓毛衰\n儿童相见不相识\n笑问客从何处来',
   poem10: '秦时明月汉时关\n万里长征人未还\n但使龙城飞将在\n不教胡马度阴山',
+  poem11: '黄河远上白云间\n一片孤城万仞山\n羌笛何须怨杨柳\n春风不度玉门关',
+  poem12: '月落乌啼霜满天\n江枫渔火对愁眠\n姑苏城外寒山寺\n夜半钟声到客船',
+  poem13: '朝辞白帝彩云间\n千里江陵一日还\n两岸猿声啼不住\n轻舟已过万重山',
+  poem14: '天门中断楚江开\n碧水东流至此回\n两岸青山相对出\n孤帆一片日边来',
+  poem15: '空山不见人\n但闻人语响\n返景入深林\n复照青苔上',
+  poem16: '渭城朝雨浥轻尘\n客舍青青柳色新\n劝君更尽一杯酒\n西出阳关无故人',
+  poem17: '独在异乡为异客\n每逢佳节倍思亲\n遥知兄弟登高处\n遍插茱萸少一人',
+  poem18: '千里莺啼绿映红\n水村山郭酒旗风\n南朝四百八十寺\n多少楼台烟雨中',
+  poem19: '京口瓜洲一水间\n钟山只隔数重山\n春风又绿江南岸\n明月何时照我还',
+  poem20: '江南好\n风景旧曾谙\n日出江花红胜火\n春来江水绿如蓝\n能不忆江南',
   ci1: '明月几时有\n把酒问青天\n不知天上宫阙\n今夕是何年\n我欲乘风归去\n又恐琼楼玉宇\n高处不胜寒\n起舞弄清影\n何似在人间',
   ci2: '大江东去\n浪淘尽\n千古风流人物\n故垒西边\n人道是\n三国周郎赤壁\n乱石穿空\n惊涛拍岸\n卷起千堆雪',
   ci3: '寻寻觅觅\n冷冷清清\n凄凄惨惨戚戚\n乍暖还寒时候\n最难将息\n三杯两盏淡酒\n怎敌他\n晚来风急',
+  ci4: '寒蝉凄切\n对长亭晚\n骤雨初歇\n都门帐饮无绪\n留恋处\n兰舟催发\n执手相看泪眼\n竟无语凝噎\n念去去\n千里烟波\n暮霭沉沉楚天阔',
+  ci5: '伫倚危楼风细细\n望极春愁\n黯黯生天际\n草色烟光残照里\n无言谁会凭阑意\n拟把疏狂图一醉\n对酒当歌\n强乐还无味\n衣带渐宽终不悔\n为伊消得人憔悴',
+  ci6: '东风夜放花千树\n更吹落\n星如雨\n宝马雕车香满路\n凤箫声动\n玉壶光转\n一夜鱼龙舞\n蛾儿雪柳黄金缕\n笑语盈盈暗香去\n众里寻他千百度\n蓦然回首\n那人却在\n灯火阑珊处',
+  ci7: '一曲新词酒一杯\n去年天气旧亭台\n夕阳西下几时回\n无可奈何花落去\n似曾相识燕归来\n小园香径独徘徊',
+  ci8: '常记溪亭日暮\n沉醉不知归路\n兴尽晚回舟\n误入藕花深处\n争渡\n争渡\n惊起一滩鸥鹭',
+  ci9: '薄雾浓云愁永昼\n瑞脑销金兽\n佳节又重阳\n玉枕纱橱\n半夜凉初透\n东篱把酒黄昏后\n有暗香盈袖\n莫道不销魂\n帘卷西风\n人比黄花瘦',
+  ci10: '春花秋月何时了\n往事知多少\n小楼昨夜又东风\n故国不堪回首月明中\n雕栏玉砌应犹在\n只是朱颜改\n问君能有几多愁\n恰似一江春水向东流',
+  prose1: '天地玄黄\n宇宙洪荒\n日月盈昃\n辰宿列张\n寒来暑往\n秋收冬藏\n闰余成岁\n律吕调阳\n云腾致雨\n露结为霜\n金生丽水\n玉出昆冈\n剑号巨阙\n珠称夜光\n果珍李奈\n菜重芥姜\n海咸河淡\n鳞潜羽翔\n龙师火帝\n鸟官人皇\n始制文字\n乃服衣裳',
+  prose2: '人之初\n性本善\n性相近\n习相远\n苟不教\n性乃迁\n教之道\n贵以专\n昔孟母\n择邻处\n子不学\n断机杼\n窦燕山\n有义方\n教五子\n名俱扬\n养不教\n父之过\n教不严\n师之惰\n子不学\n非所宜\n幼不学\n老何为',
+  prose3: '父母呼\n应勿缓\n父母命\n行勿懒\n父母教\n须敬听\n父母责\n须顺承\n冬则温\n夏则清\n晨则省\n昏则定\n出必告\n反必面\n居有常\n业无变\n事虽小\n勿擅为\n苟擅为\n子道亏\n物虽小\n勿私藏\n苟私藏\n亲心伤',
+  prose4: '学而时习之\n不亦说乎\n有朋自远方来\n不亦乐乎\n人不知而不愠\n不亦君子乎\n吾日三省吾身\n为人谋而不忠乎\n与朋友交而不信乎\n传不习乎\n弟子入则孝\n出则悌\n谨而信\n泛爱众\n而亲仁\n行有余力\n则以学文',
+  prose5: '黎明即起\n洒扫庭除\n要内外整洁\n既昏便息\n关锁门户\n必亲自检点\n一粥一饭\n当思来处不易\n半丝半缕\n恒念物力维艰\n宜未雨而绸缪\n毋临渴而掘井\n自奉必须俭约\n宴客切勿流连',
   basic: '天地玄黄\n宇宙洪荒\n日月盈昃\n辰宿列张\n寒来暑往\n秋收冬藏\n闰余成岁\n律吕调阳\n云腾致雨\n露结为霜',
+  basic500: '的一是在不了有和人这中大为上个国我以要他时来用们生到作地于出就分对成会可主发年动同工也能下过子说产种面而方后多定行学法所民得经十三之进着等部度家电力里如水化高自二理起小物现实加量都两体制机当使点从业本去把性好应开它合还因由其些然前外天政四日那社义事平形相全表间样与关各重新线内数正心反你明看原又么利比或但质气第向道命此变条只没结解问意建月公无系军很情者最立代想已通并提直题党程展五果料象员革位入常文总次品式活设及管特件长求老头基资边流路级少图山统接知较将组见计别她手角期根论运农指几九区强放决西被干做必战先回则取任据处队南给色光门即保治北造百规热领七海口东导器压志世金增争济阶油思术极交受联什认六共权收证改清己美再采转更单风切打白教速花带安场身车例真务具万每目至达走积示议声报斗完类八离华名确才科张信马节话米整空元况今集温传土许步群广石记需段研界拉林律叫且究观越织装影算低持音众书布复容儿须际商非验连断深难近矿千周委素技备半办青省列习响约支般史感劳便团往酸历市克何除消构府称太准精值号率族维划选标写存候毛亲快效斯院查江型眼王按格养易置派层片始却专状育厂京识适属圆包火住调满县局照参红细引听该铁价严',
   number: '壹贰叁肆伍\n陆柒捌玖拾\n壹佰贰佰叁佰\n肆佰伍佰陆佰\n柒佰捌佰玖佰\n壹仟贰仟叁仟',
-  name: '赵钱孙李\n周吴郑王\n冯陈褚卫\n蒋沈韩杨\n朱秦尤许\n何吕施张\n孔曹严华\n金魏陶姜',
-  pianpang: '江河湖海\n花草芬芳\n推拉提打\n休仙伶俐\n讲谈论议\n怕忙快情\n树村林森\n灯烛炎煌\n地球圣域\n钉钢铁锁'
+  name: '赵钱孙李\n周吴郑王\n冯陈褚卫\n蒋沈韩杨\n朱秦尤许\n何吕施张\n孔曹严华\n金魏陶姜\n戚谢邹喻\n柏水窦章\n云苏潘葛\n奚范彭郎\n鲁韦昌马\n苗凤花方\n俞任袁柳\n酆鲍史唐',
+  name48: '赵钱孙李\n周吴郑王\n冯陈褚卫\n蒋沈韩杨\n朱秦尤许\n何吕施张\n孔曹严华\n金魏陶姜',
+  pianpang: '江河湖海\n花草芬芳\n推拉提打\n休仙伶俐\n讲谈论议\n怕忙快情\n树村林森\n灯烛炎煌\n地球圣域\n钉钢铁锁',
+  essay1: '燕子去了\n有再来的时候\n杨柳枯了\n有再青的时候\n桃花谢了\n有再开的时候\n但是聪明的\n你告诉我\n我们的日子\n为什么一去不复返呢\n是有人偷了他们罢\n那是谁\n又藏在何处呢\n是他们自己逃走了罢\n现在又到了哪里呢',
+  essay2: '曲曲折折的荷塘上面\n弥望的是田田的叶子\n叶子出水很高\n像亭亭的舞女的裙\n层层的叶子中间\n零星地点缀着些白花\n有袅娜地开着的\n有羞涩地打着朵儿的\n正如一粒粒的明珠\n又如碧天里的星星',
+  essay3: '不必说碧绿的菜畦\n光滑的石井栏\n高大的皂荚树\n紫红的桑椹\n也不必说鸣蝉在树叶里长吟\n肥胖的黄蜂伏在菜花上\n轻捷的叫天子忽然从草间直窜向云霄里去了\n单是周围的短短的泥墙根一带\n就有无限趣味'
 };
 
 // ==================== 预设选择 ====================
@@ -775,7 +898,7 @@ function updatePreview() {
 // ==================== 重置 ====================
 function resetAll() {
   state.grid = 'tian';
-  state.font = 'KaiTi, STKaiti, "楷体", serif';
+  state.font = "KaiTi, STKaiti, '楷体', serif";
   state.content = '';
   state.fontSize = 'medium';
   state.cols = 6;
@@ -788,7 +911,7 @@ function resetAll() {
   document.getElementById('customText').value = '';
   document.getElementById('paperTitle').value = '';
   document.getElementById('contentPreset').value = '';
-  document.getElementById('fontSelect').value = 'KaiTi, STKaiti, "楷体", serif';
+  document.getElementById('fontSelect').value = "KaiTi, STKaiti, '楷体', serif";
 
   resetOptGroup('gridOpts', 'tian');
   resetOptGroup('sizeOpts', 'medium');
