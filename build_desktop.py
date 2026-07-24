@@ -22,7 +22,7 @@ if os.path.exists(SPEC_FILE):
     os.remove(SPEC_FILE)
 
 # 前端资源目录（中文目录名）
-DATA_DIRS = ['人情', '排班', '绩点', '成绩', '倒计时', '记账', '部署', '字帖']
+DATA_DIRS = ['人情', '排班', '绩点', '成绩', '倒计时', '记账', '部署']
 
 # 通过 --add-data 附加资源；格式在 Windows 下为 "src;dest"
 datas = []

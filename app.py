@@ -126,7 +126,7 @@ def check_auth():
         return jsonify({'success': False, 'error': '请求过于频繁'}), 429
 
     # 免登录路径
-    PUBLIC_PREFIXES = ('/static', '/countdown', '/accounting', '/renqing/manifest', '/renqing/icon', '/deploy/manifest', '/deploy/icon', '/calligraphy/manifest', '/calligraphy/icon', '/api/accounting', '/api/countdown', '/api/pa/', '/api/status', '/api/speedtest/')
+    PUBLIC_PREFIXES = ('/static', '/countdown', '/accounting', '/renqing/manifest', '/renqing/icon', '/deploy/manifest', '/deploy/icon', '/api/accounting', '/api/countdown', '/api/pa/', '/api/status', '/api/speedtest/')
     if request.path in ('/login', '/setup') or any(request.path.startswith(p) for p in PUBLIC_PREFIXES):
         return
     if session.get('auth'):
@@ -344,23 +344,6 @@ def accounting_icon_512():
 def speedtest_index():
     return redirect('/deploy')
 
-@app.route('/calligraphy')
-@app.route('/calligraphy/')
-def calligraphy_index():
-    return send_from_directory('字帖', 'index.html')
-
-@app.route('/calligraphy/manifest.json')
-def calligraphy_manifest():
-    return send_from_directory('字帖', 'manifest.json')
-
-@app.route('/calligraphy/icon-192.svg')
-def calligraphy_icon_192():
-    return send_from_directory('字帖', 'icon-192.svg')
-
-@app.route('/calligraphy/icon-512.svg')
-def calligraphy_icon_512():
-    return send_from_directory('字帖', 'icon-512.svg')
-
 # ==================== 启动 ====================
 
 _diag('开始初始化数据库...')
@@ -430,17 +413,11 @@ _thread = threading.Thread(target=_clean_rate_limits, daemon=True)
 _thread.start()
 
 if __name__ == '__main__':
-    import webbrowser
-    def _open_browser():
-        time_mod.sleep(1.2)
-        webbrowser.open('http://127.0.0.1:5000/calligraphy')
-    threading.Thread(target=_open_browser, daemon=True).start()
     print('礼金记录系统: http://127.0.0.1:5000')
     print('排工考勤系统: http://127.0.0.1:5000/paiban')
     print('GPA系统: http://127.0.0.1:5000/gpa')
     print('高中成绩系统: http://127.0.0.1:5000/hsgrades')
     print('个人记账系统: http://127.0.0.1:5000/accounting')
-    print('字帖生成器: http://127.0.0.1:5000/calligraphy')
     print('网速测试: http://127.0.0.1:5000/speedtest')
     print('提示: 使用 127.0.0.1 访问比 localhost 更快（约40倍）')
     app.run(host='0.0.0.0', port=5000, debug=False)
