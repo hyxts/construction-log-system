@@ -267,22 +267,22 @@ td.act{white-space:nowrap}
 </main>
 
 <main class="pg" id="pg-event">
-  <!-- 未归档事件（外面，独立编辑） -->
-  <div class="card" id="unarchivedCard" style="display:none">
-    <div class="card-title" style="cursor:pointer">
-      <span>未归档事件 <span id="unarchivedToggleIcon" style="font-size:12px;color:#999">[-]</span></span>
-      <button class="btn primary sm" onclick="event.stopPropagation();showEvtModal()">新增事件</button>
-    </div>
-    <div class="evt-grid" id="unarchivedGrid"></div>
-  </div>
-
-  <!-- 已归档事件列表（默认折叠） -->
+  <!-- 已归档事件列表（默认折叠，存放以往已完结事件） -->
   <div class="card">
     <div class="card-title" style="cursor:pointer" onclick="toggleEvtList()">
       <span>已归档事件 <span id="evtToggleIcon" style="font-size:12px;color:#999">[+]</span></span>
       <button class="btn sm" onclick="event.stopPropagation()" style="visibility:hidden"></button>
     </div>
     <div class="evt-grid" id="evtGrid" style="display:none"></div>
+  </div>
+
+  <!-- 未归档事件（当前编辑中的事件） -->
+  <div class="card" id="unarchivedCard" style="display:none">
+    <div class="card-title" style="cursor:pointer">
+      <span>未归档事件 <span id="unarchivedToggleIcon" style="font-size:12px;color:#999">[-]</span></span>
+      <button class="btn primary sm" onclick="event.stopPropagation();showEvtModal()">新增事件</button>
+    </div>
+    <div class="evt-grid" id="unarchivedGrid"></div>
   </div>
 
   <!-- 选中事件的详情 -->
