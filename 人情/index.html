@@ -638,8 +638,8 @@ function renderEvtGrid(){
 }
 
 function renderUnarchivedGrid(){
-  $('unarchivedCard').style.display=unarchivedEvts.length?'':'none';
-  $('unarchivedGrid').innerHTML=unarchivedEvts.map(e=>`<div class="evt-item${e.id===selEvtId?' selected':''}${e.locked?' row-locked':''}" onclick="selectEvent(${e.id},true)">
+  $('unarchivedCard').style.display='';
+  $('unarchivedGrid').innerHTML=unarchivedEvts.length?unarchivedEvts.map(e=>`<div class="evt-item${e.id===selEvtId?' selected':''}${e.locked?' row-locked':''}" onclick="selectEvent(${e.id},true)">
     <div class="ename">${escH(e.name)}${e.locked?' <span style="font-size:11px;color:#c0392b">[锁定]</span>':''}</div>
     <div class="emeta"><span>${escH(evtTypeLabel(e.event_type))}</span>${e.event_date?`<span>${e.event_date}</span>`:''}<span>${e.record_count}条</span></div>
     <div class="etotal">${fmtA(e.total_amount)} 元</div>
