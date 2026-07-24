@@ -29,7 +29,7 @@ def git_pull():
 
         if force:
             subprocess.run(['git', 'fetch', '--all'], cwd=BASE_DIR, capture_output=True, text=True, timeout=30)
-            r = subprocess.run(['git', 'reset', '--hard', 'origin/main'], cwd=BASE_DIR, capture_output=True, text=True, timeout=30)
+            r = subprocess.run(['git', 'reset', '--hard', 'origin/master'], cwd=BASE_DIR, capture_output=True, text=True, timeout=30)
         else:
             r = subprocess.run(['git', 'pull'], cwd=BASE_DIR, capture_output=True, text=True, timeout=30)
 
