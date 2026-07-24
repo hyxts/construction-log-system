@@ -152,6 +152,11 @@ td.act{white-space:nowrap}
   main{max-width:1100px;margin:0 auto;padding:16px 24px}
   body{background:#eef1f5}
 }
+/* 加载状态 */
+.loading-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(245,244,240,.7);z-index:9999;display:none;justify-content:center;align-items:center}
+.loading-overlay.show{display:flex}
+.loading-spinner{border:3px solid #e0dbd0;border-top:3px solid #2c3e50;border-radius:50%;width:32px;height:32px;animation:spin .8s linear infinite}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
@@ -208,127 +213,14 @@ td.act{white-space:nowrap}
 
 <!-- 提示 -->
 <div class="toast" id="toast"></div>
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div></div>
 
 <script>
 const API='/api/renqing';
 const $=id=>document.getElementById(id);
-
-// ==================== 工具函数 ====================
-function escH(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
-function fmtD(d){return d||'-';}
-function fmtA(v){return (v||0).toLocaleString();}
-function evtTypeLabel(t){const m={丧事:'白事'};return m[t]||t;}
-
-let toastTimer;
-function toast(msg,isErr){
-  const t=$('toast');t.textContent=msg;t.className='toast show'+(isErr?' err':'');
-  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.className='toast',1800);
-}
-
-// ==================== 模糊搜索联想 ====================
-let acDrops=[];
-function acCleanAll(){acDrops.forEach(d=>{if(d.parentNode)d.parentNode.removeChild(d);});acDrops=[];}
-
-function acAttach(input){
-  if(input.dataset.acAttached)return;
-  input.dataset.acAttached='1';
-  const dd=document.createElement('div');dd.className='ac-dd';
-  document.body.appendChild(dd);acDrops.push(dd);
-  let items=[],idx=-1,timer,blurTimer,ctrl,picking=false;
-
-  function hide(){
-    clearTimeout(blurTimer);blurTimer=null;
-    dd.classList.remove('show');idx=-1;
-  }
-
-  function pick(i){
-    if(!items[i])return;
-    picking=true;
-    input.value=items[i];
-    hide();
-    input.focus();
-    input.dispatchEvent(new Event('input',{bubbles:true}));
-    picking=false;
-  }
-
-  function render(){
-    dd.innerHTML=items.map((n,ii)=>`<div class="ac-item" data-i="${ii}">${escH(n)}</div>`).join('');
-    dd.querySelectorAll('.ac-item').forEach(el=>{
-      el.addEventListener('mousedown',e=>{e.preventDefault();pick(parseInt(el.dataset.i));});
-    });
-  }
-
-  function highlight(){
-    dd.querySelectorAll('.ac-item').forEach((el,ii)=>el.classList.toggle('active',ii===idx));
-  }
-
-  function show(){
-    try{
-      if(!input.isConnected)return;
-      const r=input.getBoundingClientRect();
-      dd.style.top=(r.bottom+2)+'px';dd.style.left=r.left+'px';dd.style.minWidth=r.width+'px';
-      render();dd.classList.add('show');
-    }catch(e){}
-  }
-
-  input.addEventListener('input',()=>{
-    if(picking)return;
-    clearTimeout(timer);clearTimeout(blurTimer);blurTimer=null;idx=-1;
-    const q=input.value.trim();
-    if(!q){hide();return;}
-    if(ctrl){ctrl.abort();}
-    ctrl=new AbortController();
-    timer=setTimeout(async()=>{
-      try{
-        const res=await fetch(API+'/suggestions?q='+encodeURIComponent(q),{signal:ctrl.signal});
-        items=await res.json();
-      }catch(e){return;}
-      if(!Array.isArray(items)||items.length===0||document.activeElement!==input||!input.isConnected){hide();return;}
-      show();
-    },150);
-  });
-
-  input.addEventListener('keydown',e=>{
-    if(!dd.classList.contains('show'))return;
-    if(e.key==='ArrowDown'){e.preventDefault();idx=(idx+1)%items.length;highlight();}
-    else if(e.key==='ArrowUp'){e.preventDefault();idx=(idx-1+items.length)%items.length;highlight();}
-    else if(e.key==='Enter'||e.key===' '||e.code==='Space'){e.preventDefault();e.stopPropagation();if(idx<0)idx=0;pick(idx);}
-    else if(e.key==='Escape'){e.preventDefault();hide();}
-  });
-
-  input.addEventListener('blur',()=>{
-    clearTimeout(blurTimer);blurTimer=null;
-    blurTimer=setTimeout(()=>hide(),200);
-  });
-}
-
-// ==================== 弹窗 ====================
-function showModal(html){
-  $('modalBox').innerHTML=html;$('modal').classList.add('show');
-  document.body.classList.add('modal-open');
-  setTimeout(()=>{
-    const firstInp=$('modalBox').querySelector('input,select');
-    if(firstInp)firstInp.focus();
-  },100);
-}
-function hideModal(){
-  $('modal').classList.remove('show');
-  document.body.classList.remove('modal-open');
-}
-$('modal').addEventListener('click',e=>{if(e.target===$('modal'))hideModal();});
-
-function showConfirm(msg, onOk){
-  showModal(`<h3>${msg}</h3>
-    <div class="btn-row" style="justify-content:flex-end;margin-top:20px">
-      <button class="btn" onclick="hideModal()">取消</button>
-      <button class="btn danger" id="confirmOkBtn">确定</button>
-    </div>`);
-  setTimeout(()=>{
-    const btn=$('confirmOkBtn');
-    if(btn){btn.addEventListener('click',()=>{hideModal();onOk();},{once:true});}
-    btn&&btn.focus();
-  },50);
-}
+</script>
+<script src="/renqing/common.js"></script>
+<script>$('modal').addEventListener('click',e=>{if(e.target===$('modal'))hideModal();});
 
 // ==================== 事件收礼（归档库专用） ====================
 let events=[],unarchivedEvts=[],selEvtId=null,selBatch=null,evtRecords=[],_gotoBatch=null,isUnarchivedMode=false;
@@ -491,6 +383,7 @@ async function loadEvtDataSilent(){
 }
 
 async function savePage(silent=false){
+  showLoading();
   const inputs=$('pageForm').querySelectorAll('input');
   const rows=[];
   for(let i=0;i<inputs.length;i+=3){
@@ -500,7 +393,7 @@ async function savePage(silent=false){
     if(!name||!amt||amt<=0)continue;
     rows.push({rid:parseInt(nameInp.dataset.rid)||0,name,amount:amt,note:noteInp.value.trim()});
   }
-  if(rows.length===0){if(!silent)toast('请至少填写一条完整记录',1);return;}
+  if(rows.length===0){if(!silent)toast('请至少填写一条完整记录',1);hideLoading();return;}
 
   const evt=events.find(e=>e.id===selEvtId);
   const defaultDate=evt&&evt.event_date?evt.event_date:'';
@@ -510,11 +403,12 @@ async function savePage(silent=false){
     const method=r.rid?'PUT':'POST';
     return fetch(url,{method,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   }));
-  const okCount=results.filter(r=>r.status==='fulfilled'&&r.value.success).length;
+  const okCount=results.filter(r=>r.status==='fulfilled'&&r.value.ok).length;
   const errCount=results.length-okCount;
   if(!silent)toast(`保存完成: ${okCount}条成功${errCount>0?`, ${errCount}条失败`:''}`,errCount>0?1:0);
   await loadEvtDataSilent();
   renderBatchPage();
+  hideLoading();
 }
 
 async function toggleLock(){
@@ -641,7 +535,8 @@ function renderDailyYears(){
   $('dailyArchiveContent').innerHTML='<div class="evt-grid" id="dailyYearGrid"></div>';
   const byYear={};
   dailyRecords.forEach(r=>{const y=r.date?r.date.slice(0,4):'未知';if(!byYear[y])byYear[y]=[];byYear[y].push(r);});
-  const years=Object.keys(byYear).filter(y=>y!=='未知').sort((a,b)=>b-a);
+  const currentYear=new Date().getFullYear().toString();
+  const years=Object.keys(byYear).filter(y=>y!==currentYear&&y!=='未知').sort((a,b)=>b-a);
   if(Object.keys(byYear).includes('未知'))years.push('未知');
   if(years.length===0){$('dailyYearGrid').innerHTML='<div class="empty-hint">暂无历史记录</div>';return;}
   $('dailyYearGrid').innerHTML=years.map(y=>{

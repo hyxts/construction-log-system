@@ -406,8 +406,15 @@ def update_record(rid):
             evt = c.execute('SELECT event_date FROM events WHERE id=?', (target_eid,)).fetchone()
             if evt and evt['event_date']:
                 date_val = evt['event_date']
+        amount = d.get('amount', 0)
+        try:
+            amount = float(amount)
+            if amount <= 0:
+                return jsonify({'success': False, 'error': '金额必须大于0'}), 400
+        except (ValueError, TypeError):
+            return jsonify({'success': False, 'error': '金额格式无效'}), 400
         c.execute('UPDATE records SET event_id=?,date=?,name=?,amount=?,note=?,batch=?,direction=? WHERE id=?',
-                  (target_eid, date_val, d.get('name',''), d.get('amount',0), d.get('note',''), d.get('batch',1), d.get('direction','收'), rid))
+                  (target_eid, date_val, d.get('name',''), amount, d.get('note',''), d.get('batch',1), d.get('direction','收'), rid))
         c.commit()
         _log(f'更新记录: {d["name"]} (ID:{rid})')
         return jsonify({'success': True})

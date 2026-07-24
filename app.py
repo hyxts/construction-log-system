@@ -264,6 +264,10 @@ def renqing_index():
 def renqing_archive():
     return send_from_directory('人情', 'archive.html')
 
+@app.route('/renqing/common.js')
+def renqing_common_js():
+    return send_from_directory('人情', 'renqing-common.js')
+
 @app.route('/paiban')
 @app.route('/paiban/')
 def paiban_index():
